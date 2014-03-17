@@ -1,5 +1,5 @@
 # ======================================================================
-#  mu2e_artdaq main build file
+#  darkart main build file
 #
 #  cd .../path/to/build/directory
 #  source .../path/to/mu2e-artdaq/ups/setup_for_development
