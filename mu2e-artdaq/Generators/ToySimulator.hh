@@ -49,7 +49,7 @@ namespace mu2e {
     // the fragment_id_ variable declared in the parent
     // CommandableFragmentGenerator class)
     
-    std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_() override {
+    std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_() {
       return fragment_ids_;
     }
 

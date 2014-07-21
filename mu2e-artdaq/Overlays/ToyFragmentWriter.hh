@@ -40,7 +40,7 @@ public:
   // order to be able to perform writes
 
   Header * header_() {
-    assert(frag_.dataSize() >= words_to_frag_words_(Header::size_words ));
+    assert(artdaq_Fragment_.dataSize() >= words_to_frag_words_(Header::size_words ));
     return reinterpret_cast<Header *>(&*artdaq_Fragment_.dataBegin());
   }
 
@@ -92,7 +92,7 @@ mu2e::ToyFragmentWriter::ToyFragmentWriter(artdaq::Fragment& f ) :
 
 
 inline mu2e::ToyFragment::adc_t * mu2e::ToyFragmentWriter::dataBegin() {
-  assert(frag_.dataSize() > words_to_frag_words_(Header::size_words));
+  assert(artdaq_Fragment_.dataSize() > words_to_frag_words_(Header::size_words));
   return reinterpret_cast<adc_t *>(header_() + 1);
 }
 
