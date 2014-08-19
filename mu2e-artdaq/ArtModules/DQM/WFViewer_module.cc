@@ -6,7 +6,7 @@
 #include "art/Utilities/InputTag.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
-#include "artdaq/DAQdata/Fragments.hh"
+#include "artdaq-core/Data/Fragments.hh"
 
 #include "mu2e-artdaq/Overlays/FragmentType.hh"
 #include "mu2e-artdaq/Overlays/ToyFragment.hh"

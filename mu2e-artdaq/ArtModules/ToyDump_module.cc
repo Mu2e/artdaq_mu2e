@@ -12,7 +12,7 @@
 
 #include "art/Utilities/Exception.h"
 #include "mu2e-artdaq/Overlays/ToyFragment.hh"
-#include "artdaq/DAQdata/Fragments.hh"
+#include "artdaq-core/Data/Fragments.hh"
 
 #include <algorithm>
 #include <cassert>

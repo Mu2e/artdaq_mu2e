@@ -14,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
-#include "artdaq/DAQdata/Fragment.hh"
+#include "artdaq-core/Data/Fragment.hh"
 #include "mu2e-artdaq/Overlays/ToyFragment.hh"
 
 #include <iostream>

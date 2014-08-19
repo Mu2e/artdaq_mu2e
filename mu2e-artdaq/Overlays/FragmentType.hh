@@ -1,6 +1,6 @@
 #ifndef mu2e_artdaq_Overlays_FragmentType_hh
 #define mu2e_artdaq_Overlays_FragmentType_hh
-#include "artdaq/DAQdata/Fragment.hh"
+#include "artdaq-core/Data/Fragment.hh"
 
 namespace mu2e {
 

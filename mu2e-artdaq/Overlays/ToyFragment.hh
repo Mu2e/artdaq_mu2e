@@ -1,8 +1,8 @@
 #ifndef mu2e_artdaq_Overlays_ToyFragment_hh
 #define mu2e_artdaq_Overlays_ToyFragment_hh
 
-#include "artdaq/DAQdata/Fragment.hh"
-#include "artdaq/DAQdata/features.hh"
+#include "artdaq-core/Data/Fragment.hh"
+//#include "artdaq/DAQdata/features.hh"
 #include "cetlib/exception.h"
 
 #include <ostream>

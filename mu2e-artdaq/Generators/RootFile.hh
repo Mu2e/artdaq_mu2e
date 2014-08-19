@@ -1,14 +1,14 @@
-#ifndef mu2e_artdaq_Generators_ToySimulator_hh
-#define mu2e_artdaq_Generators_ToySimulator_hh
+#ifndef mu2e_artdaq_Generators_RootFile_hh
+#define mu2e_artdaq_Generators_RootFile_hh
 
-// ToySimulator is a simple type of fragment generator intended to be
+// RootFile is a simple type of fragment generator intended to be
 // studied by new users of artdaq as an example of how to create such
 // a generator in the "best practices" manner. Derived from artdaq's
 // CommandableFragmentGenerator class, it can be used in a full DAQ
 // simulation, generating all ADC counts with equal probability via
 // the std::uniform_int_distribution class
 
-// ToySimulator is designed to simulate values coming in from one of
+// RootFile is designed to simulate values coming in from one of
 // two types of digitizer boards, one called "TOY1" and the other
 // called "TOY2"; the only difference between the two boards is the #
 // of bits in the ADC values they send. These values are declared as
@@ -24,6 +24,7 @@
 #include "artdaq/Application/CommandableFragmentGenerator.hh"
 #include "mu2e-artdaq/Overlays/ToyFragment.hh"
 #include "mu2e-artdaq/Overlays/FragmentType.hh"
+#include "TFile.h"
 
 #include <random>
 #include <vector>
@@ -31,9 +32,9 @@
 
 namespace mu2e {    
 
-  class ToySimulator : public artdaq::CommandableFragmentGenerator {
+  class RootFile : public artdaq::CommandableFragmentGenerator {
   public:
-    explicit ToySimulator(fhicl::ParameterSet const & ps);
+    explicit RootFile(fhicl::ParameterSet const & ps);
 
   private:
 
@@ -45,7 +46,7 @@ namespace mu2e {
 
     // Like "getNext_", "fragmentIDs_" is a mandatory override; it
     // returns a vector of the fragment IDs an instance of this class
-    // is responsible for (in the case of ToySimulator, this is just
+    // is responsible for (in the case of RootFile, this is just
     // the fragment_id_ variable declared in the parent
     // CommandableFragmentGenerator class)
     
@@ -66,7 +67,8 @@ namespace mu2e {
 
     std::mt19937 engine_;
     std::unique_ptr<std::uniform_int_distribution<int>> uniform_distn_;
+    TFile * file_;
   };
 }
 
-#endif /* mu2e_artdaq_Generators_ToySimulator_hh */
+#endif /* mu2e_artdaq_Generators_RootFile_hh */
