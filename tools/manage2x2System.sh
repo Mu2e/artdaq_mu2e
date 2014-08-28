@@ -24,8 +24,8 @@ function launch() {
   fi
 
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --v1720 `hostname`,${MU2EARTDAQ_BR_PORT[0]},0 \
-    --v1720 `hostname`,${MU2EARTDAQ_BR_PORT[1]},1 \
+    --toy1 `hostname`,${MU2EARTDAQ_BR_PORT[0]},0 \
+    --toy2 `hostname`,${MU2EARTDAQ_BR_PORT[1]},1 \
     --eb `hostname`,${MU2EARTDAQ_EB_PORT[0]} \
     --eb `hostname`,${MU2EARTDAQ_EB_PORT[1]} \
     --data-dir ${4} --online-monitoring $3 \
