@@ -566,88 +566,82 @@ class SystemControl
 
 
     # 27-Jun-2013, KAB - send INIT to EBs and AG last
-    threads = []
     @options.eventBuilders.each { |ebOptions|
       currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
       puts "%s: Sending the INIT command to %s:%d." %
         [currentTime, ebOptions.host, ebOptions.port]
-      threads << Thread.new() do
-        xmlrpcClient = XMLRPC::Client.new(ebOptions.host, "/RPC2", 
-                                          ebOptions.port)
+
+      xmlrpcClient = XMLRPC::Client.new(ebOptions.host, "/RPC2", 
+                                        ebOptions.port)
 
 
-        fclWFViewer = generateWFViewer( (@options.toys).map { |board| board.board_id },
-                                        (@options.toys).map { |board| board.kind }
+      fclWFViewer = generateWFViewer( (@options.toys).map { |board| board.board_id },
+                                      (@options.toys).map { |board| board.kind }
+                                      )
 
-                                       )
-
-        cfg = generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs,
+      cfg = generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs,
                                    @options.dataDir, @options.runOnmon,
                                    @options.writeData, inputBuffSizeWords,
                                    totalBoards, 
                                    fclWFViewer
                                    )
 
-        if @options.serialize
+      if @options.serialize
           fileName = "EventBuilder_%s_%d.fcl" % [ebOptions.host, ebOptions.port]
           puts "  writing %s..." % fileName
           handle = File.open(fileName, "w")
           handle.write(cfg)
           handle.close()
-        end
-        result = xmlrpcClient.call("daq.init", cfg)
-        currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
-        puts "%s: EventBuilder on %s:%d result: %s" %
-          [currentTime, ebOptions.host, ebOptions.port, result]
-        STDOUT.flush
       end
+      result = xmlrpcClient.call("daq.init", cfg)
+      currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
+      puts "%s: EventBuilder on %s:%d result: %s" %
+          [currentTime, ebOptions.host, ebOptions.port, result]
+      STDOUT.flush
+
       ebIndex += 1
     }
 
     @options.aggregators.each { |agOptions|
       currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
       puts "%s: Sending the INIT command to %s:%d" %
-        [currentTime, agOptions.host, agOptions.port, agIndex]
-      threads << Thread.new( agIndex ) do |agIndexThread|
-        xmlrpcClient = XMLRPC::Client.new(agOptions.host, "/RPC2", 
+      [currentTime, agOptions.host, agOptions.port, agIndex]
+
+      xmlrpcClient = XMLRPC::Client.new(agOptions.host, "/RPC2", 
                                           agOptions.port)
 
 
-        fclWFViewer = generateWFViewer( (@options.toys).map { |board| board.board_id },
-                                        (@options.toys).map { |board| board.kind }
-                                        )
+      fclWFViewer = generateWFViewer( (@options.toys).map { |board| board.board_id },
+                                      (@options.toys).map { |board| board.kind }
+                                      )
 
 
 
-        cfg = generateAggregatorMain(@options.dataDir, @options.runNumber,
+      cfg = generateAggregatorMain(@options.dataDir, @options.runNumber,
                                  totalFRs, totalEBs, agOptions.bunch_size,
                                  @options.runOnmon, @options.writeData,
-                                 agIndexThread, totalAGs, inputBuffSizeWords,
+                                 agIndex, totalAGs, inputBuffSizeWords,
                                  xmlrpcClients, @options.fileSizeThreshold,
                                  @options.fileDurationSeconds,
                                  @options.eventsInFile, fclWFViewer, ONMON_EVENT_PRESCALE)
 
-        if @options.serialize
+      if @options.serialize
           fileName = "Aggregator_%s_%d.fcl" % [agOptions.host, agOptions.port]
           puts "  writing %s..." % fileName
           handle = File.open(fileName, "w")
           handle.write(cfg)
           handle.close()
-        end
-        result = xmlrpcClient.call("daq.init", cfg)
-        currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
-        puts "%s: Aggregator on %s:%d result: %s" %
-          [currentTime, agOptions.host, agOptions.port, result]
-        STDOUT.flush
       end
+      result = xmlrpcClient.call("daq.init", cfg)
+      currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
+      puts "%s: Aggregator on %s:%d result: %s" %
+          [currentTime, agOptions.host, agOptions.port, result]
+      STDOUT.flush
 
       agIndex += 1
     }
     
     STDOUT.flush
-    threads.each { |aThread|
-      aThread.join()
-    }
   end
 
   def start(runNumber)
