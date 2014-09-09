@@ -35,10 +35,10 @@ cet_set_compiler_flags(DIAGS VIGILANT
 cet_report_compiler_flags()
 
 # these are minimum required versions, not the actual product versions
-find_ups_product( cetbuildtools v3_03_00 )
-find_ups_product( artdaq v1_10_00 )
-find_ups_product( artdaq_core v1_01_01 )
-find_ups_product( art v1_09_03 )
+find_ups_product( cetbuildtools v4_01_04 )
+find_ups_product( artdaq v1_11_01 )
+find_ups_product( artdaq_core v1_03_04 )
+find_ups_product( art v1_10_00 )
 find_ups_product( fhiclcpp v2_16_00 )
 find_ups_product( messagefacility v1_10_00 )
 find_ups_product( cpp0x v1_03_00 )
@@ -48,8 +48,6 @@ find_ups_boost( v1_50_0 filesystem
                         program_options
                         unit_test_framework
  )
-
-cet_check_gcc()
 
 # have to make sure cmake doesn't select the system libraries
 # define libsigc

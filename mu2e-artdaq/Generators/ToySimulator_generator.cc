@@ -7,7 +7,7 @@
 #include "mu2e-artdaq/Overlays/ToyFragmentWriter.hh"
 #include "mu2e-artdaq/Overlays/FragmentType.hh"
 #include "fhiclcpp/ParameterSet.h"
-#include "artdaq/Utilities/SimpleLookupPolicy.h"
+#include "artdaq-core/Utilities/SimpleLookupPolicy.h"
 
 #include <fstream>
 #include <iomanip>
