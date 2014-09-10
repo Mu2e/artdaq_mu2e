@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
+#include "trace.h"		// TRACE
 
 namespace mu2e {
   class ToyDump;
@@ -56,7 +57,7 @@ mu2e::ToyDump::~ToyDump()
 void mu2e::ToyDump::analyze(art::Event const & evt)
 {
   art::EventNumber_t eventNumber = evt.event();
-
+  TRACE( 11, "mu2e::ToyDump::analyze enter eventNumber=%d", eventNumber );
   // ***********************
   // *** Toy Fragments ***
   // ***********************

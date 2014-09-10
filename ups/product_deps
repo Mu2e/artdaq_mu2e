@@ -20,6 +20,7 @@ product		version		optional
 gcc		v4_8_2
 artdaq_core	v1_04_00
 artdaq		v1_12_02	
+TRACE		v3_03_03
 
 cetbuildtools	v4_01_04	-	only_for_build
 smc_compiler	v6_1_0		-	only_for_build
@@ -29,11 +30,11 @@ end_product_list
 # e2  - with gcc 4.7.1 and -std=c++11
 # -nq- here means there is no qualifier
 # a "-" here means the dependent product is not required by the parent and will not be setup
-qualifier		artdaq	 	 artdaq_core
-e5:ib:debug		e5:ib:s3:debug	 e5:s3:debug
-e5:ib:prof		e5:ib:s3:prof	 e5:s3:prof
-e5:eth:debug		e5:eth:s3:debug	 e5:s3:debug
-e5:eth:prof		e5:eth:s3:prof	 e5:s3:prof
+qualifier		artdaq	 	 artdaq_core	 TRACE
+e5:ib:debug		e5:ib:s3:debug	 e5:s3:debug	 -nq-
+e5:ib:prof		e5:ib:s3:prof	 e5:s3:prof	 -nq-
+e5:eth:debug		e5:eth:s3:debug	 e5:s3:debug	 -nq-
+e5:eth:prof		e5:eth:s3:prof	 e5:s3:prof	 -nq-
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:

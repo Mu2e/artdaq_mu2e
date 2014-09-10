@@ -81,8 +81,9 @@ mu2e::RootFile::RootFile(fhicl::ParameterSet const & ps)
 }
 
 
-bool mu2e::RootFile::getNext_(artdaq::FragmentPtrs & frags) {
-
+bool mu2e::RootFile::getNext_(artdaq::FragmentPtrs & frags)
+{
+    TRACE( 11, "mu2e::RootFile::getNext_ enter" );
   if (should_stop()) {
     return false;
   }
@@ -138,7 +139,7 @@ bool mu2e::RootFile::getNext_(artdaq::FragmentPtrs & frags) {
   ev_counter_inc();
 
   return true;
-}
+} // mu2e::RootFile::getNext_
 
 // The following macro is defined in artdaq's GeneratorMacros.hh header
 DEFINE_ARTDAQ_COMMANDABLE_GENERATOR(mu2e::RootFile) 
