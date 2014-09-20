@@ -29,6 +29,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <limits>
 
 using namespace fhicl;
 namespace  bpo = boost::program_options;
@@ -136,7 +137,10 @@ int main(int argc, char * argv[]) try
   int event_count = 0;
   artdaq::Fragment::sequence_id_t previous_sequence_id = 0;
 
-    gen.get ()->StartCmd (complete_pset.get<artdaq::EventStore::run_id_t>("run_number"));
+  uint64_t timeout = 45;
+  uint64_t timestamp = std::numeric_limits<uint64_t>::max();
+
+  gen.get ()->StartCmd (complete_pset.get<artdaq::EventStore::run_id_t>("run_number"), timeout, timestamp);
 
   artdaq::FragmentPtrs frags;
 
@@ -155,14 +159,14 @@ int main(int argc, char * argv[]) try
         previous_sequence_id = val->sequenceID();
       }
       if (events_to_generate != 0 && event_count > events_to_generate) 
-		gen.get ()->StopCmd ();
+	gen.get ()->StopCmd (timeout, timestamp);
 
       store.insert(std::move(val));
     }
     frags.clear();
 
     if (events_to_generate != 0 && event_count >= events_to_generate) 
-        gen.get ()->StopCmd ();
+      gen.get ()->StopCmd (timeout, timestamp);
   }
 
   if (event_count != events_to_generate) {

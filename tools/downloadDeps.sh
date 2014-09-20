@@ -1,220 +1,101 @@
 #!/bin/bash
 # 
-# downloadArtDaq.sh <product directory> <e2|e2:eth|nu:e2:eth|e4:eth> <debug|opt|prof>
+# downloadArtDaq.sh <product directory>
 
-thisdir=`pwd`
+
+# JCF, 8/1/14
+
+# For now, we'll just hardwire in the needed packages; something more
+# sophisticated may be used in the future as package dependencies change
+
+
 productdir=${1}
 basequal=${2}
-extraqual=${3}
+build_type=${3}  # "prof" or "debug"
 
-# require qualifier
-if [ -z ${basequal} ]
-then
-   echo "ERROR: qualifier not specified"
-   echo "USAGE:  `basename ${0}` <product directory> <e2|e2:eth|nu:e2:eth|e4:eth> <debug|opt|prof>"
-   exit 1
-fi
+basequal2=`echo ${basequal} | sed -r '/.*:.*:.*/s!:s3:eth!!' | sed -r 's!:eth!!'`
+basequal3=`echo ${basequal} | sed -e s!:eth!!g`
 
-if [ "${extraqual}" = "opt" ]
-then
-   qualdir=${qual}.${extraqual}
-elif [ "${extraqual}" = "debug" ]
-then
-   qualdir=${qual}.${extraqual}
-elif [ "${extraqual}" = "prof" ]
-then
-   qualdir=${qual}.${extraqual}
-else
-   echo "ERROR: please specify debug, opt, or prof"
-   echo "USAGE:  `basename ${0}` <product directory> <e2|e2:eth|nu:e2:eth|e4:eth> <debug|opt|prof>"
-   exit 1
-fi
+starttime=`date`
 
-OS1=`uname`
+cd ${productdir}
 
-if [ ${OS1} = "Darwin" ]
-then
-    plat=`uname -m`
-    OSnum=`uname -r | cut -f1 -d"."`
-    macos=`system_profiler -xml -detailLevel mini SPSoftwareDataType | grep Mac | cut -d ' ' -f 4 | cut -d . -f 1,2`
-    macos1=`system_profiler -xml -detailLevel mini SPSoftwareDataType | grep Mac | cut -d ' ' -f 4 | cut -d . -f 1`
-    macos2=`system_profiler -xml -detailLevel mini SPSoftwareDataType | grep Mac | cut -d ' ' -f 4 | cut -d . -f 2`
-    #OS=${OS1}${OSnum}
-    OS=mac${macos1}${macos2}
-else
-   if [ `lsb_release -d | cut -f2 | cut  -f1 -d" "` = "Ubuntu" ]
-   then
-      OS1=ub
-      OSnum=`lsb_release -r | cut -f2 | cut -f1 -d"."`
-      OS=${OS1}${OSnum}
-      plat=`uname -m`
-   elif [ ${OS1} = "Linux" ]
-   then
-      OSnum=`lsb_release -r | cut -f2 | cut -f1 -d"."`
-      OS=${OS1}${OSnum}
-      plat=`uname -p`
-      # Scientific Linux - slf should work
-      if [ `lsb_release -d | cut  -f3 -d" "` = "SL" ]
-      then
-	 OS=slf${OSnum}
-      # Scientific Linux Fermi
-      elif [ `lsb_release -d | cut  -f3 -d" "` = "SLF" ]
-      then
-	 OS=slf${OSnum}
-      #
-      elif [ `lsb_release -i | cut -f2` = "ScientificFermi" ]
-      then
-	 OS=slf${OSnum}
-      # pretend that SL6 is the same as SLF6
-      elif [ `lsb_release -i | cut -f2` = "Scientific" ]
-      then
-	 OS=slf${OSnum}
-      # pretend that CentOS is SLF
-      elif [ `lsb_release -i | cut -f2` = "CentOS" ]
-      then
-	 OS=slf${OSnum}
-      # pretend that RedHatEnterpriseServer is SLF
-      elif [ `lsb_release -i | cut -f2` = "RedHatEnterpriseServer" ]
-      then
-	 OS=slf${OSnum}
-      # Scientific Linux CERN
-      elif [ `lsb_release -d | cut  -f4 -d" "` = "SLC" ]
-      then
-	 OS=slc${OSnum}
-      elif [ `lsb_release -d | cut  -f4 -d" "` = "LTS" ]
-      then
-	 OS=slf${OSnum}
-      # unrecognized - pretend that this is SLF
-      else
-	 OS=slf${OSnum}
-      fi
-   fi
-fi
-
-subdir=${OS}.${plat}.${qualdir}
-xqual=`echo ${basequal} | sed -e s%:%-%g`
-xqual2=`echo ${xqual} | sed -e s%-eth%%g`
-
-#echo "you MUST be logged in as products to execute this script"
-echo "you are about to download the tarballs into $thisdir"
-echo "tarballs will be unwound in ${productdir}"
-
-set -x
-
-  curl -O http://oink.fnal.gov/distro/relocatable-ups/ups-upd-5.0.1-${OS}-${plat}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/art/art_externals-1.00.04-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/art/art_suite-1.08.10-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/cetpkgsupport/cetpkgsupport-1.05.02-noarch.tar.bz2
-#  wget  http://oink.fnal.gov/distro/packages/cetpkgsupport-1.05.02-noarch.tar.bz2 
-#  echo $PWD $thisdir
-#  ls -l cetpkgsupport-1.05.02-noarch.tar.bz2
-
-  cd ${productdir}
-
-  tar xf $thisdir/ups-upd-5.0.1-${OS}-${plat}.tar.bz2
-
-  tar xf $thisdir/art_externals-1.00.04-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-
-  tar xf $thisdir/art_suite-1.08.10-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-  tar xf $thisdir/cetpkgsupport-1.05.02-noarch.tar.bz2
+# artdaq_core v1_04_00 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal3}:${build_type}
 
 
-set +x
+prods="\
+art v1_10_00b -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+boost v1_55_0 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+cetlib v1_06_02 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+cetpkgsupport v1_05_02 -f NULL -z ${productdir} -g current
+clhep v2_1_4_1 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+cmake v3_0_1 -f Linux64bit+2.6-2.12 -z ${productdir}
+cpp0x v1_04_05 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+cppunit v1_12_1 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+fftw v3_3_3 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${build_type}
+fhiclcpp v2_19_05 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+gcc v4_8_2 -f Linux64bit+2.6-2.12 -z ${productdir}
+gccxml v0_9_20131217 -f Linux64bit+2.6-2.12 -z ${productdir}
+libxml2 v2_9_1 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${build_type}
+messagefacility v1_11_10 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+mpich v3_1 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+python v2_7_6 -f Linux64bit+2.6-2.12 -z ${productdir}
+root v5_34_18d -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+sqlite v3_08_03_00 -f Linux64bit+2.6-2.12 -z ${productdir}
+tbb v4_2_3 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+xmlrpc_c v1_25_28 -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type}
+xrootd v3_3_4a -f Linux64bit+2.6-2.12 -z ${productdir} -q ${basequal2}:${build_type} "
 
-if [ "${basequal}" = "e2" ]
-then
-  set -x
-  cd ${thisdir}
-  curl -O http://oink.fnal.gov/distro/ds50/mvapich2_stub-1.7.0-noarch.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/ds50/ds50daq-0.01.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  cd ${productdir}
-  tar xf $thisdir/mvapich2_stub-1.7.0-noarch.tar.bz2
-  tar xf $thisdir/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  tar xf $thisdir/ds50daq-0.01.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  set +x
-fi
+# Some tarfiles have names that deviate from the standard "template",
+# so we can't use the download function's algorithm
 
-if [ "${basequal}" = "e2:eth" ]
-then
-  set -x
-  cd ${thisdir}
-  curl -O http://oink.fnal.gov/distro/packages/mpich-3.0.2-${OS}-${plat}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/xmlrpc_c-1.25.18-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/gccxml-0.9.20130503-${OS}-${plat}-gcc47.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  cd ${productdir}
-  tar xf $thisdir/mpich-3.0.2-${OS}-${plat}-${extraqual}.tar.bz2
-  tar xf $thisdir/xmlrpc_c-1.25.18-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-  tar xf $thisdir/gccxml-0.9.20130503-${OS}-${plat}-gcc47.tar.bz2
-  tar xf $thisdir/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  set +x
-fi
+prods2="\
+cetbuildtools/v4_01_04/cetbuildtools-4.01.04-noarch.tar.bz2
+smc_compiler/v6_1_0/smc_compiler-6.1.0-noarch.tar.bz2
+TRACE/v3_03_03/TRACE-3.03.03-slf6.tar.bz2
+ups/v5_0_5/ups-upd-5.0.5-slf6-x86_64.tar.bz2"
 
-if [ "${basequal}" = "e4:eth" ]
-then
-  set -x
-  cd ${thisdir}
-  curl -O http://oink.fnal.gov/distro/art/daq_extras-1.00.04-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/gccxml/gccxml-0.9.20130621-${OS}-${plat}.tar.bz2
-#  curl -O http://oink.fnal.gov/distro/packages/artdaq/artdaq-1.05.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
+# $1=prod_area $2="prod_lines"
 
-  cd ${productdir}
-  tar xf $thisdir/daq_extras-1.00.04-${OS}-${plat}-${xqual2}-${extraqual}.tar.bz2
-  tar xf $thisdir/gccxml-0.9.20130621-${OS}-${plat}.tar.bz2
-#  tar xf  $thisdir/artdaq-1.05.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  set +x
-fi
+download() 
+{   prod_area=$1
+     prod_lines=$2
+     cd $1
 
+     test -f setup || echo invalid products area
+     test -f setup || return
+     echo "$2" | while read pp vv dashf ff dashz zz dashq qq rest;do
+         test "x$dashq" = x-q || qq=
+         #UPS_OVERRIDE= ups exist -j $pp $vv -f $ff ${qq:+-q$qq} && echo $pp $vv exists && continue
+         case $ff in
+         Linux64bit+2.6-2.12) ff=slf6-x86_64;;
+         NULL)                ff=noarch;;
+         *)   echo ERROR: unknown flavor $ff; return;;
+         esac
+         vvdot=`echo $vv | sed -e 's/^v//;s/_/./g'`
+         qq=`echo $qq | sed -e 's/:/-/g'`
+         url=http://scisoft.fnal.gov/scisoft/packages/$pp/$vv/$pp-$vvdot-${ff}${qq:+-$qq}.tar.bz2
+         echo url=$url
+         wget -O- $url 2>/dev/null | tar xjf -
+     done
+}
 
-if [ "${basequal}" = "mu2e:e2:eth" ]
-then
-  set -x
-  cd ${thisdir}
-  curl -O http://oink.fnal.gov/distro/art/mu2e_extras-0.06.05-noarch.tar.bz2
-  curl -O http://oink.fnal.gov/distro/art/mu2e_extras-0.06.05-${OS}-${plat}-e2-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/splines-1.01.04-${OS}-${plat}-e2-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/mpich-3.0.2-${OS}-${plat}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  cd ${productdir}
-  tar xf $thisdir/mu2e_extras-0.06.05-noarch.tar.bz2
-  tar xf $thisdir/mu2e_extras-0.06.05-${OS}-${plat}-e2-${extraqual}.tar.bz2
-  tar xf $thisdir/splines-1.01.04-${OS}-${plat}-e2-${extraqual}.tar.bz2
-  tar xf $thisdir/mpich-3.0.2-${OS}-${plat}-${extraqual}.tar.bz2
-  tar xf $thisdir/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  set +x
-fi
+cd ${productdir}
 
-if [ "${basequal}" = "nu:e2:eth" ]
-then
-  set -x
-  cd ${thisdir}
-  curl -O http://oink.fnal.gov/distro/art/nu_extras-0.06.05-noarch.tar.bz2
-  curl -O http://oink.fnal.gov/distro/art/nu_extras-0.06.05-${OS}-${plat}-e2-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/mpich-3.0.2-${OS}-${plat}-${extraqual}.tar.bz2
-  curl -O http://oink.fnal.gov/distro/packages/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  cd ${productdir}
-  tar xf $thisdir/nu_extras-0.06.05-noarch.tar.bz2
-  tar xf $thisdir/nu_extras-0.06.05-${OS}-${plat}-e2-${extraqual}.tar.bz2
-  tar xf $thisdir/mpich-3.0.2-${OS}-${plat}-${extraqual}.tar.bz2
-  tar xf $thisdir/artdaq-1.00.00-${OS}-${plat}-${xqual}-${extraqual}.tar.bz2
-  set +x
-fi
-
-#cetbuildtools
-
-for ver in v3_07_03
-do
-  dotver=`echo ${ver} | sed -e s%_%.%g | sed -e s%v%%`
-
-  set -x
-  cd $thisdir
-  curl -O http://oink.fnal.gov/distro/packages/cetbuildtools/cetbuildtools-${dotver}-noarch.tar.bz2
-  cd ${productdir}
-  tar xf $thisdir/cetbuildtools-${dotver}-noarch.tar.bz2
-  set +x
-
+for packagestring in `echo $prods2 | tr " " "\n"`; do
+    url=http://scisoft.fnal.gov/scisoft/packages/$packagestring
+    echo url=$url
+    wget -O- $url 2>/dev/null | tar xjf -
 done
 
-exit
+download ${productdir} "$prods"
+
+echo -ne "\a"
+
+endtime=`date`
+
+echo $starttime
+echo $endtime
+
+exit 0
 
