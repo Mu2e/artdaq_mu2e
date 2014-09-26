@@ -2,6 +2,9 @@
 
 #include "cetlib/exception.h"
 
+// 26-Sep-2014, KAB: commenting out this function since it is unused
+// and the compiler doesn't like that
+#if 0
 namespace {
   unsigned int pop_count (unsigned int n) {
     unsigned int c; 
@@ -9,6 +12,7 @@ namespace {
     return c;
   }
 }
+#endif
 
 void mu2e::ToyFragment::checkADCData(int daq_adc_bits) const {
   mu2e::ToyFragment::adc_t const * adcPtr(findBadADC(daq_adc_bits));
