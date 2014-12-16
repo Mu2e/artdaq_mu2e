@@ -57,36 +57,27 @@ else
     build_arg="p"
 fi
 
-# Commit 52d6e7b4527dce8a86b7bcaf5970d45013373b89, from 9/15/14,
-# updates artdaq core v1_04_00 s.t. it includes the BuildInfo template
-
 test -d artdaq-core || git clone http://cdcvs.fnal.gov/projects/artdaq-core
 cd artdaq-core
 git fetch origin
-git checkout 52d6e7b4527dce8a86b7bcaf5970d45013373b89
+git checkout v1_04_05
 cd ../build_artdaq-core
 echo IN $PWD: about to . ../artdaq-core/ups/setup_for_development
 . $products_dir/setup
-. ../artdaq-core/ups/setup_for_development -${build_arg} e5 s3
+. ../artdaq-core/ups/setup_for_development -${build_arg} e6 s5
 echo FINISHED ../artdaq-core/ups/setup_for_development
 buildtool -i
 cd ..
 
 
-
-
-# artdaq commit f0f0c5eb950f5a53e06aee564975357c4bc5da7e, from
-# 9/16/14, includes both the merging of the buildinfo branch and the
-# timestamps branch
-
 test -d artdaq || git clone http://cdcvs.fnal.gov/projects/artdaq
 cd artdaq
 git fetch origin
-git checkout f0f0c5eb950f5a53e06aee564975357c4bc5da7e
+git checkout v1_12_03
 cd ../build_artdaq
 echo IN $PWD: about to . ../artdaq/ups/setup_for_development
 . $products_dir/setup
-. ../artdaq/ups/setup_for_development -${build_arg} e5 s3 eth
+. ../artdaq/ups/setup_for_development -${build_arg} e6 s5 eth
 echo FINISHED ../artdaq/ups/setup_for_development
 buildtool -i
 
@@ -110,7 +101,8 @@ if [[ ! -e ./setupMU2EARTDAQ ]]; then
 
 	echo changing directory to \$MU2EARTDAQ_BUILD
 	cd \$MU2EARTDAQ_BUILD  # note: next line adjusts PATH based one cwd
-	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p e5 eth
+#	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p e5 eth
+	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p
 
 	alias rawEventDump="art -c $mu2e_artdaq_dir/mu2e_artdaq/ArtModules/fcl/rawEventDump.fcl"
 	alias compressedEventDump="art -c $mu2e_artdaq_dir/mu2e_artdaq/ArtModules/fcl/compressedEventDump.fcl"
