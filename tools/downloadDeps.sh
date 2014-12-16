@@ -56,7 +56,7 @@ cd ${productdir}
 export savedPRODUCTS=${PRODUCTS}
 installDir=`pwd`
 simpleQual=`echo ${basequal} | sed 's/:eth//g' | sed 's/eth://g' | sed 's/ib://g' | sed 's/:ib//g'`
-artVersion=v1_12_01
+artVersion=v1_12_02
 pullScript=pullProducts-${artVersion}
 url=http://scisoft.fnal.gov/scisoft/projects/art/${artVersion}/${pullScript}
 echo url=$url

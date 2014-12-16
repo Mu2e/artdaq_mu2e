@@ -60,7 +60,7 @@ fi
 test -d artdaq-core || git clone http://cdcvs.fnal.gov/projects/artdaq-core
 cd artdaq-core
 git fetch origin
-git checkout d706c3558bc476004ee7eec9629f07b8aed1cb97
+git checkout v1_04_06
 cd ../build_artdaq-core
 echo IN $PWD: about to . ../artdaq-core/ups/setup_for_development
 . $products_dir/setup
@@ -73,7 +73,7 @@ cd ..
 test -d artdaq || git clone http://cdcvs.fnal.gov/projects/artdaq
 cd artdaq
 git fetch origin
-git checkout 246b8e7e1cc9ae36b74099c9ed28bdddc903fbfe
+git checkout v1_12_04
 cd ../build_artdaq
 echo IN $PWD: about to . ../artdaq/ups/setup_for_development
 . $products_dir/setup
@@ -101,8 +101,7 @@ if [[ ! -e ./setupMU2EARTDAQ ]]; then
 
 	echo changing directory to \$MU2EARTDAQ_BUILD
 	cd \$MU2EARTDAQ_BUILD  # note: next line adjusts PATH based one cwd
-#	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p e5 eth
-	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p
+	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p e6 eth
 
 	alias rawEventDump="art -c $mu2e_artdaq_dir/mu2e_artdaq/ArtModules/fcl/rawEventDump.fcl"
 	alias compressedEventDump="art -c $mu2e_artdaq_dir/mu2e_artdaq/ArtModules/fcl/compressedEventDump.fcl"
