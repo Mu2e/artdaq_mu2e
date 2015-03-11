@@ -29,6 +29,8 @@
 #include <vector>
 #include <atomic>
 
+#include "dtcInterfaceLib/DTC.h"
+
 namespace mu2e {    
 
   class ToySimulator : public artdaq::CommandableFragmentGenerator {
@@ -66,6 +68,25 @@ namespace mu2e {
 
     std::mt19937 engine_;
     std::unique_ptr<std::uniform_int_distribution<int>> uniform_distn_;
+
+
+
+
+    // State
+    size_t events_read_;
+    bool isSimulatedDTC;
+
+    DTC::DTC* theInterface;
+
+//    //    std::pair<std::vector<std::string>::const_iterator, uint64_t> next_point_;
+//    //    std::atomic<bool> should_stop_;
+//    //    std::independent_bits_engine<std::minstd_rand, 2, V172xFragment::adc_type> twoBits_;
+//
+//    // Root Input
+//    int64_t gen_from_file_;
+//    TFile * file_;
+//    TTree *eventTree_;
+//    art::Wrapper< std::vector<artdaq::Fragment> >* wrapper_;
   };
 }
 

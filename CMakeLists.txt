@@ -35,6 +35,7 @@ cet_set_compiler_flags(DIAGS VIGILANT
 cet_report_compiler_flags()
 
 # these are minimum required versions, not the actual product versions
+find_ups_product( pcie_linux_kernel_driver v1_02_00 )
 find_ups_product( cetbuildtools v4_01_04 )
 find_ups_product( artdaq v1_11_01 )
 find_ups_product( artdaq_core v1_03_04 )

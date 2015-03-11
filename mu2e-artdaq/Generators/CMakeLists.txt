@@ -7,6 +7,7 @@ simple_plugin(ToySimulator "generator"
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${CETLIB}
+  DTCInterface
   )
 
 simple_plugin( RootFile "generator"

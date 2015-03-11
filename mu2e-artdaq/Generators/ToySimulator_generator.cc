@@ -49,7 +49,13 @@ mu2e::ToySimulator::ToySimulator(fhicl::ParameterSet const & ps)
   throttle_usecs_(ps.get<size_t>("throttle_usecs", 0)),
   fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id() ) },
   engine_(ps.get<int64_t>("random_seed", 314159)),
-  uniform_distn_(new std::uniform_int_distribution<int>(0, pow(2, typeToADC( fragment_type_ ) ) - 1 ))
+  uniform_distn_(new std::uniform_int_distribution<int>(0, pow(2, typeToADC( fragment_type_ ) ) - 1 )),
+  events_read_(0),
+  isSimulatedDTC(false),
+  theInterface(0)
+//  file_(0),
+//  eventTree_(0),
+//  wrapper_(0)
 {
 
   // Check and make sure that the fragment type will be one of the "toy" types
@@ -69,6 +75,36 @@ bool mu2e::ToySimulator::getNext_(artdaq::FragmentPtrs & frags) {
   if (should_stop()) {
     return false;
   }
+
+  if(events_read_==0) {
+    theInterface = new DTC::DTC();
+
+    isSimulatedDTC = theInterface->IsSimulatedDTC();
+    if(isSimulatedDTC) {
+      std::cout << "ALERT: READING SIMULATED DTC" << std::endl;
+    } else {
+      std::cout << "ALERT: READING ACTUAL DTC" << std::endl;
+    }
+
+    //    std::vector<void*> GetData(const DTC_Ring_ID& ring, const DTC_ROC_ID& roc, const DTC_Timestamp& when, int* length);
+    DTC::DTC_Ring_ID ring     = DTC::DTC_Ring_0;
+    DTC::DTC_ROC_ID  roc      = DTC::DTC_ROC_0;
+    DTC::DTC_Timestamp tstamp((uint64_t)0);
+    int veclength = 0;
+    std::cout << "ALERT: BEFORE GETTING DATA" << std::endl << std::flush;
+    theInterface->GetData(ring, roc, tstamp, &veclength);    
+    std::cout << "ALERT: DONE GETTING DATA" << std::flush << std::endl;
+
+  }
+  events_read_++;
+
+
+
+
+
+
+
+
 
   usleep( throttle_usecs_ );
 
