@@ -36,6 +36,7 @@ namespace mu2e {
   class ToySimulator : public artdaq::CommandableFragmentGenerator {
   public:
     explicit ToySimulator(fhicl::ParameterSet const & ps);
+    virtual ~ToySimulator();
 
   private:
 
@@ -76,7 +77,7 @@ namespace mu2e {
     size_t events_read_;
     bool isSimulatedDTC;
 
-    DTC::DTC* theInterface;
+    DTCLib::DTC* theInterface;
 
 //    //    std::pair<std::vector<std::string>::const_iterator, uint64_t> next_point_;
 //    //    std::atomic<bool> should_stop_;

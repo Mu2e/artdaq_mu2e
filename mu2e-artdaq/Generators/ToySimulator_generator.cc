@@ -51,13 +51,14 @@ mu2e::ToySimulator::ToySimulator(fhicl::ParameterSet const & ps)
   engine_(ps.get<int64_t>("random_seed", 314159)),
   uniform_distn_(new std::uniform_int_distribution<int>(0, pow(2, typeToADC( fragment_type_ ) ) - 1 )),
   events_read_(0),
-  isSimulatedDTC(false),
-  theInterface(0)
+  isSimulatedDTC(false)
 //  file_(0),
 //  eventTree_(0),
 //  wrapper_(0)
 {
-
+  theInterface = new DTCLib::DTC();
+  theInterface->SetMaxROCNumber(DTCLib::DTC_Ring_0, DTCLib::DTC_ROC_5);
+  theInterface->EnableRing(DTCLib::DTC_Ring_1, DTCLib::DTC_ROC_5);
   // Check and make sure that the fragment type will be one of the "toy" types
   
   std::vector<artdaq::Fragment::type_t> const ftypes = 
@@ -69,6 +70,10 @@ mu2e::ToySimulator::ToySimulator(fhicl::ParameterSet const & ps)
     
 }
 
+mu2e::ToySimulator::~ToySimulator()
+{
+  delete theInterface;
+}
 
 bool mu2e::ToySimulator::getNext_(artdaq::FragmentPtrs & frags) {
 
@@ -76,8 +81,8 @@ bool mu2e::ToySimulator::getNext_(artdaq::FragmentPtrs & frags) {
     return false;
   }
 
-  if(events_read_==0) {
-    theInterface = new DTC::DTC();
+  
+    //theInterface = new DTC::DTC();
 
     isSimulatedDTC = theInterface->IsSimulatedDTC();
     if(isSimulatedDTC) {
@@ -87,20 +92,26 @@ bool mu2e::ToySimulator::getNext_(artdaq::FragmentPtrs & frags) {
     }
 
     //    std::vector<void*> GetData(const DTC_Ring_ID& ring, const DTC_ROC_ID& roc, const DTC_Timestamp& when, int* length);
-    DTC::DTC_Ring_ID ring     = DTC::DTC_Ring_0;
-    DTC::DTC_ROC_ID  roc      = DTC::DTC_ROC_0;
-    DTC::DTC_Timestamp tstamp((uint64_t)0);
-    int veclength = 0;
+    //DTC::DTC_Ring_ID ring     = DTC::DTC_Ring_0;
+    //DTC::DTC_ROC_ID  roc      = DTC::DTC_ROC_0;
+    //DTC::DTC_Timestamp tstamp((uint64_t)0);
+    
     std::cout << "ALERT: BEFORE GETTING DATA" << std::endl << std::flush;
-    theInterface->GetData(ring, roc, tstamp, &veclength);    
+    std::vector<void*> data = theInterface->GetData((uint64_t)0,true,true);    
+    for(size_t i = 0; i < data.size(); ++i)
+    {
+      std::cout << "Dumping DataHeaderPacket: " << std::endl;
+      DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
+      std::cout << packet.toJSON() << std::endl;
+    }
     std::cout << "ALERT: DONE GETTING DATA" << std::flush << std::endl;
 
-  }
-  events_read_++;
+ 
+  std::cout << "ALERT: DONE WITH DTC CODE" << std::endl;
 
 
 
-
+   
 
 
 
