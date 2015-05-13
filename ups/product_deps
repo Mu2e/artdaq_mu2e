@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent mu2e_artdaq	v0_04_00
+parent mu2e_artdaq	v0_04_01
 defaultqual	e6:eth
 
 # These optional lines define the installed directories where
@@ -18,7 +18,7 @@ bindir      fq_dir      bin
 #
 product		version		optional
 artdaq		v1_12_09
-pcie_linux_kernel_driver v1_03_03
+pcie_linux_kernel_module v1_04_00
 cetbuildtools	v4_09_02	-	only_for_build
 end_product_list
 
