@@ -30,7 +30,7 @@ end_product_list
 # -nq- means there is no qualifier
 # a "-" means the dependent product is not required by the parent and will not be setup
 
-qualifier               artdaq              pcie_linux_kernel_driver
+qualifier               artdaq              pcie_linux_kernel_module
 e6:ib:debug             e6:ib:s7:debug      e6:debug
 e6:ib:prof              e6:ib:s7:prof       e6:prof
 e6:eth:debug            e6:eth:s7:debug     e6:debug
