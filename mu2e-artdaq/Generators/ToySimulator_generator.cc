@@ -58,7 +58,7 @@ mu2e::ToySimulator::ToySimulator(fhicl::ParameterSet const & ps)
 {
   theInterface = new DTCLib::DTC();
   theInterface->SetMaxROCNumber(DTCLib::DTC_Ring_0, DTCLib::DTC_ROC_5);
-  theInterface->EnableRing(DTCLib::DTC_Ring_1, DTCLib::DTC_ROC_5);
+  theInterface->EnableRing(DTCLib::DTC_Ring_1, DTCLib::DTC_RingEnableMode(), DTCLib::DTC_ROC_5);
   // Check and make sure that the fragment type will be one of the "toy" types
   
   std::vector<artdaq::Fragment::type_t> const ftypes = 
