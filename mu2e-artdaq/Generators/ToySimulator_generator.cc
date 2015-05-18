@@ -84,7 +84,7 @@ bool mu2e::ToySimulator::getNext_(artdaq::FragmentPtrs & frags) {
   
     //theInterface = new DTC::DTC();
 
-    isSimulatedDTC = theInterface->IsSimulatedDTC();
+    isSimulatedDTC = theInterface->ReadSimMode();
     if(isSimulatedDTC) {
       std::cout << "ALERT: READING SIMULATED DTC" << std::endl;
     } else {
@@ -97,7 +97,7 @@ bool mu2e::ToySimulator::getNext_(artdaq::FragmentPtrs & frags) {
     //DTC::DTC_Timestamp tstamp((uint64_t)0);
     
     std::cout << "ALERT: BEFORE GETTING DATA" << std::endl << std::flush;
-    std::vector<void*> data = theInterface->GetData((uint64_t)0,true,true);    
+    std::vector<void*> data = theInterface->GetData( (uint64_t)0 );    
     for(size_t i = 0; i < data.size(); ++i)
     {
       std::cout << "Dumping DataHeaderPacket: " << std::endl;
