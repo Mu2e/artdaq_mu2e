@@ -3,9 +3,9 @@
 #include "art/Utilities/Exception.h"
 #include "artdaq/Application/GeneratorMacros.hh"
 #include "cetlib/exception.h"
-#include "mu2e-artdaq/Overlays/ToyFragment.hh"
-#include "mu2e-artdaq/Overlays/ToyFragmentWriter.hh"
-#include "mu2e-artdaq/Overlays/FragmentType.hh"
+#include "mu2e-artdaq-core/Overlays/ToyFragment.hh"
+#include "mu2e-artdaq-core/Overlays/ToyFragmentWriter.hh"
+#include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "fhiclcpp/ParameterSet.h"
 #include "artdaq-core/Utilities/SimpleLookupPolicy.h"
 
@@ -18,13 +18,13 @@
 
 namespace {
 
-  size_t typeToADC(mu2e::FragmentType type)
+  size_t typeToADC(mu2ecore::FragmentType type)
   {
     switch (type) {
-    case mu2e::FragmentType::TOY1:
+    case mu2ecore::FragmentType::TOY1:
       return 12;
       break;
-    case mu2e::FragmentType::TOY2:
+    case mu2ecore::FragmentType::TOY2:
       return 14;
       break;
     default:
@@ -32,7 +32,7 @@ namespace {
         << "Unknown board type "
         << type
         << " ("
-        << mu2e::fragmentTypeToString(type)
+        << mu2ecore::fragmentTypeToString(type)
         << ").\n";
     };
   }

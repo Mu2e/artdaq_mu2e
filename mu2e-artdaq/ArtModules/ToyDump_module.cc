@@ -11,7 +11,7 @@
 #include "art/Framework/Principal/Handle.h"
 
 #include "art/Utilities/Exception.h"
-#include "mu2e-artdaq/Overlays/ToyFragment.hh"
+#include "mu2e-artdaq-core/Overlays/ToyFragment.hh"
 #include "artdaq-core/Data/Fragments.hh"
 
 #include <algorithm>
