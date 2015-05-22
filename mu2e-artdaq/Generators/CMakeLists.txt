@@ -10,6 +10,17 @@ simple_plugin(ToySimulator "generator"
   DTCInterface
   )
 
+simple_plugin(DTCReceiver "generator"
+  mu2e-artdaq-core_Overlays
+  ${ARTDAQ_APPLICATION}
+  ${ARTDAQ_DAQDATA}
+  ${ARTDAQ_UTILITIES}
+  ${ART_UTILITIES}
+  ${FHICLCPP}
+  ${CETLIB}
+  DTCInterface
+  )
+
 simple_plugin( RootFile "generator"
   mu2e-artdaq-core_Overlays
   ${ARTDAQ_APPLICATION}

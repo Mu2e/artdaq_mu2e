@@ -22,14 +22,14 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
   , fragment_type_(toFragmentType("DTC"))
   , fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id() ) }
   , packets_read_(0)
-  , mode_(DTCLib::ConvertToSimMode(ps.get<std::string>("sim_mode","Disabled")))
+  , mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode","Disabled")))
   , print_packets_(ps.get<bool>("debug_print",false))
 {
   // mode_ can still be overridden by environment!
   theInterface_ = new DTCLib::DTC(mode_);
   mode_ = theInterface_->ReadSimMode();
 
-  int ringRocs = {
+  int ringRocs[] = {
   ps.get<int>("ring_0_roc_count",-1),
   ps.get<int>("ring_1_roc_count",-1),
   ps.get<int>("ring_2_roc_count",-1),
@@ -38,7 +38,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
   ps.get<int>("ring_5_roc_count",-1)
   };
 
-  bool ringTiming = {
+  bool ringTiming[] = {
     ps.get<bool>("ring_0_timing_enabled",true),
     ps.get<bool>("ring_1_timing_enabled",true),
     ps.get<bool>("ring_2_timing_enabled",true),
@@ -51,8 +51,8 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
     {  
    if(ringRocs[ring] >= 0) 
      {
-       theInterface->EnableRing(DTCLib::DTC_Rings[0],
-                                DTCLib::DTC_RingEnableMode(true,true,ring0timing), 
+       theInterface_->EnableRing(DTCLib::DTC_Rings[0],
+                                DTCLib::DTC_RingEnableMode(true,true,ringTiming[ring]), 
                                 DTCLib::DTC_ROCS[ringRocs[ring]]);
      }
     }
@@ -93,14 +93,14 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   DTCFragmentWriter newfrag(*frags.back());
   newfrag.set_hdr_run_number(999);
 
-  std::vector<void*> data = theInterface->GetData( (uint64_t)0 );    
+  std::vector<void*> data = theInterface_->GetData( (uint64_t)0 );    
   auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
   DTCLib::DTC_Timestamp ts = first.GetTimestamp();
   int packetCount = first.GetPacketCount();
   if(print_packets_) {
     std::cout << first.toJSON() << std::endl;
     for(int ii = 0; ii < first.GetPacketCount(); ++ii) {
-      std::cout << "\t" << DTC_DataPacket(((uint8_t*)data[0]) + ((ii + 1) * 16)).toJSON() << std::endl;
+      std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0]) + ((ii + 1) * 16)).toJSON() << std::endl;
     }
   }
 
@@ -111,7 +111,7 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
       if(print_packets_) {
 	std::cout << packet.toJSON() << std::endl;
         for(int ii = 0; ii < packet.GetPacketCount(); ++ii) {
-	  std::cout << "\t" << DTC_DataPacket(((uint8_t*)data[i]) + ((ii + 1) * 16)).toJSON() << std::endl;
+	  std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i]) + ((ii + 1) * 16)).toJSON() << std::endl;
 	}
       }
     }
@@ -121,7 +121,7 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   newfrag.resize(packetCount);
 
   size_t packetsProcessed = 0;
-  for(size_t i = 0; i < data.size() ++i)
+  for(size_t i = 0; i < data.size(); ++i)
     {
       auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
       memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i],(1 + packet.GetPacketCount())*sizeof(DTCFragment::packet_t));
