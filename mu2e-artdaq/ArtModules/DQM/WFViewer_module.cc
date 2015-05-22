@@ -6,10 +6,10 @@
 #include "art/Utilities/InputTag.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
-#include "artdaq/DAQdata/Fragments.hh"
+#include "artdaq-core/Data/Fragments.hh"
 
-#include "mu2e-artdaq/Overlays/FragmentType.hh"
-#include "mu2e-artdaq/Overlays/ToyFragment.hh"
+#include "mu2e-artdaq-core/Overlays/FragmentType.hh"
+#include "mu2e-artdaq-core/Overlays/ToyFragment.hh"
 
 #include "cetlib/exception.h"
 

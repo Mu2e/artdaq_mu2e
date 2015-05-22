@@ -2,15 +2,15 @@
 
 env_opts_var=`basename $0 | sed 's/\.sh$//' | tr 'a-z-' 'A-Z_'`_OPTS
 USAGE="\
-  usage: `basename $0` [options] <demo_products_dir/> <mu2e-artdaq/>
-example: `basename $0` products mu2e-artdaq --run-demo
+  usage: `basename $0` [options] <demo_products_dir/> <mu2e_artdaq/>
+example: `basename $0` products mu2e_artdaq --run-demo
 <demo_products>    where products were installed (products/)
-<mu2e-artdaq_root> directory where mu2e-artdaq was cloned into.
+<mu2e_artdaq_root> directory where mu2e_artdaq was cloned into.
 --run-demo   runs the demo
 Currently this script will clone (if not already cloned) artdaq
-along side of the mu2e-artdaq dir.
+along side of the mu2e_artdaq dir.
 Also it will create, if not already created, build directories
-for artdaq and mu2e-artdaq.
+for artdaq and mu2e_artdaq.
 "
 # Process script arguments and options
 eval env_opts=\${$env_opts_var-} # can be args too
@@ -29,6 +29,7 @@ while [ -n "${1-}" ];do
         v*)        eval $op1chr; opt_v=`expr $opt_v + 1`;;
         x*)        eval $op1chr; set -x;;
         -run-demo) opt_run_demo=--run-demo;;
+        -debug)    opt_debug=--debug;;
         *)         echo "Unknown option -$op"; do_help=1;;
         esac
     else
@@ -43,22 +44,41 @@ products_dir=`cd "$1" >/dev/null;pwd`
 mu2e_artdaq_dir=`cd "$2" >/dev/null;pwd`
 demo_dir=`dirname "$mu2e_artdaq_dir"`
 
+export CETPKG_INSTALL=$products_dir
+export CETPKG_J=16
+
+test -d "$demo_dir/build_artdaq-core" || mkdir "$demo_dir/build_artdaq-core" 
 test -d "$demo_dir/build_artdaq"      || mkdir "$demo_dir/build_artdaq"  # This is where we will build artdaq
-test -d "$demo_dir/build_mu2e-artdaq" || mkdir "$demo_dir/build_mu2e-artdaq"  # This is where we will build mu2e-artdaq
+test -d "$demo_dir/build_mu2e_artdaq" || mkdir "$demo_dir/build_mu2e_artdaq"  # This is where we will build mu2e_artdaq
+
+if [[ -n "${opt_debug:-}" ]];then
+    build_arg="d"
+else
+    build_arg="p"
+fi
+
+test -d artdaq-core || git clone http://cdcvs.fnal.gov/projects/artdaq-core
+cd artdaq-core
+git fetch origin
+git checkout v1_04_06
+cd ../build_artdaq-core
+echo IN $PWD: about to . ../artdaq-core/ups/setup_for_development
+. $products_dir/setup
+. ../artdaq-core/ups/setup_for_development -${build_arg} e6 s5
+echo FINISHED ../artdaq-core/ups/setup_for_development
+buildtool -i
+cd ..
 
 
-# Get artdaq from central git repository
 test -d artdaq || git clone http://cdcvs.fnal.gov/projects/artdaq
 cd artdaq
 git fetch origin
-git checkout v1_05_08
+git checkout v1_12_04
 cd ../build_artdaq
 echo IN $PWD: about to . ../artdaq/ups/setup_for_development
 . $products_dir/setup
-. ../artdaq/ups/setup_for_development -p e4 eth
+. ../artdaq/ups/setup_for_development -${build_arg} e6 s5 eth
 echo FINISHED ../artdaq/ups/setup_for_development
-export CETPKG_INSTALL=$products_dir
-export CETPKG_J=16
 buildtool -i
 
 cd $demo_dir >/dev/null
@@ -66,7 +86,7 @@ if [[ ! -e ./setupMU2EARTDAQ ]]; then
     cat >setupMU2EARTDAQ <<-EOF
 	echo # This script is intended to be sourced.
 
-	sh -c "[ \`ps \$\$ | grep bash | wc -l\` -gt 0 ] || { echo 'Please switch to the bash shell before running the mu2e-artdaq.'; exit; }" || exit
+	sh -c "[ \`ps \$\$ | grep bash | wc -l\` -gt 0 ] || { echo 'Please switch to the bash shell before running the mu2e_artdaq.'; exit; }" || exit
 
 	source $products_dir/setup
 
@@ -75,23 +95,23 @@ if [[ ! -e ./setupMU2EARTDAQ ]]; then
 	#export MU2EARTDAQ_BASE_PORT=52200
 	export DAQ_INDATA_PATH=$mu2e_artdaq_dir/test/Generators:$mu2e_artdaq_dir/inputData
 
-	export MU2EARTDAQ_BUILD="$demo_dir/build_mu2e-artdaq"
+	export MU2EARTDAQ_BUILD="$demo_dir/build_mu2e_artdaq"
 	export MU2EARTDAQ_REPO="$mu2e_artdaq_dir"
 	export FHICL_FILE_PATH=.:\$MU2EARTDAQ_REPO/tools/fcl:\$FHICL_FILE_PATH
 
 	echo changing directory to \$MU2EARTDAQ_BUILD
 	cd \$MU2EARTDAQ_BUILD  # note: next line adjusts PATH based one cwd
-	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p e4 eth
+	. \$MU2EARTDAQ_REPO/ups/setup_for_development -p e6 eth
 
-	alias rawEventDump="art -c $mu2e_artdaq_dir/mu2e-artdaq/ArtModules/fcl/rawEventDump.fcl"
-	alias compressedEventDump="art -c $mu2e_artdaq_dir/mu2e-artdaq/ArtModules/fcl/compressedEventDump.fcl"
-	alias compressedEventComparison="art -c $mu2e_artdaq_dir/mu2e-artdaq/ArtModules/fcl/compressedEventComparison.fcl"
+	alias rawEventDump="art -c $mu2e_artdaq_dir/mu2e_artdaq/ArtModules/fcl/rawEventDump.fcl"
+	alias compressedEventDump="art -c $mu2e_artdaq_dir/mu2e_artdaq/ArtModules/fcl/compressedEventDump.fcl"
+	alias compressedEventComparison="art -c $mu2e_artdaq_dir/mu2e_artdaq/ArtModules/fcl/compressedEventComparison.fcl"
 	EOF
     #
 fi
 
 
-echo "Building mu2e-artdaq..."
+echo "Building mu2e_artdaq..."
 cd $MU2EARTDAQ_BUILD
 . $demo_dir/setupMU2EARTDAQ
 buildtool

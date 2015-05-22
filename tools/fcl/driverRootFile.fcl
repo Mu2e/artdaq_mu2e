@@ -2,19 +2,14 @@
 #  about the FHiCL language, please look at
 #  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
 
-# This FhiCL document will create "events_to_generate" events,
-# dividing the events into two root files, "splitter_even.root", if
-# "N" for the "N"th event processed is even, and "splitter_odd.root"
-# for the other events.
-
-events_to_generate: 20
+events_to_generate: 1
 run_number: 101
 
 fragment_receiver: {
 
    # Parameters defining and configuring the fragment generator to be used
    		    
-   generator: ToySimulator 
+   generator: RootFile 
    fragment_type: TOY2        # Make sure downstream modules know about this fragment_type!
    nADCcounts: 100
    random_seed: 6514
@@ -41,48 +36,28 @@ event_builder: {
 
 physics:
 {
-
-  filters:
+  analyzers:
   {
-    filterEven: {
-      module_type: Prescaler
-      prescaleFactor: 2
-      prescaleOffset: 0
-     }
-
-    filterOdd: {
-      module_type: Prescaler
-      prescaleFactor: 2
-      prescaleOffset: 1
+    toyDump:
+    {
+      module_type: ToyDump
+      raw_data_label: daq
+      frag_type: @local::fragment_receiver.fragment_type
+      num_adcs_to_show: 10   # Obviously this should be no more than ADC counts per fragment
     }
-  } 	
+  }
 
-  endpath: [ evenOutput, oddOutput ]
-  evenpath: [ filterEven ]
-  oddpath: [ filterOdd ]   # Think this is the same as "!filterEven"
-
-  trigger_paths: [ evenpath, oddpath ]
-  end_paths: [ endpath ]
+  a1: [ toyDump ]
+#  e1: [ out1 ]
+  end_paths: [ a1 ]
 }
 
 outputs:
 {
-  evenOutput:
+  out1:
   {
-    module_type: RootOutput
-    fileName: "splitter_even.root"
-    compressionLevel: 0
-
-    SelectEvents: { SelectEvents: [ evenpath ] }
-  }
-
-  oddOutput:
-  {
-    module_type: RootOutput
-    fileName: "splitter_odd.root"
-    compressionLevel: 0
-
-    SelectEvents: { SelectEvents: [ oddpath ] }
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
   }
 }
 
@@ -91,7 +66,7 @@ source:
 module_type: RawInput
 waiting_time: 900
 resume_after_timeout: true
-fragment_type_map: [[3, "V1720"], [4, "V1724"], [6, "TOY1"], [7, "TOY2"] ]
+fragment_type_map: [[2, "TOY1"], [3, "TOY2"] ]
 }
 
 process_name: Driver

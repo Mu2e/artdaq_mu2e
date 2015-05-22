@@ -1,9 +1,10 @@
-#! /bin/sh
-#  This file (mu2e-artdaq-quickstart.sh) was created by Ron Rechenmacher <ron@fnal.gov> on
-#  Jan  7, 2014. "TERMS AND CONDITIONS" governing this file are in the README
-#  or COPYING file. If you do not have such a file, one can be obtained by
-#  contacting Ron or Fermi Lab in Batavia IL, 60510, phone: 630-840-3000.
-#  $RCSfile: .emacs.gnu,v $
+#! /bin/env bash
+
+#  This file was created by Ron Rechenmacher <ron@fnal.gov> on Jan 7,
+#  2014. "TERMS AND CONDITIONS" governing this file are in the README
+#  or COPYING file. If you do not have such a file, one can be
+#  obtained by contacting Ron or Fermi Lab in Batavia IL, 60510,
+#  phone: 630-840-3000.  $RCSfile: .emacs.gnu,v $
 rev='$Revision: 1.20 $$Date: 2010/02/18 13:20:16 $'
 #
 #  This script is based on the original createArtDaqDemo.sh script created by
@@ -11,12 +12,27 @@ rev='$Revision: 1.20 $$Date: 2010/02/18 13:20:16 $'
 
 #
 # This script will:
-#      1.  get (if not already gotten) mu2e-artdaq and all support products
+#      1.  get (if not already gotten) mu2e_artdaq and all support products
 #          Note: this whole demo takes approx. X Megabytes of disk space
 #      2a. possibly build the artdaq dependent product
 #      2b. build (via cmake),
-#  and 3.  start the mu2e-artdaq system
+#  and 3.  start the mu2e_artdaq system
 #
+
+# JCF, 1/23/15
+
+# Save all output from this script (stdout + stderr) in a file with a
+# name that looks like "quick-start.sh_Fri_Jan_16_13:58:27.script" as
+# well as all stderr in a file with a name that looks like
+# "quick-start.sh_Fri_Jan_16_13:58:27_stderr.script"
+
+alloutput_file=$( date | awk -v "SCRIPTNAME=$(basename $0)" '{print SCRIPTNAME"_"$1"_"$2"_"$3"_"$4".script"}' )
+
+stderr_file=$( date | awk -v "SCRIPTNAME=$(basename $0)" '{print SCRIPTNAME"_"$1"_"$2"_"$3"_"$4"_stderr.script"}' )
+
+exec  > >(tee $alloutput_file)
+exec 2> >(tee $stderr_file)
+
 
 # program (default) parameters
 root=
@@ -30,6 +46,7 @@ examples: `basename $0` .
 If the \"demo_root\" optional parameter is not supplied, the user will be
 prompted for this location.
 --run-demo    runs the demo
+--debug       perform a debug build
 -f            force download
 --skip-check  skip the free diskspace check
 "
@@ -54,6 +71,7 @@ while [ -n "${1-}" ];do
         t*|-tag)    eval $reqarg; tag=$1;    shift;;
         -skip-check)opt_skip_check=1;;
         -run-demo)  opt_run_demo=--run-demo;;
+	-debug)     opt_debug=--debug;;
         *)          echo "Unknown option -$op"; do_help=1;;
         esac
     else
@@ -91,6 +109,15 @@ if [ "$branch" != '(no branch)' ];then
     fi
 fi
 
+# JCF, 9/19/14
+
+# Now that we've checked out the mu2e_artdaq version we want, make
+# sure we know what qualifier is meant to be passed to the
+# downloadDeps.sh and installArtDaqDemo.sh scripts below
+
+defaultqual=`grep defaultqual $git_working_path/ups/product_deps | awk '{print $2}' `
+
+
 vecho() { test $opt_v -gt 0 && echo "$@"; }
 starttime=`date`
 
@@ -118,6 +145,14 @@ if [ ! -x $git_working_path/tools/installArtDaqDemo.sh ];then
     exit 1
 fi
 
+
+if [[ -n "${opt_debug:-}" ]] ; then
+    build_type="debug"
+else
+    build_type="prof"
+fi
+
+
 if [ ! -d products -o ! -d download ];then
     echo "Are you sure you want to download and install the artdaq demo dependent products in `pwd`? [y/n]"
     read response
@@ -128,16 +163,16 @@ if [ ! -d products -o ! -d download ];then
     test -d products || mkdir products
     test -d download || mkdir download
     cd download
-    $git_working_path/tools/downloadDeps.sh  ../products e4:eth prof
+    $git_working_path/tools/downloadDeps.sh  ../products $defaultqual $build_type
     cd ..
 elif [ -n "${opt_force-}" ];then
     cd download
-    $git_working_path/tools/downloadDeps.sh  ../products e4:eth prof
+    $git_working_path/tools/downloadDeps.sh  ../products $defaultqual $build_type
     cd ..
 fi
 
 
-$git_working_path/tools/installArtDaqDemo.sh products $git_working_path ${opt_run_demo-}
+$git_working_path/tools/installArtDaqDemo.sh products $git_working_path ${opt_run_demo-} ${opt_debug-}
 
 endtime=`date`
 

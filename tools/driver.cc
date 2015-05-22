@@ -12,12 +12,12 @@
 //
 
 #include "art/Framework/Art/artapp.h"
-#include "artdaq/DAQdata/Fragments.hh"
+#include "artdaq-core/Data/Fragments.hh"
 #include "artdaq/Application/CommandableFragmentGenerator.hh"
 #include "artdaq/Application/makeCommandableFragmentGenerator.hh"
 #include "artdaq/DAQrate/EventStore.hh"
-#include "artdaq/DAQrate/SimpleQueueReader.hh"
-#include "artdaq/Utilities/SimpleLookupPolicy.h"
+#include "artdaq-core/Core/SimpleQueueReader.hh"
+#include "artdaq-core/Utilities/SimpleLookupPolicy.h"
 #include "cetlib/container_algorithms.h"
 #include "cetlib/filepath_maker.h"
 #include "fhiclcpp/ParameterSet.h"
@@ -29,6 +29,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <limits>
 
 using namespace fhicl;
 namespace  bpo = boost::program_options;
@@ -124,19 +125,21 @@ int main(int argc, char * argv[]) try
   artdaq::EventStore::ART_CMDLINE_FCN *
     es_fcn (want_artapp ? &artapp : &artdaq::simpleQueueReaderApp );
 
-  artdaq::EventStore store(event_builder_pset.get<size_t>("expected_fragments_per_event"),
+  artdaq::EventStore store(event_builder_pset,event_builder_pset.get<size_t>("expected_fragments_per_event"),
 			   complete_pset.get<artdaq::EventStore::run_id_t>("run_number"),
                            1,
                            es_argc,
                            es_argv,
-                           es_fcn,
-                           event_builder_pset.get<bool>("print_event_store_stats", false));
+                           es_fcn);
 
   int events_to_generate = complete_pset.get<int>("events_to_generate", 0);
   int event_count = 0;
   artdaq::Fragment::sequence_id_t previous_sequence_id = 0;
 
-    gen.get ()->StartCmd (complete_pset.get<artdaq::EventStore::run_id_t>("run_number"));
+  uint64_t timeout = 45;
+  uint64_t timestamp = std::numeric_limits<uint64_t>::max();
+
+  gen.get ()->StartCmd (complete_pset.get<artdaq::EventStore::run_id_t>("run_number"), timeout, timestamp);
 
   artdaq::FragmentPtrs frags;
 
@@ -155,14 +158,14 @@ int main(int argc, char * argv[]) try
         previous_sequence_id = val->sequenceID();
       }
       if (events_to_generate != 0 && event_count > events_to_generate) 
-		gen.get ()->StopCmd ();
+	gen.get ()->StopCmd (timeout, timestamp);
 
       store.insert(std::move(val));
     }
     frags.clear();
 
     if (events_to_generate != 0 && event_count >= events_to_generate) 
-        gen.get ()->StopCmd ();
+      gen.get ()->StopCmd (timeout, timestamp);
   }
 
   if (event_count != events_to_generate) {

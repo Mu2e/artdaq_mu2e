@@ -11,8 +11,8 @@
 #include "art/Framework/Principal/Handle.h"
 
 #include "art/Utilities/Exception.h"
-#include "mu2e-artdaq/Overlays/ToyFragment.hh"
-#include "artdaq/DAQdata/Fragments.hh"
+#include "mu2e-artdaq-core/Overlays/ToyFragment.hh"
+#include "artdaq-core/Data/Fragments.hh"
 
 #include <algorithm>
 #include <cassert>
@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
+#include "trace.h"		// TRACE
 
 namespace mu2e {
   class ToyDump;
@@ -56,7 +57,7 @@ mu2e::ToyDump::~ToyDump()
 void mu2e::ToyDump::analyze(art::Event const & evt)
 {
   art::EventNumber_t eventNumber = evt.event();
-
+  TRACE( 11, "mu2e::ToyDump::analyze enter eventNumber=%d", eventNumber );
   // ***********************
   // *** Toy Fragments ***
   // ***********************
@@ -86,7 +87,7 @@ void mu2e::ToyDump::analyze(art::Event const & evt)
       if (frag.hasMetadata()) {
       std::cout << std::endl;
 	std::cout << "Fragment metadata: " << std::endl;
-        ToyFragment::Metadata const* md =
+	ToyFragment::Metadata const* md =
           frag.metadata<ToyFragment::Metadata>();
         std::cout << std::showbase << "Board serial number = "
                   << ((int)md->board_serial_number) << ", sample bits = "
