@@ -12,6 +12,7 @@ art_make_exec(driver
   ${MPI_C_LIBRARIES}
   )
   
+add_subdirectory(fcl)
 
 # Is this necessary?
 #install_source()
