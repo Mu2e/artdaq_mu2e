@@ -1,6 +1,6 @@
 
 simple_plugin(ToySimulator "generator"
-  mu2e-artdaq_Overlays
+  mu2e-artdaq-core_Overlays
   ${ARTDAQ_APPLICATION}
   ${ARTDAQ_DAQDATA}
   ${ARTDAQ_UTILITIES}
@@ -11,7 +11,7 @@ simple_plugin(ToySimulator "generator"
   )
 
 simple_plugin( RootFile "generator"
-  mu2e-artdaq_Overlays
+  mu2e-artdaq-core_Overlays
   ${ARTDAQ_APPLICATION}
   ${ARTDAQ_DAQDATA}
   ${ARTDAQ_UTILITIES}

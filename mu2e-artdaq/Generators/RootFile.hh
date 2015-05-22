@@ -22,8 +22,8 @@
 #include "fhiclcpp/fwd.h"
 #include "artdaq-core/Data/Fragments.hh" 
 #include "artdaq/Application/CommandableFragmentGenerator.hh"
-#include "mu2e-artdaq/Overlays/ToyFragment.hh"
-#include "mu2e-artdaq/Overlays/FragmentType.hh"
+#include "mu2e-artdaq-core/Overlays/ToyFragment.hh"
+#include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "TFile.h"
 
 #include <random>

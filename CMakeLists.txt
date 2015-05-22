@@ -10,6 +10,8 @@
 # use cmake 2.8 or later
 cmake_minimum_required (VERSION 2.8)
 
+
+project(mu2e-artdaq)
 # cetbuildtools contains our cmake modules
 SET ( CETBUILDTOOLS_VERSION $ENV{CETBUILDTOOLS_VERSION} )
 IF (NOT CETBUILDTOOLS_VERSION)
@@ -39,6 +41,7 @@ find_ups_product( pcie_linux_kernel_module v1_04_00 )
 find_ups_product( cetbuildtools v4_01_04 )
 find_ups_product( artdaq v1_11_01 )
 find_ups_product( artdaq_core v1_03_04 )
+find_ups_product( mu2e_artdaq_core v0_00_01 )
 find_ups_product( art v1_10_00 )
 find_ups_product( fhiclcpp v2_16_00 )
 find_ups_product( messagefacility v1_10_00 )

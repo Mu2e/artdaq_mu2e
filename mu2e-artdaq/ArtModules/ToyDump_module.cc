@@ -87,7 +87,7 @@ void mu2e::ToyDump::analyze(art::Event const & evt)
       if (frag.hasMetadata()) {
       std::cout << std::endl;
 	std::cout << "Fragment metadata: " << std::endl;
-        ToyFragment::Metadata const* md =
+	ToyFragment::Metadata const* md =
           frag.metadata<ToyFragment::Metadata>();
         std::cout << std::showbase << "Board serial number = "
                   << ((int)md->board_serial_number) << ", sample bits = "

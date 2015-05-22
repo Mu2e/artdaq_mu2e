@@ -18,13 +18,13 @@
 
 namespace {
 
-  size_t typeToADC(mu2ecore::FragmentType type)
+  size_t typeToADC(mu2e::FragmentType type)
   {
     switch (type) {
-    case mu2ecore::FragmentType::TOY1:
+    case mu2e::FragmentType::TOY1:
       return 12;
       break;
-    case mu2ecore::FragmentType::TOY2:
+    case mu2e::FragmentType::TOY2:
       return 14;
       break;
     default:
@@ -32,7 +32,7 @@ namespace {
         << "Unknown board type "
         << type
         << " ("
-        << mu2ecore::fragmentTypeToString(type)
+        << mu2e::fragmentTypeToString(type)
         << ").\n";
     };
   }
