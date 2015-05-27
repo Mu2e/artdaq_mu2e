@@ -23,6 +23,7 @@ require File.join( File.dirname(__FILE__), 'demo_utilities' )
 # (BoardReaderMain, EventBuilderMain, AggregatorMain)
 
 require File.join( File.dirname(__FILE__), 'generateToy' )
+require File.join( File.dirname(__FILE__), 'generateDTC' )
 require File.join( File.dirname(__FILE__), 'generateWFViewer' )
 
 require File.join( File.dirname(__FILE__), 'generateBoardReaderMain' )
@@ -204,6 +205,7 @@ class CommandLineParser
     @options.aggregators = []
     @options.eventBuilders = []
     @options.toys = []
+    @options.dtcs = []
     @options.boardReaders = []
     @options.dataDir = nil
     @options.command = nil
@@ -292,6 +294,25 @@ class CommandLineParser
                                                               toy2Config.kind, toy2Config.index)
 
         @options.toys << toy2Config
+      end
+
+
+      opts.on("--dtc [host,port,board_id]", Array, 
+              "Add a DTC fragment receiver that runs on the specified host, port, ",
+              "and board ID.") do |dtc|
+        if dtc.length != 3
+          puts "You must specify a host, port, and board ID."
+          exit
+        end
+        dtcConfig = OpenStruct.new
+        dtcConfig.host = toy1[0]
+        dtcConfig.port = Integer(toy1[1])
+        dtcConfig.board_id = Integer(toy1[2])
+        dtcConfig.kind = "DTC"
+        dtcConfig.index = (@options.dtcs).length
+        dtcConfig.board_reader_index = addToBoardReaderList(dtcConfig.host, dtcConfig.port,
+                                                              dtcConfig.kind, dtcConfig.index)
+        @options.toys << toy1Config
       end
 
 
@@ -411,7 +432,7 @@ class CommandLineParser
     # is running on which host.
     puts "Configuration Summary:"
     hostMap = {}
-    (@options.eventBuilders + @options.toys + @options.aggregators).each do |proc|
+    (@options.eventBuilders + @options.dtcs + @options.toys + @options.aggregators).each do |proc|
       if not hostMap.keys.include?(proc.host)
         hostMap[proc.host] = []
       end
@@ -436,6 +457,11 @@ class CommandLineParser
           puts "    FragmentReceiver, Simulated %s, port %d, rank %d, board_id %d" % 
             [item.kind.upcase,
              item.port,
+             item.index,
+             item.board_id]
+        when "DTC"
+          puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d" %
+            [item.port,
              item.index,
              item.board_id]
         end
@@ -469,6 +495,7 @@ class SystemControl
     agIndex = 0
     totaltoy1s = 0
     totaltoy2s = 0
+    totaldtcs = @options.dtcs.length
 
     @options.toys.each do |proc|
       case proc.kind
@@ -478,7 +505,8 @@ class SystemControl
         totaltoy2s += 1
       end
     end
-    totalBoards = @options.toys.length
+
+    totalBoards = @options.toys.length + @options.dtcs.length
     totalFRs = @options.boardReaders.length
     totalEBs = @options.eventBuilders.length
     totalAGs = @options.aggregators.length
@@ -498,7 +526,7 @@ class SystemControl
 
     # John F., 1/21/14 -- added the toy fragment generators
 
-    (@options.toys).each { |boardreaderOptions|
+    (@options.toys + @options.dtcs).each { |boardreaderOptions|
       br = @options.boardReaders[boardreaderOptions.board_reader_index]
       listIndex = 0
       br.kindList.each do |kind|
@@ -507,6 +535,9 @@ class SystemControl
     	  if kind == "TOY1" || kind == "TOY2"
             generatorCode = generateToy(boardreaderOptions.index,
                                         boardreaderOptions.board_id, kind)
+          elsif kind == "DTC"
+            generatorCode = generateDTC(boardreaderOptions.index,
+                                        boardreaderOptions.board_id)
           end
 
           cfg = generateBoardReaderMain(totalEBs, totalFRs,
@@ -525,7 +556,7 @@ class SystemControl
 
     threads = []
 
-    (@options.toys).each { |proc|
+    (@options.toys + @options.dtcs).each { |proc|
       br = @options.boardReaders[proc.board_reader_index]
       if br.boardCount > 1
         if br.commandHasBeenSent
@@ -611,8 +642,8 @@ class SystemControl
                                           agOptions.port)
 
 
-      fclWFViewer = generateWFViewer( (@options.toys).map { |board| board.board_id },
-                                      (@options.toys).map { |board| board.kind }
+      fclWFViewer = generateWFViewer( (@options.toys + @options.dtcs).map { |board| board.board_id },
+                                      (@options.toys + @options.dtcs).map { |board| board.kind }
                                       )
 
 
@@ -648,6 +679,7 @@ class SystemControl
     self.sendCommandSet("start", @options.aggregators, runNumber)
     self.sendCommandSet("start", @options.eventBuilders, runNumber)
     self.sendCommandSet("start", @options.toys, runNumber)
+    self.sendCommandSet("start", @options.dtcs, runNumber)
   end
 
   def sendCommandSet(commandName, procs, commandArg = nil)
@@ -700,6 +732,9 @@ class SystemControl
         when "ag"
           puts "%s: Aggregator on %s:%d result: %s" %
             [currentTime, proc.host, proc.port, result]
+        when "DTC"
+          puts "%s: DTC on %s:%d result: %s" %
+            [currentTime, proc.host, proc.port, result]
         when "TOY1"
           puts "%s: TOY1 FragmentReceiver on %s:%d result: %s" %
             [currentTime, proc.host, proc.port, result]
@@ -719,12 +754,14 @@ class SystemControl
   end
 
   def shutdown()
+    self.sendCommandSet("shutdown", @options.dtcs)
     self.sendCommandSet("shutdown", @options.toys)
     self.sendCommandSet("shutdown", @options.eventBuilders)
     self.sendCommandSet("shutdown", @options.aggregators)
   end
 
   def pause()
+    self.sendCommandSet("pause", @options.dtcs)
     self.sendCommandSet("pause", @options.toys)
     self.sendCommandSet("pause", @options.eventBuilders)
     self.sendCommandSet("pause", @options.aggregators)
@@ -859,6 +896,7 @@ class SystemControl
       end
     end
 
+    self.sendCommandSet("stop", @options.dtcs)
     self.sendCommandSet("stop", @options.toys)
     self.sendCommandSet("stop", @options.eventBuilders)
     @options.aggregators.each do |proc|
@@ -872,18 +910,21 @@ class SystemControl
     self.sendCommandSet("resume", @options.aggregators)
     self.sendCommandSet("resume", @options.eventBuilders)
     self.sendCommandSet("resume", @options.toys)
+    self.sendCommandSet("resume", @options.dtcs)
   end
 
   def checkStatus()
     self.sendCommandSet("status", @options.aggregators)
     self.sendCommandSet("status", @options.eventBuilders)
-    self.sendCommandSet("status", @options.toys)
+    self.sendCommandSet("status", @options.toys)    
+    self.sendCommandSet("status", @options.dtcs)
   end
 
   def getLegalCommands()
     self.sendCommandSet("legal_commands", @options.aggregators)
     self.sendCommandSet("legal_commands", @options.eventBuilders)
-    self.sendCommandSet("legal_commands", @options.toys)
+    self.sendCommandSet("legal_commands", @options.toys)    
+    self.sendCommandSet("legal_commands", @options.dtcs)
   end
 end
 
