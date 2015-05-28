@@ -305,14 +305,14 @@ class CommandLineParser
           exit
         end
         dtcConfig = OpenStruct.new
-        dtcConfig.host = toy1[0]
-        dtcConfig.port = Integer(toy1[1])
-        dtcConfig.board_id = Integer(toy1[2])
+        dtcConfig.host = dtc[0]
+        dtcConfig.port = Integer(dtc[1])
+        dtcConfig.board_id = Integer(dtc[2])
         dtcConfig.kind = "DTC"
         dtcConfig.index = (@options.dtcs).length
         dtcConfig.board_reader_index = addToBoardReaderList(dtcConfig.host, dtcConfig.port,
                                                               dtcConfig.kind, dtcConfig.index)
-        @options.toys << toy1Config
+        @options.dtcs << dtcConfig
       end
 
 

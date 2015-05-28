@@ -93,7 +93,10 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   DTCFragmentWriter newfrag(*frags.back());
   newfrag.set_hdr_run_number(999);
 
-  std::vector<void*> data = theInterface_->GetData( (uint64_t)0 );    
+  std::vector<void*> data;
+
+  while(data.size() == 0){ data = theInterface_->GetData( (uint64_t)0 ); }
+     
   auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
   DTCLib::DTC_Timestamp ts = first.GetTimestamp();
   int packetCount = first.GetPacketCount();

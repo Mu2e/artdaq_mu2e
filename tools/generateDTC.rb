@@ -7,12 +7,12 @@
 
 require File.join( File.dirname(__FILE__), 'demo_utilities' )
   
-def generateToy(startingFragmentId, boardId)
+def generateDTC(startingFragmentId, boardId)
 
   dtcConfig = String.new( "\
     generator: DTCReceiver
     fragment_type: \"DTC\"
-    fragment_id: %{startingFragmentId}
+    fragment_id: %{starting_fragment_id}
     board_id: %{board_id}" \
                           + read_fcl("DTCReceiver.fcl") )
   
