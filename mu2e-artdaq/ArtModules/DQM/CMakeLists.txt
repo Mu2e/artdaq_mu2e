@@ -5,3 +5,6 @@ simple_plugin(WFViewer "module"
     ${ROOT_HIST} 
     ${ROOT_GUI}
 )
+
+install_headers()
+install_source()

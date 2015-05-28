@@ -48,3 +48,6 @@ simple_plugin( RootFile "generator"
   ${ROOT_CINT}
   ${ROOT_REFLEX}
   )
+
+install_headers()
+install_source()
