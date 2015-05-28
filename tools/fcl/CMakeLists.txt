@@ -1,3 +1,2 @@
-cet_script(driverDTC.fcl driverToy.fcl 
-           WFViewer.fcl splitter.fcl        
-           driverRootFile.fcl  ToySimulator.fcl)
+cet_script(driverRootFile.fcl driverDTC.fcl driverToy.fcl
+           DTCReceiver.fcl splitter.fcl ToySimulator.fcl WFViewer.fcl)
