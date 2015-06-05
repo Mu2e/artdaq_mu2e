@@ -19,3 +19,6 @@ simple_plugin(Mu2eArtdaqBuildInfo "module"
 
 # Subdirectories.
 add_subdirectory(DQM)
+
+install_headers()
+install_source()
