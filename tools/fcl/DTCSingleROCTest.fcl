@@ -1,0 +1,5 @@
+
+ring_0_roc_count: 1
+ring_0_timing_enabled: false
+debug_print: true
+sim_mode: "Disabled"
