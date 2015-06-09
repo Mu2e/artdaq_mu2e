@@ -47,13 +47,24 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
     ps.get<bool>("ring_5_timing_enabled",true)
   };
 
+  bool ringEmulators[] = {
+    ps.get<bool>("ring_0_roc_emulator_enabled",false),
+    ps.get<bool>("ring_1_roc_emulator_enabled",false),
+    ps.get<bool>("ring_2_roc_emulator_enabled",false),
+    ps.get<bool>("ring_3_roc_emulator_enabled",false),
+    ps.get<bool>("ring_4_roc_emulator_enabled",false),
+    ps.get<bool>("ring_5_roc_emulator_enabled",false)
+  };
+
   for(int ring = 0; ring < 6; ++ring)
     {  
    if(ringRocs[ring] >= 0) 
      {
-       theInterface_->EnableRing(DTCLib::DTC_Rings[0],
+       theInterface_->EnableRing(DTCLib::DTC_Rings[ring],
                                 DTCLib::DTC_RingEnableMode(true,true,ringTiming[ring]), 
                                 DTCLib::DTC_ROCS[ringRocs[ring]]);
+       if(ringEmulators[ring]) { theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]); }
+       else                    { theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]); }
      }
     }
 }
