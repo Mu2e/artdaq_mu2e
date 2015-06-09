@@ -6,6 +6,11 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
 
 simple_plugin(ToyDump "module")
 
+simple_plugin(DTCDump "module"
+  mu2e-artdaq-core_Overlays
+  DTCInterface
+)
+
 simple_plugin(Mu2eArtdaqBuildInfo "module" 
   artdaq_DAQdata
   artdaq_BuildInfo
