@@ -88,13 +88,13 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps)
   
   switch (fragment_type_) {
     case mu2e::FragmentType::TRK:
-      theInterface = new DTCLib::DTC(DTCLib::DTC_Sim_Mode_Tracker);
+      theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_Tracker);
       break;
     case mu2e::FragmentType::CAL:
-      theInterface = new DTCLib::DTC(DTCLib::DTC_Sim_Mode_Calorimeter);
+      theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_Calorimeter);
       break;
     case mu2e::FragmentType::CRV:
-      theInterface = new DTCLib::DTC(DTCLib::DTC_Sim_Mode_CosmicVeto);
+      theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_CosmicVeto);
       break;
     default:
       theInterface = new DTCLib::DTC();
@@ -147,16 +147,18 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     return false;
   }
 
-  isSimulatedDTC = theInterface->IsSimulatedDTC();
-  if(isSimulatedDTC) {
+  isSimulatedDTC = theInterface->ReadSimMode();
+  if(isSimulatedDTC != DTCLib::DTC_SimMode_Disabled && isSimulatedDTC != DTCLib::DTC_SimMode_Hardware) {
     std::cout << "ALERT: USING SIMULATED DTC" << std::endl;
+  } else if(isSimulatedDTC == DTCLib::DTC_SimMode_Hardware) {
+    std::cout << "ALERT: USING ACTUAL DTC IN LOOPBACK MODE" << std::endl;
   } else {
     std::cout << "ALERT: USING ACTUAL DTC" << std::endl;
   }
 
   if(data.empty()) {
     // std::vector<void*> DTCLib::DTC::GetData(DTC_Timestamp when, bool sendDReq, bool sendRReq)
-    data = theInterface->GetData((uint64_t)0,true,true);    
+    data = theInterface->GetData((uint64_t)0);    
     dataIdx = 0;
   }
 
