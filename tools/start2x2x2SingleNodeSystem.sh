@@ -3,7 +3,7 @@
 source `which setupDemoEnvironment.sh`
 
 # create the configuration file for PMT
-logroot="/home/eflumerf/tmp"
+logroot="/tmp"
 tempFile="$logroot/pmtConfig.$$"
 
 echo "BoardReaderMain `hostname` ${MU2EARTDAQ_BR_PORT[0]}" >> $tempFile
