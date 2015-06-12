@@ -6,8 +6,8 @@ source `which setupDemoEnvironment.sh`
 logroot="/home/eflumerf/tmp"
 tempFile="$logroot/pmtConfig.$$"
 
-echo "BoardReaderMain mu2edaq03.dhcp.fnal.gov ${MU2EARTDAQ_BR_PORT[0]}" >> $tempFile
-echo "BoardReaderMain mu2edaq02.dhcp.fnal.gov ${MU2EARTDAQ_BR_PORT[1]}" >> $tempFile
+echo "BoardReaderMain `hostname` ${MU2EARTDAQ_BR_PORT[0]}" >> $tempFile
+echo "BoardReaderMain `hostname` ${MU2EARTDAQ_BR_PORT[1]}" >> $tempFile
 echo "EventBuilderMain `hostname` ${MU2EARTDAQ_EB_PORT[0]}" >> $tempFile
 echo "EventBuilderMain `hostname` ${MU2EARTDAQ_EB_PORT[1]}" >> $tempFile
 echo "AggregatorMain `hostname` ${MU2EARTDAQ_AG_PORT[0]}" >> $tempFile

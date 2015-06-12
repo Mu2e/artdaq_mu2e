@@ -2,5 +2,5 @@
 ring_0_roc_count: 1
 ring_0_timing_enabled: false
 ring_0_roc_emulator_enabled: true
-debug_print: true
+debug_print: false
 sim_mode: "Calorimeter"
