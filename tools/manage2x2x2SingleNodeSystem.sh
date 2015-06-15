@@ -26,9 +26,9 @@ function launch() {
   fi
 
 #    --dtc `mu2edaq02.dhcp.fnal.gov`,${MU2EARTDAQ_BR_PORT[0]},0 \
+    #--dtc `hostname`,${MU2EARTDAQ_BR_PORT[1]},1 \
   DemoControl.rb ${enableSerial} -s -c $1 \
     --dtc `hostname`,${MU2EARTDAQ_BR_PORT[0]},0 \
-    --dtc `hostname`,${MU2EARTDAQ_BR_PORT[1]},1 \
     --eb `hostname`,${MU2EARTDAQ_EB_PORT[0]} \
     --eb `hostname`,${MU2EARTDAQ_EB_PORT[1]} \
     --ag `hostname`,${MU2EARTDAQ_AG_PORT[0]},1 \

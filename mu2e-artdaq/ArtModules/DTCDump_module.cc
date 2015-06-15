@@ -62,7 +62,7 @@ void mu2e::DTCDump::analyze(art::Event const & evt)
   if (raw.isValid()) {
     std::cout << "######################################################################" << std::endl;
     std::cout << std::endl;
-    std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()
+    std::cout << std::dec << "Run " << evt.run() << ", subrun " << evt.subRun()
               << ", event " << eventNumber << " has " << raw->size()
               << " DTCFragment(s)"<< std::endl;
 
