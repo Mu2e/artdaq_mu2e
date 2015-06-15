@@ -79,6 +79,7 @@ void mu2e::DTCDump::analyze(art::Event const & evt)
         std::cout << DTCLib::DTC_SimModeConverter((DTCLib::DTC_SimMode)(md->sim_mode)).toString()
                   << std::endl;
 	std::cout << "Timestamp: 0x" << std::hex << bb.hdr_timestamp() << std::endl;
+	std::cout << "Hostname: " << std::string(md->hostname) << std::endl;
 	std::cout << std::endl;
       }
       

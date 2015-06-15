@@ -83,6 +83,11 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   // Set fragment's metadata
   DTCFragment::Metadata metadata;
   metadata.sim_mode = static_cast<int>(mode_);
+  metadata.run_number = run_number();
+  char *name = new char[64];
+  gethostname(name, 64);
+  //  std::cout << "Hostname is: " << name << std::endl;
+  memcpy(metadata.hostname,name,64);
 
 
   // And use it, along with the artdaq::Fragment header information
@@ -102,7 +107,6 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
 
   // Now we make an instance of the overlay to put the data into...
   DTCFragmentWriter newfrag(*frags.back());
-  newfrag.set_hdr_run_number(999);
 
   std::vector<void*> data;
 
@@ -110,7 +114,7 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
      
   auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
   DTCLib::DTC_Timestamp ts = first.GetTimestamp();
-  int packetCount = first.GetPacketCount();
+  int packetCount = first.GetPacketCount() + 1;
   if(print_packets_) {
     std::cout << first.toJSON() << std::endl;
     for(int ii = 0; ii < first.GetPacketCount(); ++ii) {
@@ -121,7 +125,7 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   for(size_t i = 1; i < data.size(); ++i)
     {
       auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-      packetCount += packet.GetPacketCount();
+      packetCount += packet.GetPacketCount() + 1;
       if(print_packets_) {
 	std::cout << packet.toJSON() << std::endl;
         for(int ii = 0; ii < packet.GetPacketCount(); ++ii) {
