@@ -105,7 +105,7 @@ end
 
 
 currentTime = Time.now
-fileName = "artdaqdemo_eb%02d_" % ebIndex
+fileName = "mu2e_eb%02d_" % ebIndex
 fileName += "r%06r_sr%02s_%to"
 fileName += ".root"
 outputFile = File.join(dataDir, fileName)
