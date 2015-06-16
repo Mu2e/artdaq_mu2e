@@ -100,6 +100,46 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps)
       theInterface = new DTCLib::DTC();
   };
 
+  int ringRocs[] = {
+    ps.get<int>("ring_0_roc_count",-1),
+    ps.get<int>("ring_1_roc_count",-1),
+    ps.get<int>("ring_2_roc_count",-1),
+    ps.get<int>("ring_3_roc_count",-1),
+    ps.get<int>("ring_4_roc_count",-1),
+    ps.get<int>("ring_5_roc_count",-1)
+  };
+
+  bool ringTiming[] = {
+    ps.get<bool>("ring_0_timing_enabled",true),
+    ps.get<bool>("ring_1_timing_enabled",true),
+    ps.get<bool>("ring_2_timing_enabled",true),
+    ps.get<bool>("ring_3_timing_enabled",true),
+    ps.get<bool>("ring_4_timing_enabled",true),
+    ps.get<bool>("ring_5_timing_enabled",true)
+  };
+
+  bool ringEmulators[] = {
+    ps.get<bool>("ring_0_roc_emulator_enabled",false),
+    ps.get<bool>("ring_1_roc_emulator_enabled",false),
+    ps.get<bool>("ring_2_roc_emulator_enabled",false),
+    ps.get<bool>("ring_3_roc_emulator_enabled",false),
+    ps.get<bool>("ring_4_roc_emulator_enabled",false),
+    ps.get<bool>("ring_5_roc_emulator_enabled",false)
+  };
+
+  for(int ring = 0; ring < 6; ++ring) {  
+    if(ringRocs[ring] >= 0) {
+      theInterface->EnableRing(DTCLib::DTC_Rings[ring],
+                                DTCLib::DTC_RingEnableMode(true,true,ringTiming[ring]), 
+                                DTCLib::DTC_ROCS[ringRocs[ring]]);
+      if(ringEmulators[ring]) {
+	theInterface->EnableROCEmulator(DTCLib::DTC_Rings[ring]); 
+      } else {
+	theInterface->DisableROCEmulator(DTCLib::DTC_Rings[ring]);
+      }
+    }
+  }
+
   //  theInterface->SetMaxROCNumber(DTCLib::DTC_Ring_0, DTCLib::DTC_ROC_5);
   //  theInterface->EnableRing(DTCLib::DTC_Ring_1, DTCLib::DTC_ROC_5);
   
@@ -156,7 +196,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     std::cout << "ALERT: USING ACTUAL DTC" << std::endl;
   }
 
-  if(data.empty()) {
+  while(data.empty()){
     // std::vector<void*> DTCLib::DTC::GetData(DTC_Timestamp when, bool sendDReq, bool sendRReq)
     data = theInterface->GetData((uint64_t)0);    
     dataIdx = 0;
@@ -164,9 +204,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 
   usleep( throttle_usecs_ );
 
-
   while(!data.empty()) {
-
 
     std::cout << "Dumping DataHeaderPacket: " << std::endl;
     DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));
@@ -206,7 +244,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     // header and metadata) to empty; this will be resized below
   
     frags.emplace_back( new artdaq::Fragment(0, ev_counter(), curFragID, fragment_type_, metadata) );
-  
+
     // Use detector-specific FragmentWriters:
     DetectorFragmentWriter* newfrag;
     switch (fragment_type_) {
