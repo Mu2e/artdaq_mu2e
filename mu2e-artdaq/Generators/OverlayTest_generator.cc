@@ -58,6 +58,7 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps)
   fragment_type_(toFragmentType(ps.get<std::string>("fragment_type"))),
   throttle_usecs_(ps.get<size_t>("throttle_usecs", 0)),
   dataIdx(0),
+  data_packets_read_(0),
   events_read_(0),
   isSimulatedDTC(false)
 {
@@ -151,6 +152,7 @@ mu2e::OverlayTest::~OverlayTest()
 }
 
 artdaq::Fragment::fragment_id_t mu2e::OverlayTest::generateFragmentID(DTCLib::DTC_DataHeaderPacket &thePacket) {
+
   DTCLib::DTC_DataPacket dataPacket = thePacket.ConvertToDataPacket();
   
   std::bitset<128> theArray;
@@ -204,7 +206,109 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 
   usleep( throttle_usecs_ );
 
+
+  std::vector<size_t> dataBlockVec;
+  std::cout << "Checking data[] content..." << std::endl;
+  for(size_t curDataIdx=0; curDataIdx<data.size(); curDataIdx++) {
+    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));    
+    dataBlockVec.push_back(packet.GetPacketCount()+1);
+  }
+
+  // The fragment payload needs to be large enough to hold the 64*2 bit DTC header
+  // packet and all the data from the associated data packets (each is 128 bits long)
+  int payloadSize; // Measured in sizeof(adc_t)=16 bit blocks
+
+
+
+  int totalNumPackets = 0;
+  for(size_t i=0; i<dataBlockVec.size(); i++) {
+    totalNumPackets += dataBlockVec[i];
+  }
+
+  // The typeToADC is 16 bits so the number of 16 bit blocks
+  // in the payload is 8*(totalNumPackets)
+  // An additional 16 bits are used by each entry in the offset list
+  // plus 16 bits for the number of entries in the offset list
+  payloadSize = (128*(totalNumPackets) + 16*(dataBlockVec.size() + 1))/ typeToADC(fragment_type_);
+
+
+
+  // Generate the appropriate fragment ID based on the ROC and ring numbers
+  //  artdaq::Fragment::fragment_id_t curFragID = generateFragmentID(packet);
+  artdaq::Fragment::fragment_id_t curFragID = 0;
+  std::cout << "FragmentID: " << curFragID << std::endl;
+
+  // If this is the first event, we need to add each fragment ID to the list
+  // of all fragment IDs handled by this particular fragment generator.
+  if(events_read_==0) {
+    fragment_ids_.push_back(curFragID);
+  }
+
+  // Set fragment's metadata
+  mu2e::DetectorFragment::Metadata metadata;
+  // The board_serial_number is being hardcoded to 999 for now, but this
+  // will eventually need to be changed (DTC board ID?).
+  metadata.board_serial_number = 999;
+  metadata.num_adc_bits = typeToADC(fragment_type_); // Fixed to 16 bits
+  
+  // Use the metadata, along with the artdaq::Fragment header information
+  // (fragment id, sequence id, and user type) to create a fragment:
+  
+  // Constructor used is:   
+  // Fragment(std::size_t payload_size, sequence_id_t sequence_id,
+  //  fragment_id_t fragment_id, type_t type, const T & metadata);
+  // ...where we'll start off setting the payload (data after the
+  // header and metadata) to empty; this will be resized below
+  
+  frags.emplace_back( new artdaq::Fragment(0, ev_counter(), curFragID, fragment_type_, metadata) );
+
+  // Use detector-specific FragmentWriters:
+  DetectorFragmentWriter* newfrag;
+  switch (fragment_type_) {
+  case mu2e::FragmentType::TRK:
+    newfrag = new TrackerFragmentWriter(*frags.back());
+    break;
+  case mu2e::FragmentType::CAL:
+    newfrag = new CalorimeterFragmentWriter(*frags.back());
+    break;
+  case mu2e::FragmentType::CRV:
+    newfrag = new CosmicVetoFragmentWriter(*frags.back());
+    break;
+  default:
+    newfrag = new TrackerFragmentWriter(*frags.back());
+  };
+  
+  // Currently hardcoding hdr_run_number to 999, but this will
+  // need to be changed.
+  newfrag->set_hdr_run_number(999);
+
+  //    // The fragment payload needs to be large enough to hold the 64*2 bit DTC header
+  //    // packet and all the data from the associated data packets (each is 128 bits long)
+  //    int payloadSize; // Measured in sizeof(adc_t)=16 bit blocks
+  //
+  //    // The typeToADC is 16 bits so the number of 16 bit blocks
+  //    // in the payload is 8*(1+packet.GetPacketCount())
+  //    payloadSize = 128*(1 + packet.GetPacketCount()) / typeToADC(fragment_type_);
+  newfrag->resize(payloadSize);
+
+  // Fill the beginning of the adc_t array with the DataBlock
+  // offset list (units of offsets are 128-bit packets)
+  // Format:
+  // adc_t Position     Value
+  // 0                  Number of offset values
+  // 1                  Second offset (first is assumed to be 0)
+  // 2                  Third offset
+  // ...
+  // N                  (N+1)th offset
+  newfrag->generateOffsetTable(dataBlockVec);
+
   while(!data.empty()) {
+
+    // Let the DetectorFragment know which offset in adc_t it should be writing to
+    newfrag->setDataBlockIndex(dataIdx);    
+
+
+    std::cout << "================ DATA INDEX " << dataIdx << " ================" << std::endl;
 
     std::cout << "Dumping DataHeaderPacket: " << std::endl;
     DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));
@@ -217,62 +321,6 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
       std::cout << "\t" << "DumpingDataPackets: " << std::endl;
     }
 
-    // Generate the appropriate fragment ID based on the ROC and ring numbers
-    artdaq::Fragment::fragment_id_t curFragID = generateFragmentID(packet);
-    std::cout << "FragmentID: " << curFragID << std::endl;
-
-    // If this is the first event, we need to add each fragment ID to the list
-    // of all fragment IDs handled by this particular fragment generator.
-    if(events_read_==0) {
-      fragment_ids_.push_back(curFragID);
-    }
-
-    // Set fragment's metadata
-    mu2e::DetectorFragment::Metadata metadata;
-    // The board_serial_number is being hardcoded to 999 for now, but this
-    // will eventually need to be changed (DTC board ID?).
-    metadata.board_serial_number = 999;
-    metadata.num_adc_bits = typeToADC(fragment_type_); // Fixed to 16 bits
-  
-    // Use the metadata, along with the artdaq::Fragment header information
-    // (fragment id, sequence id, and user type) to create a fragment:
-  
-    // Constructor used is:   
-    // Fragment(std::size_t payload_size, sequence_id_t sequence_id,
-    //  fragment_id_t fragment_id, type_t type, const T & metadata);
-    // ...where we'll start off setting the payload (data after the
-    // header and metadata) to empty; this will be resized below
-  
-    frags.emplace_back( new artdaq::Fragment(0, ev_counter(), curFragID, fragment_type_, metadata) );
-
-    // Use detector-specific FragmentWriters:
-    DetectorFragmentWriter* newfrag;
-    switch (fragment_type_) {
-      case mu2e::FragmentType::TRK:
-        newfrag = new TrackerFragmentWriter(*frags.back());
-        break;
-      case mu2e::FragmentType::CAL:
-        newfrag = new CalorimeterFragmentWriter(*frags.back());
-        break;
-      case mu2e::FragmentType::CRV:
-        newfrag = new CosmicVetoFragmentWriter(*frags.back());
-        break;
-      default:
-        newfrag = new TrackerFragmentWriter(*frags.back());
-      };
-  
-    // Currently hardcoding hdr_run_number to 999, but this will
-    // need to be changed.
-    newfrag->set_hdr_run_number(999);
-
-    // The fragment payload needs to be large enough to hold the 64*2 bit DTC header
-    // packet and all the data from the associated data packets (each is 128 bits long)
-    int payloadSize; // Measured in sizeof(adc_t)=16 bit blocks
-
-    // The typeToADC is 16 bits so the number of 16 bit blocks
-    // in the payload is 8*(1+packet.GetPacketCount())
-    payloadSize = 128*(1 + packet.GetPacketCount()) / typeToADC(fragment_type_);
-    newfrag->resize(payloadSize);
 
 
     // // Debugging output:
@@ -288,6 +336,29 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     // and store them as 16-bit adc_t values in the fragment:
     for(int packetNum = 0; packetNum<packet.GetPacketCount()+1; packetNum++) {
       DTCLib::DTC_DataPacket curPacket((char*)data[dataIdx] + 16*packetNum);
+
+//      std::cout << "\tPacket " << packetNum << " words: ";
+//      for(int wordNum=15; wordNum>=0; wordNum--) {
+//	uint8_t curWord = curPacket.GetWord(wordNum);
+//
+//	for(int offset = 7; offset>=0; offset--) {
+//	  if((curWord & (1<<offset)) != 0) {
+//	    std::cout << 1;
+//	  } else {
+//	    std::cout << 0;
+//	  }
+//	}
+//
+//	std::cout  << " ";
+//	if(wordNum%2==0) {
+//	  uint8_t firstWord = curPacket.GetWord(wordNum);
+//	  uint8_t secondWord = curPacket.GetWord(wordNum+1);
+//	  uint16_t combined = ((secondWord << 8) | (firstWord));
+//	  std::cout << "(" << (int)combined << ") ";
+//	}
+//      }
+//      std::cout << std::endl;
+
       for(int wordNum=0; wordNum<16; wordNum+=2) { // 16 words per DTC packet
 	int fragPos = (packetNum*16+wordNum)/2; // The index of the current 16 bit adc_t value in the fragment
 	if(wordNum%2==0) { // Not strictly necessary since we increment by 2
@@ -297,6 +368,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 	  *(newfrag->dataBegin()+fragPos) = combined; // Set the appropriate adc_t entry in the fragment to the combined uint16_t
 	}
       }
+      data_packets_read_++;
     }
 
     // Print out debug info
@@ -328,14 +400,14 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     // larger than the max allowed
     newfrag->fastVerify( metadata.num_adc_bits );
 
-    delete newfrag;
-
     dataIdx++;
     if(dataIdx>=data.size()) {
       data.clear();
       dataIdx=0;
     }
   }
+
+  delete newfrag;
 
   // Debug output to check the list of all fragment IDs handled by this
   // fragment generator
