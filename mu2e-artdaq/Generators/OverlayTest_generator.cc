@@ -208,11 +208,15 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 
 
   std::vector<size_t> dataBlockVec;
-  std::cout << "Checking data[] content..." << std::endl;
+  std::cout << "Checking data[] content: ";
   for(size_t curDataIdx=0; curDataIdx<data.size(); curDataIdx++) {
     DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));    
     dataBlockVec.push_back(packet.GetPacketCount()+1);
   }
+  for(size_t curDataIdx=0; curDataIdx<dataBlockVec.size(); curDataIdx++) {
+    std::cout << dataBlockVec[curDataIdx] << " ";
+  }
+  std::cout << std::endl;
 
   // The fragment payload needs to be large enough to hold the 64*2 bit DTC header
   // packet and all the data from the associated data packets (each is 128 bits long)
@@ -307,11 +311,14 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     // Let the DetectorFragment know which offset in adc_t it should be writing to
     newfrag->setDataBlockIndex(dataIdx);    
 
+    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));
 
-    std::cout << "================ DATA INDEX " << dataIdx << " ================" << std::endl;
+    std::cout << "================ DATA INDEX " << dataIdx << "/" << data.size()-1 << " (" << packet.GetPacketCount()+1 << " packets total) ================" << std::endl;
+
+    std::cout << "DEBUG: numDataBlocks()=" << newfrag->numDataBlocks() << std::endl;
 
     std::cout << "Dumping DataHeaderPacket: " << std::endl;
-    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));
+
     std::cout << packet.toJSON() << std::endl;
 
     // The packet count does not include the header packet
@@ -320,8 +327,6 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     if(packet.GetPacketCount()>0) {
       std::cout << "\t" << "DumpingDataPackets: " << std::endl;
     }
-
-
 
     // // Debugging output:
     // std::cout <<"\t\tWordList: ";
@@ -337,27 +342,32 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     for(int packetNum = 0; packetNum<packet.GetPacketCount()+1; packetNum++) {
       DTCLib::DTC_DataPacket curPacket((char*)data[dataIdx] + 16*packetNum);
 
-//      std::cout << "\tPacket " << packetNum << " words: ";
-//      for(int wordNum=15; wordNum>=0; wordNum--) {
-//	uint8_t curWord = curPacket.GetWord(wordNum);
-//
-//	for(int offset = 7; offset>=0; offset--) {
-//	  if((curWord & (1<<offset)) != 0) {
-//	    std::cout << 1;
-//	  } else {
-//	    std::cout << 0;
-//	  }
-//	}
-//
-//	std::cout  << " ";
-//	if(wordNum%2==0) {
-//	  uint8_t firstWord = curPacket.GetWord(wordNum);
-//	  uint8_t secondWord = curPacket.GetWord(wordNum+1);
-//	  uint16_t combined = ((secondWord << 8) | (firstWord));
-//	  std::cout << "(" << (int)combined << ") ";
-//	}
-//      }
-//      std::cout << std::endl;
+
+
+      std::cout << "\tPacket " << packetNum << " words: ";
+      for(int wordNum=15; wordNum>=0; wordNum--) {
+	uint8_t curWord = curPacket.GetWord(wordNum);
+
+	for(int offset = 7; offset>=0; offset--) {
+	  if((curWord & (1<<offset)) != 0) {
+	    std::cout << 1;
+	  } else {
+	    std::cout << 0;
+	  }
+	}
+
+	std::cout  << " ";
+	if(wordNum%2==0) {
+	  uint8_t firstWord = curPacket.GetWord(wordNum);
+	  uint8_t secondWord = curPacket.GetWord(wordNum+1);
+	  uint16_t combined = ((secondWord << 8) | (firstWord));
+	  std::cout << "(" << (int)combined << ") ";
+	}
+      }
+      std::cout << std::endl;
+
+
+
 
       for(int wordNum=0; wordNum<16; wordNum+=2) { // 16 words per DTC packet
 	int fragPos = (packetNum*16+wordNum)/2; // The index of the current 16 bit adc_t value in the fragment
@@ -406,6 +416,38 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
       dataIdx=0;
     }
   }
+  
+  std::cout << "OFFSET LIST DEBUG INFO:" << std::endl;
+  for(size_t i=0; i<newfrag->numDataBlocks(); i++) {
+    newfrag->setDataBlockIndex(i);
+//    std::cout << "\t************************************************" << std::endl;
+    std::cout << "\toffset " << newfrag->offsetIndex() << ": " << newfrag->offset() << std::endl;
+//    std::cout << "\t************************************************" << std::endl;
+//    std::cout << "Calling printDTCHeader() on new fragment..."            << std::endl;
+//    std::cout << "************************************************" << std::endl;
+//    newfrag->printDTCHeader();
+//    std::cout << "************************************************" << std::endl;
+//    std::cout << std::endl << std::endl;
+//    std::cout << "************************************************" << std::endl;
+//    std::cout << "Calling printAll() on new fragment..."            << std::endl;
+//    std::cout << "************************************************" << std::endl;
+//    switch (fragment_type_) {
+//      case mu2e::FragmentType::TRK:
+//        (dynamic_cast<TrackerFragmentWriter*>(newfrag))->printAll();      
+//        break;
+//      case mu2e::FragmentType::CAL:
+//        (dynamic_cast<CalorimeterFragmentWriter*>(newfrag))->printAll();
+//        break;
+//      case mu2e::FragmentType::CRV:
+//        (dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->printAll();
+//        break;
+//      default:
+//        (dynamic_cast<TrackerFragmentWriter*>(newfrag))->printAll();
+//      };
+//    std::cout << "************************************************" << std::endl;
+  }
+  newfrag->setDataBlockIndex(0);
+
 
   delete newfrag;
 
