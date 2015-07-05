@@ -51,8 +51,7 @@ namespace {
 
 
 
-mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps)
-  :
+mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
   CommandableFragmentGenerator(ps),
   nADCcounts_(ps.get<size_t>("nADCcounts", 600000)), // No longer used as adc counts are based on data read from the DTC simulator
   fragment_type_(toFragmentType(ps.get<std::string>("fragment_type"))),
@@ -182,8 +181,9 @@ artdaq::Fragment::fragment_id_t mu2e::OverlayTest::generateFragmentID(DTCLib::DT
 }
 
 
-
 bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
+
+  std::cout << "==================== BEGINNING OF EVENT ====================" << std::endl;
 
   if (should_stop()) {
     return false;
@@ -206,36 +206,27 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 
   usleep( throttle_usecs_ );
 
-
-  std::vector<size_t> dataBlockVec;
-  std::cout << "Checking data[] content: ";
+  int totalNumPackets = 0;
+  
+  std::cout << "Determining total number of packets in payload: " << std::endl;
   for(size_t curDataIdx=0; curDataIdx<data.size(); curDataIdx++) {
     DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));    
-    dataBlockVec.push_back(packet.GetPacketCount()+1);
+    totalNumPackets += packet.GetPacketCount()+1;
+    //    DTCLib::DTC_PacketType theType = packet.GetPacketType();
+    //    if(theType == DTCLib::DTC_PacketType::DTC_PacketType_DataHeader) {
+    //      std::cout << "\t" << "HEADER" << std::endl;
+    //    } else {
+    //      std::cout << "\t" << "OTHER" << std::endl;
+    //    }
   }
-  for(size_t curDataIdx=0; curDataIdx<dataBlockVec.size(); curDataIdx++) {
-    std::cout << dataBlockVec[curDataIdx] << " ";
-  }
-  std::cout << std::endl;
+  //  std::cout << "DEBUG: Number of data blocks from data.size(): " << data.size() << std::endl;
 
   // The fragment payload needs to be large enough to hold the 64*2 bit DTC header
   // packet and all the data from the associated data packets (each is 128 bits long)
   int payloadSize; // Measured in sizeof(adc_t)=16 bit blocks
-
-
-
-  int totalNumPackets = 0;
-  for(size_t i=0; i<dataBlockVec.size(); i++) {
-    totalNumPackets += dataBlockVec[i];
-  }
-
   // The typeToADC is 16 bits so the number of 16 bit blocks
   // in the payload is 8*(totalNumPackets)
-  // An additional 16 bits are used by each entry in the offset list
-  // plus 16 bits for the number of entries in the offset list
-  payloadSize = (128*(totalNumPackets) + 16*(dataBlockVec.size() + 1))/ typeToADC(fragment_type_);
-
-
+  payloadSize = 128*(totalNumPackets) / typeToADC(fragment_type_);
 
   // Generate the appropriate fragment ID based on the ROC and ring numbers
   //  artdaq::Fragment::fragment_id_t curFragID = generateFragmentID(packet);
@@ -269,53 +260,33 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
   // Use detector-specific FragmentWriters:
   DetectorFragmentWriter* newfrag;
   switch (fragment_type_) {
-  case mu2e::FragmentType::TRK:
-    newfrag = new TrackerFragmentWriter(*frags.back());
-    break;
-  case mu2e::FragmentType::CAL:
-    newfrag = new CalorimeterFragmentWriter(*frags.back());
-    break;
-  case mu2e::FragmentType::CRV:
-    newfrag = new CosmicVetoFragmentWriter(*frags.back());
-    break;
-  default:
-    newfrag = new TrackerFragmentWriter(*frags.back());
+    case mu2e::FragmentType::TRK:
+      newfrag = new TrackerFragmentWriter(*frags.back());
+      break;
+    case mu2e::FragmentType::CAL:
+      newfrag = new CalorimeterFragmentWriter(*frags.back());
+      break;
+    case mu2e::FragmentType::CRV:
+      newfrag = new CosmicVetoFragmentWriter(*frags.back());
+      break;
+    default:
+      newfrag = new TrackerFragmentWriter(*frags.back());
   };
   
   // Currently hardcoding hdr_run_number to 999, but this will
   // need to be changed.
   newfrag->set_hdr_run_number(999);
 
-  //    // The fragment payload needs to be large enough to hold the 64*2 bit DTC header
-  //    // packet and all the data from the associated data packets (each is 128 bits long)
-  //    int payloadSize; // Measured in sizeof(adc_t)=16 bit blocks
-  //
-  //    // The typeToADC is 16 bits so the number of 16 bit blocks
-  //    // in the payload is 8*(1+packet.GetPacketCount())
-  //    payloadSize = 128*(1 + packet.GetPacketCount()) / typeToADC(fragment_type_);
   newfrag->resize(payloadSize);
 
-  // Fill the beginning of the adc_t array with the DataBlock
-  // offset list (units of offsets are 128-bit packets)
-  // Format:
-  // adc_t Position     Value
-  // 0                  Number of offset values
-  // 1                  Second offset (first is assumed to be 0)
-  // 2                  Third offset
-  // ...
-  // N                  (N+1)th offset
-  newfrag->generateOffsetTable(dataBlockVec);
-
+  size_t numPacketsRecorded = 0;
   while(!data.empty()) {
-
-    // Let the DetectorFragment know which offset in adc_t it should be writing to
-    newfrag->setDataBlockIndex(dataIdx);    
 
     DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));
 
     std::cout << "================ DATA INDEX " << dataIdx << "/" << data.size()-1 << " (" << packet.GetPacketCount()+1 << " packets total) ================" << std::endl;
 
-    std::cout << "DEBUG: numDataBlocks()=" << newfrag->numDataBlocks() << std::endl;
+    //    std::cout << "DEBUG: numDataBlocks()=" << newfrag->numDataBlocks() << std::endl;
 
     std::cout << "Dumping DataHeaderPacket: " << std::endl;
 
@@ -328,21 +299,13 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
       std::cout << "\t" << "DumpingDataPackets: " << std::endl;
     }
 
-    // // Debugging output:
-    // std::cout <<"\t\tWordList: ";
-    // DTCLib::DTC_DataPacket curPacket((char*)data[dataIdx] + 16*1);
-    // for(int wordNum=15; wordNum>=0; wordNum--) {
-    //   uint8_t curWord = curPacket.GetWord(wordNum);
-    //   std::cout << (int)curWord << " ";
-    // }
-    // std::cout << std::endl;
-
     // Take pairs of 8-bit words from the DTC header and data packets, combine them,
     // and store them as 16-bit adc_t values in the fragment:
     for(int packetNum = 0; packetNum<packet.GetPacketCount()+1; packetNum++) {
       DTCLib::DTC_DataPacket curPacket((char*)data[dataIdx] + 16*packetNum);
 
-
+      // Print the words being written to the adc_t array:
+      std::cout << "PACKETNUM: " << packetNum << std::endl;
 
       std::cout << "\tPacket " << packetNum << " words: ";
       for(int wordNum=15; wordNum>=0; wordNum--) {
@@ -365,12 +328,9 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 	}
       }
       std::cout << std::endl;
-
-
-
-
+      
       for(int wordNum=0; wordNum<16; wordNum+=2) { // 16 words per DTC packet
-	int fragPos = (packetNum*16+wordNum)/2; // The index of the current 16 bit adc_t value in the fragment
+	int fragPos = ((numPacketsRecorded+packetNum)*16+wordNum )/2; // The index of the current 16 bit adc_t value in the fragment
 	if(wordNum%2==0) { // Not strictly necessary since we increment by 2
 	  uint8_t firstWord = curPacket.GetWord(wordNum);
 	  uint8_t secondWord = curPacket.GetWord(wordNum+1);
@@ -380,9 +340,26 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
       }
       data_packets_read_++;
     }
+    numPacketsRecorded += packet.GetPacketCount()+1;
 
-    // Print out debug info
-    std::cout << "************************************************" << std::endl;
+    // Check and make sure that no ADC values in this fragment are
+    // larger than the max allowed
+    newfrag->fastVerify( metadata.num_adc_bits );
+
+    dataIdx++;
+    if(dataIdx>=data.size()) {
+      data.clear();
+      dataIdx=0;
+    }
+  }
+
+  std::cout << "GREPME: Checking number of stored datablocks: " << newfrag->numDataBlocks() << std::endl;
+    
+  for(size_t i=0; i<newfrag->numDataBlocks(); i++) {
+    newfrag->setDataBlockIndex(i);
+    std::cout << "\t************************************************" << std::endl;
+    std::cout << "\toffset " << newfrag->offsetIndex() << ": " << newfrag->offset() << std::endl;
+    std::cout << "\t************************************************" << std::endl;
     std::cout << "Calling printDTCHeader() on new fragment..."            << std::endl;
     std::cout << "************************************************" << std::endl;
     newfrag->printDTCHeader();
@@ -405,49 +382,8 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
         (dynamic_cast<TrackerFragmentWriter*>(newfrag))->printAll();
       };
     std::cout << "************************************************" << std::endl;
-    
-    // Check and make sure that no ADC values in this fragment are
-    // larger than the max allowed
-    newfrag->fastVerify( metadata.num_adc_bits );
-
-    dataIdx++;
-    if(dataIdx>=data.size()) {
-      data.clear();
-      dataIdx=0;
-    }
-  }
-  
-  std::cout << "OFFSET LIST DEBUG INFO:" << std::endl;
-  for(size_t i=0; i<newfrag->numDataBlocks(); i++) {
-    newfrag->setDataBlockIndex(i);
-//    std::cout << "\t************************************************" << std::endl;
-    std::cout << "\toffset " << newfrag->offsetIndex() << ": " << newfrag->offset() << std::endl;
-//    std::cout << "\t************************************************" << std::endl;
-//    std::cout << "Calling printDTCHeader() on new fragment..."            << std::endl;
-//    std::cout << "************************************************" << std::endl;
-//    newfrag->printDTCHeader();
-//    std::cout << "************************************************" << std::endl;
-//    std::cout << std::endl << std::endl;
-//    std::cout << "************************************************" << std::endl;
-//    std::cout << "Calling printAll() on new fragment..."            << std::endl;
-//    std::cout << "************************************************" << std::endl;
-//    switch (fragment_type_) {
-//      case mu2e::FragmentType::TRK:
-//        (dynamic_cast<TrackerFragmentWriter*>(newfrag))->printAll();      
-//        break;
-//      case mu2e::FragmentType::CAL:
-//        (dynamic_cast<CalorimeterFragmentWriter*>(newfrag))->printAll();
-//        break;
-//      case mu2e::FragmentType::CRV:
-//        (dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->printAll();
-//        break;
-//      default:
-//        (dynamic_cast<TrackerFragmentWriter*>(newfrag))->printAll();
-//      };
-//    std::cout << "************************************************" << std::endl;
   }
   newfrag->setDataBlockIndex(0);
-
 
   delete newfrag;
 
@@ -461,6 +397,8 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 
   ev_counter_inc();
   events_read_++;
+
+  std::cout << "==================== END OF EVENT ====================" << std::endl;
 
   return true;
 }

@@ -34,6 +34,47 @@ namespace mu2e {
 
   private:
 
+
+
+
+    std::bitset<128> bitArray(mu2e::DetectorFragment::adc_t const * beginning) {
+      // Return 128 bit bitset filled with bits starting at the indicated position in the fragment
+      std::bitset<128> theArray;
+      for(int bitIdx=127, adcIdx = 0; adcIdx<8; adcIdx++) {
+	for(int offset = 0; offset<16; offset++) {
+	  if( ( (*((mu2e::DetectorFragment::adc_t const *)(beginning+adcIdx))) & (1<<offset) ) != 0) {
+	    theArray.set(bitIdx);
+	  } else {
+	    theArray.reset(bitIdx);
+	  }
+	  bitIdx--;
+	}
+      }
+      return theArray;
+    }
+
+
+    mu2e::DetectorFragment::adc_t convertFromBinary(std::bitset<128> theArray, int minIdx, int maxIdx) {
+      std::bitset<16> retVal;
+      for(int i=minIdx+1; i<=maxIdx; i++) {
+	retVal.set(maxIdx-i,theArray[i]);
+      }
+      return retVal.to_ulong();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // The "generateFragmentID" function is used to parse out the
     // ring and ROC numbers from a DTC header packet and combine
     // them to create a fragment_id.
