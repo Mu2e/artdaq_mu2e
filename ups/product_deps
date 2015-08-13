@@ -1,7 +1,7 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent mu2e_artdaq	v1_00_01
-defaultqual	e6:s7:eth
+parent mu2e_artdaq	v1_00_02
+defaultqual	e7:s11:eth
 
 # These optional lines define the installed directories where
 # headers, libraries, and executables will be found
@@ -17,17 +17,15 @@ bindir      fq_dir      bin
 
 #
 product		version		optional
-artdaq		v1_12_09
-mu2e_artdaq_core v1_00_01
-pcie_linux_kernel_module v1_04_05
-cetbuildtools	v4_09_02	-	only_for_build
+artdaq		v1_12_11
+mu2e_artdaq_core v1_00_02
+pcie_linux_kernel_module v1_05_00
+cetbuildtools	v4_12_05	-	only_for_build
 end_product_list
 
-# e5  - with gcc 4.8.2 and -std=c++11
 # e6  - with gcc 4.9.1 and -std=c++1y
-# s3  - with art v1_10_00b
-# s4  - with art v1_11_03
-# s5  - with art v1_12_xx
+# e7  - with gcc 4.9.2 and -std=c++1y
+# s* -- See artdaq_core's product_deps for full list of currently-supported art versions
 # -nq- means there is no qualifier
 # a "-" means the dependent product is not required by the parent and will not be setup
 
@@ -36,6 +34,10 @@ e6:s7:ib:debug          e6:ib:s7:debug      e6:s7:debug		e6:debug
 e6:s7:ib:prof           e6:ib:s7:prof       e6:s7:prof		e6:prof
 e6:s7:eth:debug         e6:eth:s7:debug     e6:s7:debug		e6:debug
 e6:s7:eth:prof          e6:eth:s7:prof      e6:s7:prof		e6:prof
+e7:s11:ib:debug         e7:ib:s11:debug     e7:s11:debug	e7:debug
+e7:s11:ib:prof          e7:ib:s11:prof      e7:s11:prof		e7:prof
+e7:s11:eth:debug        e7:eth:s11:debug    e7:s11:debug	e7:debug
+e7:s11:eth:prof         e7:eth:s11:prof     e7:s11:prof		e7:prof
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:

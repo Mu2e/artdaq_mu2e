@@ -65,6 +65,7 @@ namespace mu2e {
     // State
     size_t packets_read_;
     DTCLib::DTC_SimMode mode_;
+    uint8_t board_id_;
 
     DTCLib::DTC* theInterface_;
 

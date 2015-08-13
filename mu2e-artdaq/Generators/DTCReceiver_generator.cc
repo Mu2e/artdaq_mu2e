@@ -23,6 +23,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
   , fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id() ) }
   , packets_read_(0)
   , mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode","Disabled")))
+  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id",0)))
   , print_packets_(ps.get<bool>("debug_print",false))
 {
   // mode_ can still be overridden by environment!
@@ -84,11 +85,7 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   DTCFragment::Metadata metadata;
   metadata.sim_mode = static_cast<int>(mode_);
   metadata.run_number = run_number();
-  char *name = new char[64];
-  gethostname(name, 64);
-  //  std::cout << "Hostname is: " << name << std::endl;
-  memcpy(metadata.hostname,name,64);
-
+  metadata.board_id = board_id_;
 
   // And use it, along with the artdaq::Fragment header information
   // (fragment id, sequence id, and user type) to create a fragment
@@ -142,7 +139,7 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   for(size_t i = 0; i < data.size(); ++i)
     {
       auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-      memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i],(1 + packet.GetPacketCount())*sizeof(DTCFragment::packet_t));
+      memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i],(1 + packet.GetPacketCount())*sizeof(packet_t));
       packetsProcessed += 1 + packet.GetPacketCount();
     }
 
