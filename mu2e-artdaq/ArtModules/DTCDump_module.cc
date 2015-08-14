@@ -91,7 +91,7 @@ void mu2e::DTCDump::analyze(art::Event const & evt)
 
 
       std::cout << std::endl;
-      int packetMax = max_DataPackets_to_show_ > bb.hdr_packet_count() ? bb.hdr_packet_count() : max_DataPackets_to_show_;
+      int packetMax = max_DataPackets_to_show_ > (bb.hdr_packet_count() - 1) ? (bb.hdr_packet_count() - 1) : max_DataPackets_to_show_;
       for(int ii = 0; ii < packetMax; ++ii)
 	{
 	  auto packet = DTCLib::DTC_DataPacket((uint8_t*)*(bb.dataBegin() + 1 + ii));

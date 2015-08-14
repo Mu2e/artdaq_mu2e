@@ -29,6 +29,7 @@
 #include <atomic>
 
 #include "dtcInterfaceLib/DTC.h"
+#include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 namespace mu2e {    
 
@@ -68,6 +69,7 @@ namespace mu2e {
     uint8_t board_id_;
 
     DTCLib::DTC* theInterface_;
+    DTCLib::DTCSoftwareCFO* theCFO_;
 
     // For Debugging:
     bool print_packets_;
