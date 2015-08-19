@@ -28,6 +28,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
 {
   // mode_ can still be overridden by environment!
   theInterface_ = new DTCLib::DTC(mode_);
+  theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_);
   mode_ = theInterface_->ReadSimMode();
 
   int ringRocs[] = {
@@ -73,6 +74,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
 mu2e::DTCReceiver::~DTCReceiver()
 {
   delete theInterface_;
+  delete theCFO_;
 }
 
 bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
@@ -106,6 +108,8 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
   DTCFragmentWriter newfrag(*frags.back());
 
   std::vector<void*> data;
+
+  if(mode_ != 0) { theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter())); }
 
   while(data.size() == 0){ data = theInterface_->GetData( (uint64_t)0 ); }
      
