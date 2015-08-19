@@ -1,7 +1,7 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
 parent mu2e_artdaq	v1_00_02
-defaultqual	e7:s11:eth
+defaultqual	e7:s15:eth
 
 # These optional lines define the installed directories where
 # headers, libraries, and executables will be found
@@ -17,9 +17,9 @@ bindir      fq_dir      bin
 
 #
 product		version		optional
-artdaq		v1_12_11
+artdaq		v1_12_12
 mu2e_artdaq_core v1_00_02
-pcie_linux_kernel_module v1_05_00
+pcie_linux_kernel_module v1_05_01
 cetbuildtools	v4_12_05	-	only_for_build
 end_product_list
 
@@ -30,14 +30,22 @@ end_product_list
 # a "-" means the dependent product is not required by the parent and will not be setup
 
 qualifier               artdaq              mu2e_artdaq_core	pcie_linux_kernel_module
-e6:s7:ib:debug          e6:ib:s7:debug      e6:s7:debug		e6:debug
-e6:s7:ib:prof           e6:ib:s7:prof       e6:s7:prof		e6:prof
-e6:s7:eth:debug         e6:eth:s7:debug     e6:s7:debug		e6:debug
-e6:s7:eth:prof          e6:eth:s7:prof      e6:s7:prof		e6:prof
+e6:s8:ib:debug          e6:ib:s8:debug      e6:s8:debug		e6:debug
+e6:s8:ib:prof           e6:ib:s8:prof       e6:s8:prof		e6:prof
+e6:s8:eth:debug         e6:eth:s8:debug     e6:s8:debug		e6:debug
+e6:s8:eth:prof          e6:eth:s8:prof      e6:s8:prof		e6:prof
+e7:s15:ib:debug         e7:ib:s15:debug     e7:s15:debug	e7:debug
+e7:s15:ib:prof          e7:ib:s15:prof      e7:s15:prof		e7:prof
+e7:s15:eth:debug        e7:eth:s15:debug    e7:s15:debug	e7:debug
+e7:s15:eth:prof         e7:eth:s15:prof     e7:s15:prof		e7:prof
 e7:s11:ib:debug         e7:ib:s11:debug     e7:s11:debug	e7:debug
 e7:s11:ib:prof          e7:ib:s11:prof      e7:s11:prof		e7:prof
 e7:s11:eth:debug        e7:eth:s11:debug    e7:s11:debug	e7:debug
 e7:s11:eth:prof         e7:eth:s11:prof     e7:s11:prof		e7:prof
+e7:s8:ib:debug         e7:ib:s8:debug     e7:s8:debug	e7:debug
+e7:s8:ib:prof          e7:ib:s8:prof      e7:s8:prof		e7:prof
+e7:s8:eth:debug        e7:eth:s8:debug    e7:s8:debug	e7:debug
+e7:s8:eth:prof         e7:eth:s8:prof     e7:s8:prof		e7:prof
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:
