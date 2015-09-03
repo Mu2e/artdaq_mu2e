@@ -8,6 +8,11 @@
 #include "mu2e-artdaq-core/Overlays/TrackerFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/CalorimeterFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/CosmicVetoFragmentWriter.hh"
+
+#include "mu2e-artdaq-core/Overlays/TrackerFragmentReader.hh"
+#include "mu2e-artdaq-core/Overlays/CalorimeterFragmentReader.hh"
+#include "mu2e-artdaq-core/Overlays/CosmicVetoFragmentReader.hh"
+
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 
 #include "fhiclcpp/ParameterSet.h"
@@ -28,22 +33,22 @@ namespace {
   size_t typeToADC(mu2e::FragmentType type)
   {
     switch (type) {
-    case mu2e::FragmentType::TRK:
-      return 16;
-      break;
-    case mu2e::FragmentType::CAL:
-      return 16;
-      break;
-    case mu2e::FragmentType::CRV:
-      return 16;
-      break;
-    default:
-      throw art::Exception(art::errors::Configuration)
-        << "Unknown board type "
-        << type
-        << " ("
-        << mu2e::fragmentTypeToString(type)
-        << ").\n";
+      case mu2e::FragmentType::TRK:
+        return 16;
+        break;
+      case mu2e::FragmentType::CAL:
+        return 16;
+        break;
+      case mu2e::FragmentType::CRV:
+        return 16;
+        break;
+      default:
+        throw art::Exception(art::errors::Configuration)
+          << "Unknown board type "
+          << type
+          << " ("
+          << mu2e::fragmentTypeToString(type)
+          << ").\n";
     };
   }
 
@@ -97,8 +102,11 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
       theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_CosmicVeto);
       break;
     default:
+      std::cout << "WARNING: Default packet type" << std::endl;
       theInterface = new DTCLib::DTC();
   };
+  theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface);
+  mode_ = theInterface->ReadSimMode();
 
   int ringRocs[] = {
     ps.get<int>("ring_0_roc_count",-1),
@@ -148,6 +156,7 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
 mu2e::OverlayTest::~OverlayTest()
 {
   delete theInterface;
+  delete theCFO_;
 }
 
 artdaq::Fragment::fragment_id_t mu2e::OverlayTest::generateFragmentID(DTCLib::DTC_DataHeaderPacket &thePacket) {
@@ -198,11 +207,15 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     std::cout << "ALERT: USING ACTUAL DTC" << std::endl;
   }
 
+  if(mode_ != 0) { theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter())); }
+
   while(data.empty()){
+    //    std::cout << "GETTING DATA" << std::endl;
     // std::vector<void*> DTCLib::DTC::GetData(DTC_Timestamp when, bool sendDReq, bool sendRReq)
     data = theInterface->GetData((uint64_t)0);    
     dataIdx = 0;
   }
+  //  std::cout << "DONE GETTING DATA" << std::endl;
 
   usleep( throttle_usecs_ );
 
@@ -210,8 +223,11 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
   
   std::cout << "Determining total number of packets in payload: " << std::endl;
   for(size_t curDataIdx=0; curDataIdx<data.size(); curDataIdx++) {
-    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));    
+    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[curDataIdx]));
     totalNumPackets += packet.GetPacketCount()+1;
+
+    //    std::cout << "ERR: curDataIdx: " << curDataIdx << " packet.GetPacketCount()+1: " << packet.GetPacketCount()+1 << std::endl << std::flush;
+
     //    DTCLib::DTC_PacketType theType = packet.GetPacketType();
     //    if(theType == DTCLib::DTC_PacketType::DTC_PacketType_DataHeader) {
     //      std::cout << "\t" << "HEADER" << std::endl;
@@ -227,6 +243,10 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
   // The typeToADC is 16 bits so the number of 16 bit blocks
   // in the payload is 8*(totalNumPackets)
   payloadSize = 128*(totalNumPackets) / typeToADC(fragment_type_);
+
+  //  std::cout << "ERR: TotalNumPackets: " << totalNumPackets << std::endl << std::flush;
+  //  std::cout << "ERR: PayloadSize: " << payloadSize << std::endl << std::flush;
+  
 
   // Generate the appropriate fragment ID based on the ROC and ring numbers
   //  artdaq::Fragment::fragment_id_t curFragID = generateFragmentID(packet);
@@ -258,26 +278,32 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
   frags.emplace_back( new artdaq::Fragment(0, ev_counter(), curFragID, fragment_type_, metadata) );
 
   // Use detector-specific FragmentWriters:
-  DetectorFragmentWriter* newfrag;
+  DetectorFragment* newfrag;
   switch (fragment_type_) {
     case mu2e::FragmentType::TRK:
       newfrag = new TrackerFragmentWriter(*frags.back());
+      (dynamic_cast<TrackerFragmentWriter*>(newfrag))->set_hdr_run_number(999);
+      (dynamic_cast<TrackerFragmentWriter*>(newfrag))->resize(payloadSize);
       break;
     case mu2e::FragmentType::CAL:
       newfrag = new CalorimeterFragmentWriter(*frags.back());
+      (dynamic_cast<CalorimeterFragmentWriter*>(newfrag))->set_hdr_run_number(999);
+      (dynamic_cast<CalorimeterFragmentWriter*>(newfrag))->resize(payloadSize);
       break;
     case mu2e::FragmentType::CRV:
       newfrag = new CosmicVetoFragmentWriter(*frags.back());
+      (dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->set_hdr_run_number(999);
+      (dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->resize(payloadSize);
       break;
     default:
       newfrag = new TrackerFragmentWriter(*frags.back());
   };
-  
-  // Currently hardcoding hdr_run_number to 999, but this will
-  // need to be changed.
-  newfrag->set_hdr_run_number(999);
 
-  newfrag->resize(payloadSize);
+  
+//  // Currently hardcoding hdr_run_number to 999, but this will
+//  // need to be changed.
+//  newfrag->set_hdr_run_number(999);
+//  newfrag->resize(payloadSize);
 
   size_t numPacketsRecorded = 0;
   while(!data.empty()) {
@@ -289,7 +315,6 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     //    std::cout << "DEBUG: numDataBlocks()=" << newfrag->numDataBlocks() << std::endl;
 
     std::cout << "Dumping DataHeaderPacket: " << std::endl;
-
     std::cout << packet.toJSON() << std::endl;
 
     // The packet count does not include the header packet
@@ -328,14 +353,31 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 	}
       }
       std::cout << std::endl;
-      
+
+//      std::cout << "CURPACKET.TOPACKETFORMAT():" << std::endl;
+//      std::cout << curPacket.toPacketFormat() << std::endl;
+//      std::cout << std::endl;      
+
       for(int wordNum=0; wordNum<16; wordNum+=2) { // 16 words per DTC packet
 	int fragPos = ((numPacketsRecorded+packetNum)*16+wordNum )/2; // The index of the current 16 bit adc_t value in the fragment
 	if(wordNum%2==0) { // Not strictly necessary since we increment by 2
 	  uint8_t firstWord = curPacket.GetWord(wordNum);
 	  uint8_t secondWord = curPacket.GetWord(wordNum+1);
 	  uint16_t combined = ((secondWord << 8) | (firstWord));
-	  *(newfrag->dataBegin()+fragPos) = combined; // Set the appropriate adc_t entry in the fragment to the combined uint16_t
+	  switch (fragment_type_) {
+	  case mu2e::FragmentType::TRK:
+	    *((dynamic_cast<TrackerFragmentWriter*>(newfrag))->dataBegin()+fragPos) = combined;
+	    break;
+	  case mu2e::FragmentType::CAL:
+	    *((dynamic_cast<CalorimeterFragmentWriter*>(newfrag))->dataBegin()+fragPos) = combined;
+	    break;
+	  case mu2e::FragmentType::CRV:
+	    *((dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->dataBegin()+fragPos) = combined;
+	    break;
+	  default:
+	    *((dynamic_cast<TrackerFragmentWriter*>(newfrag))->dataBegin()+fragPos) = combined;
+	  };
+	  //	  *(newfrag->dataBegin()+fragPos) = combined; // Set the appropriate adc_t entry in the fragment to the combined uint16_t
 	}
       }
       data_packets_read_++;
@@ -353,8 +395,10 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     }
   }
 
-  std::cout << "GREPME: Checking number of stored datablocks: " << newfrag->numDataBlocks() << std::endl;
-    
+//  std::cout << "GREPME: About to check number of data blocks" << std::endl << std::flush;
+//  std::cout << "GREPME: Checking number of stored datablocks: " << newfrag->numDataBlocks() << std::endl;
+//  std::cout << "GREPME: Finished checking number of data blocks" << std::endl << std::flush;
+
   for(size_t i=0; i<newfrag->numDataBlocks(); i++) {
     newfrag->setDataBlockIndex(i);
     std::cout << "\t************************************************" << std::endl;
@@ -368,19 +412,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     std::cout << "************************************************" << std::endl;
     std::cout << "Calling printAll() on new fragment..."            << std::endl;
     std::cout << "************************************************" << std::endl;
-    switch (fragment_type_) {
-      case mu2e::FragmentType::TRK:
-        (dynamic_cast<TrackerFragmentWriter*>(newfrag))->printAll();      
-        break;
-      case mu2e::FragmentType::CAL:
-        (dynamic_cast<CalorimeterFragmentWriter*>(newfrag))->printAll();
-        break;
-      case mu2e::FragmentType::CRV:
-        (dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->printAll();
-        break;
-      default:
-        (dynamic_cast<TrackerFragmentWriter*>(newfrag))->printAll();
-      };
+    newfrag->printAll();
     std::cout << "************************************************" << std::endl;
   }
   newfrag->setDataBlockIndex(0);

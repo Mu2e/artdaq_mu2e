@@ -1,0 +1,89 @@
+# FHiCL document used to run the "driver" executable. To learn more
+#  about the FHiCL language, please look at
+#  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
+
+events_to_generate: 10000000
+#events_to_generate: 10
+run_number: 101
+
+
+
+#throttle_usecs: 10000
+#throttle_usecs: 5000
+
+fragment_receiver: {
+
+  throttle_usecs: 1000000
+
+# Parameters defining and configuring the fragment generator to be used
+
+   generator: OverlayTest
+#   fragment_type: TRK        # Make sure downstream modules know about this fragment_type!
+   fragment_type: CAL        # Make sure downstream modules know about this fragment_type!
+#   fragment_type: CRV        # Make sure downstream modules know about this fragment_type!
+   nADCcounts: 100
+   random_seed: 6514
+
+   ring_0_roc_count: 5
+   ring_0_timing_enabled: false
+   ring_0_roc_emulator_enabled: true
+   #debug_print: false
+   #sim_mode: "Calorimeter"
+
+
+   # Parameters configuring the fragment generator's parent class
+   # artdaq::CommandableFragmentGenerator
+
+   board_id: 0
+}  		  
+
+event_builder: {
+
+  expected_fragments_per_event: 1
+  use_art: true
+  print_event_store_stats: false
+  verbose: false
+  events_expected_in_SimpleQueueReader: @local::events_to_generate
+}
+
+######################################################################
+# The ART code
+######################################################################
+
+physics:
+{
+  analyzers:
+  {
+    DetectorDump:
+    {
+      module_type: DetectorDump
+      raw_data_label: daq
+#      raw_data_label: CAL
+      frag_type: @local::fragment_receiver.fragment_type
+      num_packets_to_show: 2 # DataHeaderPacket and up to num_packets_to_show - 1 DataPackets
+    }
+  }
+
+  a1: [ DetectorDump ]
+#  e1: [ out1 ]
+  end_paths: [ a1 ]
+}
+
+#outputs:
+#{
+#  out1:
+#  {
+#    module_type: FileDumperOutput
+#    wantProductFriendlyClassName: true
+#  }
+#}
+
+source:
+{
+module_type: RawInput
+waiting_time: 900
+resume_after_timeout: true
+fragment_type_map: [ [5, "TRK"], [6, "CAL"], [7, "CRV"] ]
+}
+
+process_name: Driver

@@ -9,6 +9,15 @@ simple_plugin(ToyDump "module")
 simple_plugin(DTCDump "module"
   mu2e-artdaq-core_Overlays
   DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
+  ${MONGODB_CXX_LIBRARIES}
+)
+
+simple_plugin(DetectorDump "module"
+  mu2e-artdaq-core_Overlays
+  DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
+  ${MONGODB_CXX_LIBRARIES}
 )
 
 simple_plugin(Mu2eArtdaqBuildInfo "module" 

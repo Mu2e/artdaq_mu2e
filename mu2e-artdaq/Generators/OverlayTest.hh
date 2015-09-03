@@ -24,6 +24,7 @@
 #include <queue>
 
 #include "dtcInterfaceLib/DTC.h"
+#include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 namespace mu2e {    
 
@@ -114,8 +115,10 @@ namespace mu2e {
     size_t data_packets_read_;
     size_t events_read_;
     bool isSimulatedDTC;
+    DTCLib::DTC_SimMode mode_;
 
     DTCLib::DTC* theInterface;
+    DTCLib::DTCSoftwareCFO* theCFO_;
 
   };
 }
