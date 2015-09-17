@@ -114,7 +114,6 @@ namespace mu2e {
     // State
     size_t data_packets_read_;
     size_t events_read_;
-    bool isSimulatedDTC;
     DTCLib::DTC_SimMode mode_;
 
     DTCLib::DTC* theInterface;

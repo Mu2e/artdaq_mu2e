@@ -64,7 +64,7 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
   dataIdx(0),
   data_packets_read_(0),
   events_read_(0),
-  isSimulatedDTC(false)
+  mode_(DTCLib::DTC_SimMode_Disabled)
 {
     std::vector<artdaq::Fragment::type_t> const ftypes = 
     {FragmentType::TOY1, FragmentType::TOY2 , FragmentType::TRK, FragmentType::CAL, FragmentType::CRV};
@@ -198,13 +198,17 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     return false;
   }
 
-  isSimulatedDTC = theInterface->ReadSimMode();
-  if(isSimulatedDTC != DTCLib::DTC_SimMode_Disabled && isSimulatedDTC != DTCLib::DTC_SimMode_Hardware) {
-    std::cout << "ALERT: USING SIMULATED DTC" << std::endl;
-  } else if(isSimulatedDTC == DTCLib::DTC_SimMode_Hardware) {
-    std::cout << "ALERT: USING ACTUAL DTC IN LOOPBACK MODE" << std::endl;
+  mode_ = theInterface->ReadSimMode();
+  if(mode_ != DTCLib::DTC_SimMode_Disabled && mode_ != DTCLib::DTC_SimMode_Loopback && mode_ != DTCLib::DTC_SimMode_NoCFO && mode_ != DTCLib::DTC_SimMode_ROCEmulator) {
+    mf::LogInfo("DTCOverlayTest") << "Using Simulated DTC in " << DTCLib::DTC_SimModeConverter(mode_).toString() << " mode";
+  } else if(mode_ == DTCLib::DTC_SimMode_Loopback) {
+    mf::LogInfo("DTCOverlayTset") << "Using Real DTC in SERDES Loopback Mode";
+  } else if(mode_ == DTCLib::DTC_SimMode_ROCEmulator) {
+    mf::LogInfo("DTCOverlayTest") << "Using Real DTC in ROC Emulator Mode";
+  } else if(mode_ == DTCLib::DTC_SimMode_NoCFO) {
+    mf::LogInfo("DTCOverlayTest") << "Using Real DTC in Internal Timing Mode";
   } else {
-    std::cout << "ALERT: USING ACTUAL DTC" << std::endl;
+    mf::LogInfo("DTCOverlayTest") << "Using Real DTC";
   }
 
   if(mode_ != 0) { theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter())); }

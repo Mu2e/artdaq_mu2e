@@ -28,6 +28,7 @@ simple_plugin(OverlayTest "generator"
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${CETLIB}
+  ${MF_MESSAGELOGGER}
   DTCInterface
   )
 
