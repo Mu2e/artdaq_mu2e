@@ -28,7 +28,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
 {
   // mode_ can still be overridden by environment!
   theInterface_ = new DTCLib::DTC(mode_);
-  theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_);
+  theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_,false);
   mode_ = theInterface_->ReadSimMode();
 
   int ringRocs[] = {
@@ -109,9 +109,16 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags) {
 
   std::vector<void*> data;
 
-  if(mode_ != 0) { theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter())); }
+  if(mode_ != 0) { theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter()));  }
 
-  while(data.size() == 0){ data = theInterface_->GetData( (uint64_t)0 ); }
+  while(data.size() == 0){ 
+    try {
+     data = theInterface_->GetData( (uint64_t)0 ); 
+    }
+    catch (std::exception ex) {
+      std::cerr << ex.what() << std::endl;
+    }
+  }
      
   auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
   DTCLib::DTC_Timestamp ts = first.GetTimestamp();
