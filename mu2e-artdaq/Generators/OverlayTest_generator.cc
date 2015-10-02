@@ -105,7 +105,7 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
       std::cout << "WARNING: Default packet type" << std::endl;
       theInterface = new DTCLib::DTC();
   };
-  theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface);
+  theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface, false);
   mode_ = theInterface->ReadSimMode();
 
   int ringRocs[] = {
