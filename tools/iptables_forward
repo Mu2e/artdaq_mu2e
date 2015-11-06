@@ -31,8 +31,11 @@ iptables_forward()
   expr "$host" : '[^.]*\.[^.]' >/dev/null || { echo "Must be FQDN (for use in comment)"; return; }
   if [ -z "$2" ];then
     nsout=`nslookup $host` || return
+    after_num=`iptables -t filter -L FORWARD --line-numbers | awk '/anywhere *state RELATED,ESTABLISHED/{print$1;exit}'`
+    test -z "$after_num" && { echo "Error - can't find state match"; return; }
+    insert_b4_num=`expr $insert_b4_num + 1`
     for ip in `echo "$nsout" | sed -n '/Address: [1-9]/{s/Address: //;p}'`;do
-      iptables -t filter -I FORWARD 2 --destination $ip -j LOG_ACCEPT -m comment --comment $host
+      iptables -t filter -I FORWARD $insert_b4_num --destination $ip -j LOG_ACCEPT -m comment --comment $host
       : echo -- "-A FORWARD -d $ip/32 -m comment --comment \"$host\" -j LOG_ACCEPT"
     done
   else
