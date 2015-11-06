@@ -1,0 +1,45 @@
+#!/bin/sh
+# This file (iptables_forward) was created by Ron Rechenmacher <ron@fnal.gov> on
+# Nov  6, 2015. "TERMS AND CONDITIONS" governing this file are in the README
+# or COPYING file. If you do not have such a file, one can be obtained by
+# contacting Ron or Fermi Lab in Batavia IL, 60510, phone: 630-840-3000.
+# $RCSfile: .emacs.gnu,v $
+# rev="$Revision: 1.0 $$Date: 2015/11/06 12:00:00 $";
+
+test $# -eq 0 && { iptables -t filter -n -L FORWARD; exit; }
+
+USAGE="\
+usage: `basename $0`               # show current filter table FORWARD chain
+       `basename $0` hostname [D]  # add [or delete] hostname
+Note: hostname may be associated with multiple IP addresses
+examples:
+`basename $0` | grep mirrors.fedoraproject.org && op1=D op2= || op1= op2=D
+`basename $0`
+`basename $0` mirrors.fedoraproject.org \$op1
+`basename $0`
+`basename $0` mirrors.fedoraproject.org \$op2
+`basename $0`
+"
+
+case "$1" in
+-?|-h|--help) echo "$USAGE"; exit;;
+esac
+
+iptables_forward()
+{ : $1=host, $2=delete  
+  host=$1
+  expr "$host" : '[^.]*\.[^.]' >/dev/null || { echo "Must be FQDN (for use in comment)"; return; }
+  if [ -z "$2" ];then
+    nsout=`nslookup $host` || return
+    for ip in `echo "$nsout" | sed -n '/Address: [1-9]/{s/Address: //;p}'`;do
+      iptables -t filter -I FORWARD 2 --destination $ip -j LOG_ACCEPT -m comment --comment $host
+      : echo -- "-A FORWARD -d $ip/32 -m comment --comment \"$host\" -j LOG_ACCEPT"
+    done
+  else
+    iptables -t filter -n -L FORWARD | grep "/\* $host \*/" | awk '{print$5}' | while read ip;do
+      iptables -t filter -D FORWARD   --destination $ip -j LOG_ACCEPT -m comment --comment $host
+    done
+  fi
+}
+iptables_forward "$@"
+
