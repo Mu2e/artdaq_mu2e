@@ -5,7 +5,7 @@
 # contacting Ron or Fermi Lab in Batavia IL, 60510, phone: 630-840-3000.
 # $RCSfile: .emacs.gnu,v $
 # rev="$Revision: 1.0 $$Date: 2015/11/06 12:00:00 $";
-
+set -u
 test $# -eq 0 && { iptables -t filter -n -L FORWARD; exit; }
 
 USAGE="\
@@ -21,19 +21,18 @@ examples:
 `basename $0`
 "
 
-case "$1" in
+case "${1-}" in
 -?|-h|--help) echo "$USAGE"; exit;;
 esac
 
 iptables_forward()
-{ : $1=host, $2=delete  
-  host=$1
+{ host=$1 delete=${2-}
   expr "$host" : '[^.]*\.[^.]' >/dev/null || { echo "Must be FQDN (for use in comment)"; return; }
-  if [ -z "$2" ];then
+  if [ -z "$delete" ];then
     nsout=`nslookup $host` || return
     after_num=`iptables -t filter -L FORWARD --line-numbers | awk '/anywhere *state RELATED,ESTABLISHED/{print$1;exit}'`
     test -z "$after_num" && { echo "Error - can't find state match"; return; }
-    insert_b4_num=`expr $insert_b4_num + 1`
+    insert_b4_num=`expr $after_num + 1`
     for ip in `echo "$nsout" | sed -n '/Address: [1-9]/{s/Address: //;p}'`;do
       iptables -t filter -I FORWARD $insert_b4_num --destination $ip -j LOG_ACCEPT -m comment --comment $host
       : echo -- "-A FORWARD -d $ip/32 -m comment --comment \"$host\" -j LOG_ACCEPT"
