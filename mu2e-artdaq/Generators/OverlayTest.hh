@@ -116,6 +116,11 @@ namespace mu2e {
     size_t events_read_;
     DTCLib::DTC_SimMode mode_;
 
+    // Debug Packet Settings
+    uint16_t debugPacketCount_;
+    DTCLib::DTC_DebugType debugType_;
+    bool stickyDebugType_;
+
     DTCLib::DTC* theInterface;
     DTCLib::DTCSoftwareCFO* theCFO_;
 

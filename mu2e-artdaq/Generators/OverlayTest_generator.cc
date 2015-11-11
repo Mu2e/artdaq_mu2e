@@ -9,9 +9,14 @@
 #include "mu2e-artdaq-core/Overlays/CalorimeterFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/CosmicVetoFragmentWriter.hh"
 
+#include "mu2e-artdaq-core/Overlays/DebugFragmentWriter.hh"
+
+
 #include "mu2e-artdaq-core/Overlays/TrackerFragmentReader.hh"
 #include "mu2e-artdaq-core/Overlays/CalorimeterFragmentReader.hh"
 #include "mu2e-artdaq-core/Overlays/CosmicVetoFragmentReader.hh"
+
+#include "mu2e-artdaq-core/Overlays/DebugFragmentReader.hh"
 
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 
@@ -42,6 +47,9 @@ namespace {
       case mu2e::FragmentType::CRV:
         return 16;
         break;
+      case mu2e::FragmentType::DBG:
+        return 16;
+        break;
       default:
         throw art::Exception(art::errors::Configuration)
           << "Unknown board type "
@@ -64,10 +72,13 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
   dataIdx(0),
   data_packets_read_(0),
   events_read_(0),
-  mode_(DTCLib::DTC_SimMode_Disabled)
+  mode_(DTCLib::DTC_SimMode_Disabled),
+  debugPacketCount_(ps.get<uint16_t>("debugPacketCount", 10)),
+  debugType_(DTCLib::DTC_DebugType_ExternalSerialWithReset),
+  stickyDebugType_(ps.get<bool>("stickyDebugType", false))
 {
     std::vector<artdaq::Fragment::type_t> const ftypes = 
-    {FragmentType::TOY1, FragmentType::TOY2 , FragmentType::TRK, FragmentType::CAL, FragmentType::CRV};
+      {FragmentType::TOY1, FragmentType::TOY2 , FragmentType::TRK, FragmentType::CAL, FragmentType::CRV, FragmentType::DBG};
 
   if (std::find( ftypes.begin(), ftypes.end(), fragment_type_) == ftypes.end() ) {
     throw cet::exception("Error in OverlayTest: unexpected fragment type supplied to constructor");
@@ -86,6 +97,9 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
     case mu2e::FragmentType::CRV:
       std::cout << "CRV";
       break;
+    case mu2e::FragmentType::DBG:
+      std::cout << "DBG";
+      break;
     default:
       std::cout << "UNKNOWN";
   };
@@ -101,11 +115,24 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
     case mu2e::FragmentType::CRV:
       theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_CosmicVeto);
       break;
+    case mu2e::FragmentType::DBG:
+      theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_Performance);
+      break;
     default:
       std::cout << "WARNING: Default packet type" << std::endl;
       theInterface = new DTCLib::DTC();
   };
-  theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface, false);
+
+  // DTCSoftwareCFO(DTCLib::DTC* dtc, bool useCFOEmulator, uint16_t debugPacketCount,
+  //                                  DTCLib::DTC_DebugType debugType, bool stickyDebugType,
+  //                                  bool quiet, bool asyncRR)
+  if(fragment_type_ == mu2e::FragmentType::DBG) {
+    theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface, false, debugPacketCount_,
+					 debugType_, stickyDebugType_,
+					 true, false);
+  } else {
+    theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface, true);
+  }
   mode_ = theInterface->ReadSimMode();
 
   int ringRocs[] = {
@@ -207,6 +234,8 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     mf::LogInfo("DTCOverlayTest") << "Using Real DTC in ROC Emulator Mode";
   } else if(mode_ == DTCLib::DTC_SimMode_NoCFO) {
     mf::LogInfo("DTCOverlayTest") << "Using Real DTC in Internal Timing Mode";
+  } else if(mode_ == DTCLib::DTC_SimMode_Performance) {
+    mf::LogInfo("DTCOverlayTest") << "Using Simulated DTC in Debug Mode";
   } else {
     mf::LogInfo("DTCOverlayTest") << "Using Real DTC";
   }
@@ -299,6 +328,11 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
       (dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->set_hdr_run_number(999);
       (dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->resize(payloadSize);
       break;
+    case mu2e::FragmentType::DBG:
+      newfrag = new DebugFragmentWriter(*frags.back());
+      (dynamic_cast<DebugFragmentWriter*>(newfrag))->set_hdr_run_number(999);
+      (dynamic_cast<DebugFragmentWriter*>(newfrag))->resize(payloadSize);
+      break;
     default:
       newfrag = new TrackerFragmentWriter(*frags.back());
   };
@@ -377,6 +411,9 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
 	    break;
 	  case mu2e::FragmentType::CRV:
 	    *((dynamic_cast<CosmicVetoFragmentWriter*>(newfrag))->dataBegin()+fragPos) = combined;
+	    break;
+	  case mu2e::FragmentType::DBG:
+	    *((dynamic_cast<DebugFragmentWriter*>(newfrag))->dataBegin()+fragPos) = combined;
 	    break;
 	  default:
 	    *((dynamic_cast<TrackerFragmentWriter*>(newfrag))->dataBegin()+fragPos) = combined;

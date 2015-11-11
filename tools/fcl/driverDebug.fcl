@@ -11,9 +11,9 @@ fragment_receiver: {
 
    generator: OverlayTest
 #   fragment_type: TRK        # Make sure downstream modules know about this fragment_type!
-   fragment_type: CAL        # Make sure downstream modules know about this fragment_type!
+#   fragment_type: CAL        # Make sure downstream modules know about this fragment_type!
 #   fragment_type: CRV        # Make sure downstream modules know about this fragment_type!
-#   fragment_type: DBG        # Make sure downstream modules know about this fragment_type!
+   fragment_type: DBG        # Make sure downstream modules know about this fragment_type!
    nADCcounts: 100
    random_seed: 6514
 
