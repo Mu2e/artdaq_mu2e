@@ -31,12 +31,16 @@ end_product_list
 # a "-" means the dependent product is not required by the parent and will not be setup
 
 qualifier               artdaq              mu2e_artdaq_core	pcie_linux_kernel_module   mongodb    notes
-e7:s15:eth:debug        e7:eth:s15:debug    e7:s15:debug	e7:debug                   e7         --std=c++1y
-e7:s15:eth:prof         e7:eth:s15:prof     e7:s15:prof		e7:prof                    e7         --std=c++1y
-e7:s11:eth:debug        e7:eth:s11:debug    e7:s11:debug	e7:debug                   e7         --std=c++1y
-e7:s11:eth:prof         e7:eth:s11:prof     e7:s11:prof		e7:prof                    e7         --std=c++1y
-e7:s8:eth:debug        e7:eth:s8:debug    e7:s8:debug	e7:debug                           e7         --std=c++1y
-e7:s8:eth:prof         e7:eth:s8:prof     e7:s8:prof		e7:prof                    e7         --std=c++1y
+e9:s21:eth:debug        e9:eth:s21:debug    e9:s21:debug	e9:debug                   e9:debug   --std=c++1y
+e9:s21:eth:prof         e9:eth:s21:prof     e9:s21:prof		e9:prof                    e9:prof    --std=c++1y
+e7:s21:eth:debug        e7:eth:s21:debug    e7:s21:debug	e7:debug                   e7:debug   --std=c++1y
+e7:s21:eth:prof         e7:eth:s21:prof     e7:s21:prof		e7:prof                    e7:prof    --std=c++1y
+e9:s15:eth:debug        e9:eth:s15:debug    e9:s15:debug	e9:debug                   e9:debug   --std=c++1y
+e9:s15:eth:prof         e9:eth:s15:prof     e9:s15:prof		e9:prof                    e9:prof    --std=c++1y
+e7:s15:eth:debug        e7:eth:s15:debug    e7:s15:debug	e7:debug                   e7:debug   --std=c++1y
+e7:s15:eth:prof         e7:eth:s15:prof     e7:s15:prof		e7:prof                    e7:prof    --std=c++1y
+e7:s11:eth:debug        e7:eth:s11:debug    e7:s11:debug	e7:debug                   e7:debug   --std=c++1y
+e7:s11:eth:prof         e7:eth:s11:prof     e7:s11:prof		e7:prof                    e7:prof    --std=c++1y
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:
