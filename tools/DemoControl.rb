@@ -297,9 +297,9 @@ class CommandLineParser
       end
 
 
-      opts.on("--dtc [host,port,board_id]", Array, 
+      opts.on("--dtc [host,port,board_id,sim_mode]", Array, 
               "Add a DTC fragment receiver that runs on the specified host, port, ",
-              "and board ID.") do |dtc|
+              "board ID, and Simulation Mode.") do |dtc|
         if dtc.length != 3
           puts "You must specify a host, port, and board ID."
           exit
@@ -308,6 +308,7 @@ class CommandLineParser
         dtcConfig.host = dtc[0]
         dtcConfig.port = Integer(dtc[1])
         dtcConfig.board_id = Integer(dtc[2])
+        dtcConfig.sim_mode = Integer(dtc[3])
         dtcConfig.kind = "DTC"
         dtcConfig.index = (@options.dtcs).length
         dtcConfig.board_reader_index = addToBoardReaderList(dtcConfig.host, dtcConfig.port,
@@ -460,10 +461,10 @@ class CommandLineParser
              item.index,
              item.board_id]
         when "DTC"
-          puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d" %
+          puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d, sim_mode %d" %
             [item.port,
              item.index,
-             item.board_id]
+             item.board_id, item.sim_mode]
         end
       end
       puts ""
@@ -537,7 +538,7 @@ class SystemControl
                                         boardreaderOptions.board_id, kind)
           elsif kind == "DTC"
             generatorCode = generateDTC(boardreaderOptions.index,
-                                        boardreaderOptions.board_id)
+                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode)
           end
 
           cfg = generateBoardReaderMain(totalEBs, totalFRs,
