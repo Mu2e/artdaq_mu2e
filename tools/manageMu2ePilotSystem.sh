@@ -1,4 +1,4 @@
-1#!/bin/bash
+#!/bin/bash
 
 source `which setupDemoEnvironment.sh` ""
 
@@ -283,7 +283,7 @@ fi
 
 # build the logfile name
 TIMESTAMP=`date '+%Y%m%d%H%M%S'`
-logFile="/tmp/masterControl/dsMC-${TIMESTAMP}-${command}.log"
+logFile="/home/mu2edaq/daqlogs/masterControl/dsMC-${TIMESTAMP}-${command}.log"
 echo "${originalCommand}" > $logFile
 echo ">>> ${originalCommand} (Disk writing is ${diskWriting})"
 

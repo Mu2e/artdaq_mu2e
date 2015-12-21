@@ -300,8 +300,8 @@ class CommandLineParser
       opts.on("--dtc [host,port,board_id,sim_mode]", Array, 
               "Add a DTC fragment receiver that runs on the specified host, port, ",
               "board ID, and Simulation Mode.") do |dtc|
-        if dtc.length != 3
-          puts "You must specify a host, port, and board ID."
+        if dtc.length != 4
+          puts "You must specify a host, port, board ID, and simMode."
           exit
         end
         dtcConfig = OpenStruct.new

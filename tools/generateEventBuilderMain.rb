@@ -36,7 +36,7 @@ services: {
 
 outputs: {
   %{netmon_output}netMonOutput: {
-  %{netmon_output}  module_type: NetMonOutput
+  %{netmon_output}  module_type: RootMPIOutput
   %{netmon_output}}
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput

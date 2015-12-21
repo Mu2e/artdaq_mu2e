@@ -8,7 +8,7 @@ tempFile="$logroot/pmtConfig.$$"
 
 echo "Currently the Pilot System is a 5x50x2 ARTDAQ configuration"
 
-echo "BoardReaderMain mu2edaq04..fnal.gov ${MU2EARTDAQ_BR_PORT[0]}" >> $tempFile
+echo "BoardReaderMain mu2edaq04.fnal.gov ${MU2EARTDAQ_BR_PORT[0]}" >> $tempFile
 echo "BoardReaderMain mu2edaq05.fnal.gov ${MU2EARTDAQ_BR_PORT[1]}" >> $tempFile
 echo "BoardReaderMain mu2edaq06.fnal.gov ${MU2EARTDAQ_BR_PORT[2]}" >> $tempFile
 echo "BoardReaderMain mu2edaq07.fnal.gov ${MU2EARTDAQ_BR_PORT[3]}" >> $tempFile
