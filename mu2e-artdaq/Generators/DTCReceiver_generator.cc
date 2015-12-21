@@ -80,6 +80,11 @@ mu2e::DTCReceiver::~DTCReceiver()
 
 bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags)
 {
+  return getNextDTCFragment(frags);
+}
+
+bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
+{
 	if (should_stop())
 	{
 		return false;
