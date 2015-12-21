@@ -38,6 +38,10 @@ namespace mu2e {
     explicit DTCReceiver(fhicl::ParameterSet const & ps);
     virtual ~DTCReceiver();
 
+    bool getNextDTCFragment(artdaq::FragmentPtrs & output);
+	DTCLib::DTC_SimMode GetMode() { return mode_; }
+    FragmentType GetFragmentType() { return fragment_type_; }
+
   private:
 
     // The "getNext_" function is used to implement user-specific
