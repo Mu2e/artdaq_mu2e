@@ -11,7 +11,6 @@
 
 #include "mu2e-artdaq-core/Overlays/DebugFragmentWriter.hh"
 
-
 #include "mu2e-artdaq-core/Overlays/TrackerFragmentReader.hh"
 #include "mu2e-artdaq-core/Overlays/CalorimeterFragmentReader.hh"
 #include "mu2e-artdaq-core/Overlays/CosmicVetoFragmentReader.hh"
@@ -78,7 +77,7 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const & ps) :
   stickyDebugType_(ps.get<bool>("stickyDebugType", false))
 {
     std::vector<artdaq::Fragment::type_t> const ftypes = 
-      {FragmentType::TOY1, FragmentType::TOY2 , FragmentType::TRK, FragmentType::CAL, FragmentType::CRV, FragmentType::DBG};
+      {FragmentType::TRK, FragmentType::CAL, FragmentType::CRV, FragmentType::DBG};
 
   if (std::find( ftypes.begin(), ftypes.end(), fragment_type_) == ftypes.end() ) {
     throw cet::exception("Error in OverlayTest: unexpected fragment type supplied to constructor");

@@ -9,7 +9,6 @@
 #include "artdaq-core/Data/Fragments.hh"
 
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
-#include "mu2e-artdaq-core/Overlays/ToyFragment.hh"
 
 #include "cetlib/exception.h"
 
@@ -167,8 +166,6 @@ void mu2e::WFViewer::analyze (art::Event const & e) {
     // Pointers to the types of fragment overlays WFViewer can handle;
     // only one will be used per fragment, of course
 
-    std::unique_ptr<ToyFragment> toyPtr;
-    
     //  const auto& frag( fragments[i] );  // Basically a shorthand
 
     //    if (i == 0) 
@@ -194,16 +191,6 @@ void mu2e::WFViewer::analyze (art::Event const & e) {
 
     switch ( fragtype ) {
 
-    case FragmentType::TOY1: 
-      toyPtr.reset( new ToyFragment(frag ));
-      total_adc_values = toyPtr->total_adc_values();
-      max_adc_count = pow(2, frag.template metadata<ToyFragment::Metadata>()->num_adc_bits) -1;
-      break;
-    case FragmentType::TOY2: 
-      toyPtr.reset( new ToyFragment(frag ));
-      total_adc_values = toyPtr->total_adc_values();
-      max_adc_count = pow(2, frag.template metadata<ToyFragment::Metadata>()->num_adc_bits) -1;
-      break;
     default: 
       throw cet::exception("Error in WFViewer: unknown fragment type supplied");
     }
@@ -229,14 +216,6 @@ void mu2e::WFViewer::analyze (art::Event const & e) {
     // stuck with this switch code...
 
     switch ( fragtype ) {
-
-
-    case FragmentType::TOY1: 
-    case FragmentType::TOY2: 
-      for (auto val = toyPtr->dataBegin(); val != toyPtr->dataEnd(); ++val ) 
-	histograms_[ind]->Fill( *val );
-      break;
-  
     default: 
       throw cet::exception("Error in WFViewer: unknown fragment type supplied");
     }
@@ -273,15 +252,6 @@ void mu2e::WFViewer::analyze (art::Event const & e) {
       // Is there some way to templatize an ART module? If not, we're stuck with this awkward switch code...
 
       switch ( fragtype ) {
-
-
-      case FragmentType::TOY1: 
-      case FragmentType::TOY2: 
-	{
-	  std::copy (toyPtr->dataBegin (), toyPtr->dataBegin() + total_adc_values, graphs_[ind]->GetY ());
-	}
-	break;
-  
       default: 
 	throw cet::exception("Error in WFViewer: unknown fragment type supplied");
       }

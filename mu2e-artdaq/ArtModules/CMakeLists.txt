@@ -4,8 +4,6 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
   LIB_LIBRARIES mu2e-artdaq-core_Overlays
 )
 
-simple_plugin(ToyDump "module")
-
 simple_plugin(DTCDump "module"
   mu2e-artdaq-core_Overlays
   DTCInterface
