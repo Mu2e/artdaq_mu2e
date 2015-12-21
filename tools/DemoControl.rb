@@ -260,8 +260,8 @@ class CommandLineParser
       opts.on("--mu2e [host,port,board_id,sim_mode]", Array, 
               "Add a Mu2e fragment receiver that runs on the specified host, port, ",
               "board ID, and Simulation Mode.") do |mu2e|
-        if mu2e.length != 3
-          puts "You must specify a host, port, and board ID."
+        if mu2e.length != 4
+          puts "You must specify a host, port, board ID, and sim_mode."
           exit
         end
         mu2eConfig = OpenStruct.new
