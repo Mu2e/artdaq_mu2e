@@ -32,17 +32,5 @@ simple_plugin(OverlayTest "generator"
   DTCInterface
   )
 
-simple_plugin( RootFile "generator"
-  mu2e-artdaq-core_Overlays
-  ${ARTDAQ_APPLICATION}
-  ${ARTDAQ_DAQDATA}
-  ${ARTDAQ_UTILITIES}
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${CETLIB}
-  ${MF_MESSAGELOGGER}
-  DTCInterface
-  )
-
 install_headers()
 install_source()
