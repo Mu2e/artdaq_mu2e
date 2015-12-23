@@ -18,17 +18,15 @@ services: {
   scheduler: {
     fileMode: NOMERGE
   }
-  user: {
-    NetMonTransportServiceInterface: {
-      service_provider: NetMonTransportService
-      first_data_receiver_rank: %{ag_rank}
-      mpi_buffer_count: %{netmonout_buffer_count}
-      max_fragment_size_words: %{size_words}
-      data_receiver_count: 1 # %{ag_count}
-      #broadcast_sends: true
-    }
+  NetMonTransportServiceInterface: {
+    service_provider: NetMonTransportService
+    first_data_receiver_rank: %{ag_rank}
+    mpi_buffer_count: %{netmonout_buffer_count}
+    max_fragment_size_words: %{size_words}
+    data_receiver_count: 1 # %{ag_count}
+    #broadcast_sends: true
   }
-  Timing: { summaryOnly: true }
+  TimeTracker: { summaryOnly: true }
   #SimpleMemoryCheck: { }
 }
 

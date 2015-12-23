@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include <unistd.h>
+#include "trace.h"
 
 #define TRACE_NAME "MU2EDEV"
 
@@ -160,7 +161,9 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
 
 	newfrag.set_hdr_timestamp(ts.GetTimestamp(true));
 
+	TRACE(3, "DTC Response for timestamp %lu includes %i packets.", ts.GetTimestamp(true), packetCount);
 	newfrag.resize(packetCount);
+	TRACE(3, "DTCFragment size: %lu",newfrag.size() * sizeof(artdaq::Fragment::value_type));
 
 	size_t packetsProcessed = 0;
 	for (size_t i = 0; i < data.size(); ++i)

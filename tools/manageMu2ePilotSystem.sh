@@ -25,7 +25,6 @@ function launch() {
       enableSerial="-e"
   fi
 
-#    --dtc `mu2edaq02.dhcp.fnal.gov`,${MU2EARTDAQ_BR_PORT[0]},0 \
   DemoControl.rb ${enableSerial} -s -c $1 \
     --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,1 \
     --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,1 \
