@@ -19,7 +19,7 @@ bindir      fq_dir      bin
 product		version		optional
 artdaq		v1_12_14
 mu2e_artdaq_core v1_00_02
-pcie_linux_kernel_module v1_05_04
+pcie_linux_kernel_module v1_05_05
 mongodb         v3_0_7
 cetbuildtools	v4_17_02	-	only_for_build
 end_product_list
