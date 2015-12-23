@@ -7,17 +7,26 @@ run_number: 101
 
 fragment_receiver: {
 
-   # Parameters defining and configuring the fragment generator to be used
-   		    
-   generator: DTCReceiver 
-   ring_0_roc_count: 1
+# Parameters defining and configuring the fragment generator to be used
+
+   generator: OverlayTest
+#   fragment_type: TRK        # Make sure downstream modules know about this fragment_type!
+#   fragment_type: CAL        # Make sure downstream modules know about this fragment_type!
+#   fragment_type: CRV        # Make sure downstream modules know about this fragment_type!
+   fragment_type: DBG        # Make sure downstream modules know about this fragment_type!
+   nADCcounts: 100
+   random_seed: 6514
+
+   ring_0_roc_count: 5
    ring_0_timing_enabled: false
-   debug_print: true
+   ring_0_roc_emulator_enabled: true
+   #debug_print: false
+   #sim_mode: "Calorimeter"
+
 
    # Parameters configuring the fragment generator's parent class
    # artdaq::CommandableFragmentGenerator
 
-   fragment_id: 0
    board_id: 0
 }  		  
 
@@ -38,28 +47,22 @@ physics:
 {
   analyzers:
   {
-#    dtcDump:
-#    {
-#      module_type: DTCDump
-#      raw_data_label: daq
-#      frag_type: @local::fragment_receiver.fragment_type
-#      num_packets_to_show: 2 # DataHeaderPacket and up to num_packets_to_show - 1 DataPackets
-#    }
+    toyDump:
+    {
+      module_type: ToyDump
+      raw_data_label: daq
+      frag_type: @local::fragment_receiver.fragment_type
+      num_adcs_to_show: 10   # Obviously this should be no more than ADC counts per fragment
+    }
   }
 
-#  a1: [ dtcDump ]
-  e1: [ out1, rootout ]
-#  end_paths: [ a1 ]
+  a1: [ toyDump ]
+#  e1: [ out1 ]
+  end_paths: [ a1 ]
 }
 
 outputs:
 {
- rootout:
-  {
-    module_type: RootOutput
-    fileName: "driver.root"
-    compressionLevel: 0
-  }
   out1:
   {
     module_type: FileDumperOutput
@@ -72,10 +75,7 @@ source:
 module_type: RawInput
 waiting_time: 900
 resume_after_timeout: true
-fragment_type_map: [[2, "DTC"] ]
+fragment_type_map: [ [5, "TRK"], [6, "CAL"], [7, "CRV"] ]
 }
 
 process_name: Driver
-
-
-

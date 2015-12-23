@@ -1,7 +1,10 @@
-cet_script(setupDemoEnvironment.sh DemoControl.rb start2x2System.sh
-manage2x2System.sh start2x2x2System.sh manage2x2x2System.sh
+cet_script(setupDemoEnvironment.sh DemoControl.rb 
+start2x2System.sh manage2x2System.sh 
+start2x2x2System.sh manage2x2x2System.sh
+startMu2ePilotSystem.sh manageMu2ePilotSystem.sh
+start2x2x2SingleNodeSystem.sh manage2x2x2SingleNodeSystem.sh
 CreateNewFragmentGenerator.rb  generateEventBuilderMain.rb
-generateWFViewer.rb generateEventBuilder.rb demo_utilities.rb generateToy.rb
+generateWFViewer.rb generateEventBuilder.rb demo_utilities.rb generateMu2e.rb
 generateDTC.rb generateAggregator.rb generateAggregatorMain.rb generateBoardReaderMain.rb RunDriver.rb)
 
 

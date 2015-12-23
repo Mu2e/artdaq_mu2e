@@ -64,11 +64,11 @@ fi
 ##################################
 # port numbers
 let MU2EARTDAQ_PMT_PORT=${basePort}
-for idx in {0..19}
+for idx in {0..99}
 do
     let MU2EARTDAQ_BR_PORT[idx]=${basePort}+5+idx
-    let MU2EARTDAQ_EB_PORT[idx]=${basePort}+35+idx
-    let MU2EARTDAQ_AG_PORT[idx]=${basePort}+65+idx
+    let MU2EARTDAQ_EB_PORT[idx]=${basePort}+105+idx
+    let MU2EARTDAQ_AG_PORT[idx]=${basePort}+205+idx
 done
 #export MU2EARTDAQ_BR_PORT
 #export MU2EARTDAQ_EB_PORT

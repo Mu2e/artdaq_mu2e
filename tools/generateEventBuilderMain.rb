@@ -18,17 +18,15 @@ services: {
   scheduler: {
     fileMode: NOMERGE
   }
-  user: {
-    NetMonTransportServiceInterface: {
-      service_provider: NetMonTransportService
-      first_data_receiver_rank: %{ag_rank}
-      mpi_buffer_count: %{netmonout_buffer_count}
-      max_fragment_size_words: %{size_words}
-      data_receiver_count: 1 # %{ag_count}
-      #broadcast_sends: true
-    }
+  NetMonTransportServiceInterface: {
+    service_provider: NetMonTransportService
+    first_data_receiver_rank: %{ag_rank}
+    mpi_buffer_count: %{netmonout_buffer_count}
+    max_fragment_size_words: %{size_words}
+    data_receiver_count: 1 # %{ag_count}
+    #broadcast_sends: true
   }
-  Timing: { summaryOnly: true }
+  TimeTracker: { summaryOnly: true }
   #SimpleMemoryCheck: { }
 }
 
@@ -36,7 +34,7 @@ services: {
 
 outputs: {
   %{netmon_output}netMonOutput: {
-  %{netmon_output}  module_type: NetMonOutput
+  %{netmon_output}  module_type: RootMPIOutput
   %{netmon_output}}
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput
@@ -62,7 +60,7 @@ source: {
   module_type: RawInput
   waiting_time: 900
   resume_after_timeout: true
-  fragment_type_map: [[1, \"missed\"], [2, \"TOY1\"], [3, \"TOY2\"]]
+  fragment_type_map: [[1, \"missed\"], [2, \"DTC\"], [3, \"TOY1\"], [4, \"TOY2\"]]
 }
 process_name: DAQ" )
 
@@ -105,7 +103,7 @@ end
 
 
 currentTime = Time.now
-fileName = "artdaqdemo_eb%02d_" % ebIndex
+fileName = "mu2e_eb%02d_" % ebIndex
 fileName += "r%06r_sr%02s_%to"
 fileName += ".root"
 outputFile = File.join(dataDir, fileName)

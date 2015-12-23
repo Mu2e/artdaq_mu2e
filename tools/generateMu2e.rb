@@ -7,11 +7,11 @@
 
 require File.join( File.dirname(__FILE__), 'demo_utilities' )
   
-def generateDTC(startingFragmentId, boardId, simMode = 0)
+def generateMu2e(startingFragmentId, boardId, simMode = 0)
 
-  dtcConfig = String.new( "\
-    generator: DTCReceiver
-    fragment_type: \"DTC\"
+  mu2eConfig = String.new( "\
+    generator: Mu2eReceiver
+    fragment_type: \"MU2E\"
     fragment_id: %{starting_fragment_id}
     board_id: %{board_id} \
     ring_0_roc_count: 1 \
@@ -21,10 +21,10 @@ def generateDTC(startingFragmentId, boardId, simMode = 0)
     sim_mode: %{simulation_mode}" \
                           + read_fcl("DTCReceiver.fcl") )
   
-  dtcConfig.gsub!(/\%\{starting_fragment_id\}/, String(startingFragmentId))
-  dtcConfig.gsub!(/\%\{board_id\}/, String(boardId))
-  dtcConfig.gsub!(/\%\{simulation_mode\}/, String(simMode))
+  mu2eConfig.gsub!(/\%\{starting_fragment_id\}/, String(startingFragmentId))
+  mu2eConfig.gsub!(/\%\{board_id\}/, String(boardId))
+  mu2eConfig.gsub!(/\%\{simulation_mode\}/, String(simMode))
 
-  return dtcConfig
+  return mu2eConfig
 
 end

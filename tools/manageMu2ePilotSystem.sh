@@ -2,7 +2,7 @@
 
 source `which setupDemoEnvironment.sh` ""
 
-AGGREGATOR_NODE=`hostname`
+AGGREGATOR_NODE=mu2edaq01.fnal.gov
 THIS_NODE=`hostname -s`
 
 # this function expects a number of arguments:
@@ -25,14 +25,64 @@ function launch() {
       enableSerial="-e"
   fi
 
-#    --dtc `mu2edaq02.dhcp.fnal.gov`,${MU2EARTDAQ_BR_PORT[0]},0 \
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --dtc mu2edaq03.dhcp.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0 \
-    --dtc mu2edaq02.dhcp.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1 \
-    --eb `hostname`,${MU2EARTDAQ_EB_PORT[0]} \
-    --eb `hostname`,${MU2EARTDAQ_EB_PORT[1]} \
-    --ag `hostname`,${MU2EARTDAQ_AG_PORT[0]},1 \
-    --ag `hostname`,${MU2EARTDAQ_AG_PORT[1]},1 \
+    --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,1 \
+    --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,1 \
+    --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,1 \
+    --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,1 \
+    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,2 \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[0]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[1]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[2]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[3]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[4]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[5]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[6]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[7]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[8]} \
+    --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[9]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[10]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[11]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[12]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[13]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[14]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[15]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[16]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[17]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[18]} \
+    --eb mu2edaq05.fnal.gov,${MU2EARTDAQ_EB_PORT[19]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[20]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[21]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[22]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[23]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[24]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[25]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[26]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[27]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[28]} \
+    --eb mu2edaq06.fnal.gov,${MU2EARTDAQ_EB_PORT[29]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[30]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[31]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[32]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[33]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[34]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[35]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[36]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[37]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[38]} \
+    --eb mu2edaq07.fnal.gov,${MU2EARTDAQ_EB_PORT[39]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[40]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[41]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[42]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[43]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[44]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[45]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[46]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[47]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[48]} \
+    --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[49]} \
+    --ag mu2edaq01.fnal.gov,${MU2EARTDAQ_AG_PORT[0]},1 \
+    --ag mu2edaq01.fnal.gov,${MU2EARTDAQ_AG_PORT[1]},1 \
     --data-dir ${4} --online-monitoring $3 \
     --write-data ${6} --run-event-count ${7} \
     --run-duration ${8} --file-size ${9} \
@@ -101,7 +151,7 @@ Examples: ${scriptName} -p 32768 init
 originalCommand="$0 $*"
 onmonEnable=off
 diskWriting=1
-dataDir="/tmp"
+dataDir="/home/mu2edaq/data"
 runNumber=""
 runEventCount=0
 runDuration=0
@@ -232,7 +282,7 @@ fi
 
 # build the logfile name
 TIMESTAMP=`date '+%Y%m%d%H%M%S'`
-logFile="/tmp/masterControl/dsMC-${TIMESTAMP}-${command}.log"
+logFile="/home/mu2edaq/daqlogs/masterControl/dsMC-${TIMESTAMP}-${command}.log"
 echo "${originalCommand}" > $logFile
 echo ">>> ${originalCommand} (Disk writing is ${diskWriting})"
 

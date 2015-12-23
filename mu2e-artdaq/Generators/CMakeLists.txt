@@ -1,4 +1,4 @@
-simple_plugin(ToySimulator "generator"
+simple_plugin(DTCReceiver "generator"
   mu2e-artdaq-core_Overlays
   ${ARTDAQ_APPLICATION}
   ${ARTDAQ_DAQDATA}
@@ -9,7 +9,8 @@ simple_plugin(ToySimulator "generator"
   DTCInterface
   )
 
-simple_plugin(DTCReceiver "generator"
+simple_plugin(Mu2eReceiver "generator"
+  mu2e-artdaq_Generators_DTCReceiver_generator
   mu2e-artdaq-core_Overlays
   ${ARTDAQ_APPLICATION}
   ${ARTDAQ_DAQDATA}
@@ -36,27 +37,11 @@ simple_plugin( RootFile "generator"
   ${ARTDAQ_APPLICATION}
   ${ARTDAQ_DAQDATA}
   ${ARTDAQ_UTILITIES}
-  ${ARTDAQ_ARTMODULES}
-  ${ARTDAQ_ARTMODULES_DICT}
-  ${ARTDAQ-CORE_DATA}
-  ${ARTDAQ-CORE_DATA_DICT}
   ${ART_UTILITIES}
-  ${ART_PERSISTENCY_COMMON}
-  ${ART_PERSISTENCY_COMMON_DICT}
-  ${ART_PERSISTENCY_PROVENANCE}
-  ${ART_PERSISTENCY_PROVENANCE_DICT}
-  ${ART_PERSISTENCY_FHICLCPPDICTIONARIES}
-  ${ART_PERSISTENCY_FHICLCPPDICTIONARIES_DICT}
-  ${ART_PERSISTENCY_CETLIBDICTIONARIES}
-  ${ART_PERSISTENCY_CETLIBDICTIONARIES_DICT}
   ${FHICLCPP}
   ${CETLIB}
-  ${ROOT_CINTEX}
-  ${ROOT_CORE}
-  ${ROOT_RIO}
-  ${ROOT_TREE}
-  ${ROOT_CINT}
-  ${ROOT_REFLEX}
+  ${MF_MESSAGELOGGER}
+  DTCInterface
   )
 
 install_headers()

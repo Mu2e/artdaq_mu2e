@@ -22,7 +22,7 @@ require File.join( File.dirname(__FILE__), 'demo_utilities' )
 # arguments, will generate FHiCL code usable by the artdaq processes
 # (BoardReaderMain, EventBuilderMain, AggregatorMain)
 
-require File.join( File.dirname(__FILE__), 'generateToy' )
+require File.join( File.dirname(__FILE__), 'generateMu2e' )
 require File.join( File.dirname(__FILE__), 'generateDTC' )
 require File.join( File.dirname(__FILE__), 'generateWFViewer' )
 
@@ -167,7 +167,7 @@ daq: {
 
   def generateXmlRpcClientList(cmdLineOptions)
     xmlrpcClients = ""
-    (cmdLineOptions.toys).each do |proc|
+    (cmdLineOptions.mu2es + cmdLineOptions.dtcs).each do |proc|
       br = cmdLineOptions.boardReaders[proc.board_reader_index]
       if br.hasBeenIncludedInXMLRPCList
         next
@@ -204,7 +204,7 @@ class CommandLineParser
     @options = OpenStruct.new
     @options.aggregators = []
     @options.eventBuilders = []
-    @options.toys = []
+    @options.mu2es = []
     @options.dtcs = []
     @options.boardReaders = []
     @options.dataDir = nil
@@ -257,57 +257,37 @@ class CommandLineParser
         @options.aggregators << agConfig
       end
     
-
-      opts.on("--toy1 [host,port,board_id]", Array, 
-              "Add a TOY1 fragment receiver that runs on the specified host, port, ",
-              "and board ID.") do |toy1|
-        if toy1.length != 3
-          puts "You must specify a host, port, and board ID."
+      opts.on("--mu2e [host,port,board_id,sim_mode]", Array, 
+              "Add a Mu2e fragment receiver that runs on the specified host, port, ",
+              "board ID, and Simulation Mode.") do |mu2e|
+        if mu2e.length != 4
+          puts "You must specify a host, port, board ID, and sim_mode."
           exit
         end
-        toy1Config = OpenStruct.new
-        toy1Config.host = toy1[0]
-        toy1Config.port = Integer(toy1[1])
-        toy1Config.board_id = Integer(toy1[2])
-        toy1Config.kind = "TOY1"
-        toy1Config.index = (@options.toys).length
-        toy1Config.board_reader_index = addToBoardReaderList(toy1Config.host, toy1Config.port,
-                                                              toy1Config.kind, toy1Config.index)
-        @options.toys << toy1Config
+        mu2eConfig = OpenStruct.new
+        mu2eConfig.host = mu2e[0]
+        mu2eConfig.port = Integer(mu2e[1])
+        mu2eConfig.board_id = Integer(mu2e[2])
+        mu2eConfig.sim_mode = Integer(mu2e[3])
+        mu2eConfig.kind = "MU2E"
+        mu2eConfig.index = (@options.mu2es).length
+        mu2eConfig.board_reader_index = addToBoardReaderList(mu2eConfig.host, mu2eConfig.port,
+                                                              mu2eConfig.kind, mu2eConfig.index)
+        @options.mu2es << mu2eConfig
       end
 
-
-      opts.on("--toy2 [host,port,board_id]", Array, 
-              "Add a TOY2 fragment receiver that runs on the specified host, port, ",
-              "and board ID.") do |toy2|
-        if toy2.length != 3
-          puts "You must specify a host, port, and board ID."
-          exit
-        end
-        toy2Config = OpenStruct.new
-        toy2Config.host = toy2[0]
-        toy2Config.port = Integer(toy2[1])
-        toy2Config.board_id = Integer(toy2[2])
-        toy2Config.kind = "TOY2"
-        toy2Config.index = (@options.toys).length
-        toy2Config.board_reader_index = addToBoardReaderList(toy2Config.host, toy2Config.port,
-                                                              toy2Config.kind, toy2Config.index)
-
-        @options.toys << toy2Config
-      end
-
-
-      opts.on("--dtc [host,port,board_id]", Array, 
+      opts.on("--dtc [host,port,board_id,sim_mode]", Array, 
               "Add a DTC fragment receiver that runs on the specified host, port, ",
-              "and board ID.") do |dtc|
-        if dtc.length != 3
-          puts "You must specify a host, port, and board ID."
+              "board ID, and Simulation Mode.") do |dtc|
+        if dtc.length != 4
+          puts "You must specify a host, port, board ID, and simMode."
           exit
         end
         dtcConfig = OpenStruct.new
         dtcConfig.host = dtc[0]
         dtcConfig.port = Integer(dtc[1])
         dtcConfig.board_id = Integer(dtc[2])
+        dtcConfig.sim_mode = Integer(dtc[3])
         dtcConfig.kind = "DTC"
         dtcConfig.index = (@options.dtcs).length
         dtcConfig.board_reader_index = addToBoardReaderList(dtcConfig.host, dtcConfig.port,
@@ -432,7 +412,7 @@ class CommandLineParser
     # is running on which host.
     puts "Configuration Summary:"
     hostMap = {}
-    (@options.eventBuilders + @options.dtcs + @options.toys + @options.aggregators).each do |proc|
+    (@options.eventBuilders + @options.dtcs + @options.mu2es + @options.aggregators).each do |proc|
       if not hostMap.keys.include?(proc.host)
         hostMap[proc.host] = []
       end
@@ -453,17 +433,16 @@ class CommandLineParser
           puts "    EventBuilder, port %d, rank %d" % [item.port, totalFRs + item.index]
         when "ag"
           puts "    Aggregator, port %d, rank %d" % [item.port, totalEBs + totalFRs + item.index]
-        when "TOY1", "TOY2"
-          puts "    FragmentReceiver, Simulated %s, port %d, rank %d, board_id %d" % 
-            [item.kind.upcase,
-             item.port,
-             item.index,
-             item.board_id]
-        when "DTC"
-          puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d" %
+        when "MU2E"
+          puts "    FragmentReceiver, DTC Card Fragment Bundler, port %s, rank %d, board_id %s, sim_mode %d" % 
             [item.port,
              item.index,
-             item.board_id]
+             item.board_id, item.sim_mode]
+        when "DTC"
+          puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d, sim_mode %d" %
+            [item.port,
+             item.index,
+             item.board_id, item.sim_mode]
         end
       end
       puts ""
@@ -493,20 +472,10 @@ class SystemControl
   def init()
     ebIndex = 0
     agIndex = 0
-    totaltoy1s = 0
-    totaltoy2s = 0
+    totalmu2es = @options.mu2es.length
     totaldtcs = @options.dtcs.length
 
-    @options.toys.each do |proc|
-      case proc.kind
-      when "TOY1"
-        totaltoy1s += 1
-      when "TOY2"
-        totaltoy2s += 1
-      end
-    end
-
-    totalBoards = @options.toys.length + @options.dtcs.length
+    totalBoards = @options.mu2es.length + @options.dtcs.length
     totalFRs = @options.boardReaders.length
     totalEBs = @options.eventBuilders.length
     totalAGs = @options.aggregators.length
@@ -526,18 +495,18 @@ class SystemControl
 
     # John F., 1/21/14 -- added the toy fragment generators
 
-    (@options.toys + @options.dtcs).each { |boardreaderOptions|
+    (@options.mu2es + @options.dtcs).each { |boardreaderOptions|
       br = @options.boardReaders[boardreaderOptions.board_reader_index]
       listIndex = 0
       br.kindList.each do |kind|
         if kind == boardreaderOptions.kind && br.boardIndexList[listIndex] == boardreaderOptions.index
 
-    	  if kind == "TOY1" || kind == "TOY2"
-            generatorCode = generateToy(boardreaderOptions.index,
-                                        boardreaderOptions.board_id, kind)
+    	  if kind == "MU2E"
+            generatorCode = generateMu2e(boardreaderOptions.index,
+                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode)
           elsif kind == "DTC"
             generatorCode = generateDTC(boardreaderOptions.index,
-                                        boardreaderOptions.board_id)
+                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode)
           end
 
           cfg = generateBoardReaderMain(totalEBs, totalFRs,
@@ -556,7 +525,7 @@ class SystemControl
 
     threads = []
 
-    (@options.toys + @options.dtcs).each { |proc|
+    (@options.mu2es + @options.dtcs).each { |proc|
       br = @options.boardReaders[proc.board_reader_index]
       if br.boardCount > 1
         if br.commandHasBeenSent
@@ -606,8 +575,8 @@ class SystemControl
                                         ebOptions.port)
 
 
-      fclWFViewer = generateWFViewer( (@options.toys).map { |board| board.board_id },
-                                      (@options.toys).map { |board| board.kind }
+      fclWFViewer = generateWFViewer( (@options.mu2es).map { |board| board.board_id },
+                                      (@options.mu2es).map { |board| board.kind }
                                       )
 
       cfg = generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs,
@@ -642,8 +611,8 @@ class SystemControl
                                           agOptions.port)
 
 
-      fclWFViewer = generateWFViewer( (@options.toys + @options.dtcs).map { |board| board.board_id },
-                                      (@options.toys + @options.dtcs).map { |board| board.kind }
+      fclWFViewer = generateWFViewer( (@options.mu2es + @options.dtcs).map { |board| board.board_id },
+                                      (@options.mu2es + @options.dtcs).map { |board| board.kind }
                                       )
 
 
@@ -678,7 +647,7 @@ class SystemControl
   def start(runNumber)
     self.sendCommandSet("start", @options.aggregators, runNumber)
     self.sendCommandSet("start", @options.eventBuilders, runNumber)
-    self.sendCommandSet("start", @options.toys, runNumber)
+    self.sendCommandSet("start", @options.mu2es, runNumber)
     self.sendCommandSet("start", @options.dtcs, runNumber)
   end
 
@@ -732,14 +701,11 @@ class SystemControl
         when "ag"
           puts "%s: Aggregator on %s:%d result: %s" %
             [currentTime, proc.host, proc.port, result]
+        when "MU2E"
+          puts "%s: MU2E on %s:%d result: %s" %
+            [currentTime, proc.host, proc.port, result]
         when "DTC"
           puts "%s: DTC on %s:%d result: %s" %
-            [currentTime, proc.host, proc.port, result]
-        when "TOY1"
-          puts "%s: TOY1 FragmentReceiver on %s:%d result: %s" %
-            [currentTime, proc.host, proc.port, result]
-        when "TOY2"
-          puts "%s: TOY2 FragmentReceiver on %s:%d result: %s" %
             [currentTime, proc.host, proc.port, result]
         when "multi-board"
           puts "%s: multi-board FragmentReceiver on %s:%d result: %s" %
@@ -755,14 +721,14 @@ class SystemControl
 
   def shutdown()
     self.sendCommandSet("shutdown", @options.dtcs)
-    self.sendCommandSet("shutdown", @options.toys)
+    self.sendCommandSet("shutdown", @options.mu2es)
     self.sendCommandSet("shutdown", @options.eventBuilders)
     self.sendCommandSet("shutdown", @options.aggregators)
   end
 
   def pause()
     self.sendCommandSet("pause", @options.dtcs)
-    self.sendCommandSet("pause", @options.toys)
+    self.sendCommandSet("pause", @options.mu2es)
     self.sendCommandSet("pause", @options.eventBuilders)
     self.sendCommandSet("pause", @options.aggregators)
   end
@@ -897,7 +863,7 @@ class SystemControl
     end
 
     self.sendCommandSet("stop", @options.dtcs)
-    self.sendCommandSet("stop", @options.toys)
+    self.sendCommandSet("stop", @options.mu2es)
     self.sendCommandSet("stop", @options.eventBuilders)
     @options.aggregators.each do |proc|
       tmpList = []
@@ -909,21 +875,21 @@ class SystemControl
   def resume()
     self.sendCommandSet("resume", @options.aggregators)
     self.sendCommandSet("resume", @options.eventBuilders)
-    self.sendCommandSet("resume", @options.toys)
+    self.sendCommandSet("resume", @options.mu2es)
     self.sendCommandSet("resume", @options.dtcs)
   end
 
   def checkStatus()
     self.sendCommandSet("status", @options.aggregators)
     self.sendCommandSet("status", @options.eventBuilders)
-    self.sendCommandSet("status", @options.toys)    
+    self.sendCommandSet("status", @options.mu2es)    
     self.sendCommandSet("status", @options.dtcs)
   end
 
   def getLegalCommands()
     self.sendCommandSet("legal_commands", @options.aggregators)
     self.sendCommandSet("legal_commands", @options.eventBuilders)
-    self.sendCommandSet("legal_commands", @options.toys)    
+    self.sendCommandSet("legal_commands", @options.mu2es)    
     self.sendCommandSet("legal_commands", @options.dtcs)
   end
 end

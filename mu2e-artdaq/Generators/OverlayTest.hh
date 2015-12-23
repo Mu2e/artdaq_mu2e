@@ -24,6 +24,7 @@
 #include <queue>
 
 #include "dtcInterfaceLib/DTC.h"
+#include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 namespace mu2e {    
 
@@ -33,6 +34,32 @@ namespace mu2e {
     virtual ~OverlayTest();
 
   private:
+
+    std::bitset<128> bitArray(mu2e::DetectorFragment::adc_t const * beginning) {
+      // Return 128 bit bitset filled with bits starting at the indicated position in the fragment
+      std::bitset<128> theArray;
+      for(int bitIdx=127, adcIdx = 0; adcIdx<8; adcIdx++) {
+	for(int offset = 0; offset<16; offset++) {
+	  if( ( (*((mu2e::DetectorFragment::adc_t const *)(beginning+adcIdx))) & (1<<offset) ) != 0) {
+	    theArray.set(bitIdx);
+	  } else {
+	    theArray.reset(bitIdx);
+	  }
+	  bitIdx--;
+	}
+      }
+      return theArray;
+    }
+
+
+    mu2e::DetectorFragment::adc_t convertFromBinary(std::bitset<128> theArray, int minIdx, int maxIdx) {
+      std::bitset<16> retVal;
+      for(int i=minIdx+1; i<=maxIdx; i++) {
+	retVal.set(maxIdx-i,theArray[i]);
+      }
+      return retVal.to_ulong();
+    }
+
 
     // The "generateFragmentID" function is used to parse out the
     // ring and ROC numbers from a DTC header packet and combine
@@ -70,10 +97,17 @@ namespace mu2e {
     std::vector<void*> data;
 
     // State
+    size_t data_packets_read_;
     size_t events_read_;
-    bool isSimulatedDTC;
+    DTCLib::DTC_SimMode mode_;
+
+    // Debug Packet Settings
+    uint16_t debugPacketCount_;
+    DTCLib::DTC_DebugType debugType_;
+    bool stickyDebugType_;
 
     DTCLib::DTC* theInterface;
+    DTCLib::DTCSoftwareCFO* theCFO_;
 
   };
 }

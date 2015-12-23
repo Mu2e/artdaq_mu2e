@@ -1,8 +1,8 @@
 
 cet_test(driver_t HANDBUILT
    TEST_EXEC driver
-   TEST_ARGS -c driverToy.fcl
+   TEST_ARGS -c driverDTC.fcl
    DATAFILES
-   ../../tools/fcl/driverToy.fcl
+   ../../tools/fcl/driverDTC.fcl
 )
 
