@@ -35,9 +35,6 @@ namespace mu2e {
 
   private:
 
-
-
-
     std::bitset<128> bitArray(mu2e::DetectorFragment::adc_t const * beginning) {
       // Return 128 bit bitset filled with bits starting at the indicated position in the fragment
       std::bitset<128> theArray;
@@ -62,18 +59,6 @@ namespace mu2e {
       }
       return retVal.to_ulong();
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     // The "generateFragmentID" function is used to parse out the
