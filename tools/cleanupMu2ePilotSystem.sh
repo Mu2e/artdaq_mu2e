@@ -14,6 +14,9 @@ manageMu2ePilotSystem.sh shutdown
 
 sleep 5
 killall ruby
-
+killall AggregatorMain
 unsetup_all
+pssh -h /home/mu2edaq/pilotSystem.txt "killall BoardReaderMain"
+pssh -h /home/mu2edaq/pilotSystem.txt "killall EventBuilderMain"
+
 /home/mu2edaq/cleanup_trace.sh $startTime

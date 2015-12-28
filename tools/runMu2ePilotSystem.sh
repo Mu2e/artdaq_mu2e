@@ -1,5 +1,5 @@
 #!/bin/bash
-export TRACE_FILE=/tmp/trace_buffer_mu2edaq
+export TRACE_FILE=/tmp/trace_buffer_$USER
 pssh -i -h /home/mu2edaq/pilotSystem.txt "/home/mu2edaq/setup_trace.sh"
 cd /home/mu2edaq
 if [ -z "$MU2E_ARTDAQ_DIR" ]; then
