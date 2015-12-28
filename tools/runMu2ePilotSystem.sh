@@ -2,8 +2,10 @@
 export TRACE_FILE=/tmp/trace_buffer_mu2edaq
 pssh -i -h /home/mu2edaq/pilotSystem.txt "/home/mu2edaq/setup_trace.sh"
 cd /home/mu2edaq
-source /mu2e/ups/setup
-setup mu2e_artdaq v1_00_02 -qe7:prof:s15:eth
+if [ -z "$MU2E_ARTDAQ_DIR" ]; then
+  source /mu2e/ups/setup
+  setup mu2e_artdaq v1_00_02 -qe7:prof:s15:eth
+fi
 startMu2ePilotSystem.sh >/dev/null 2>&1 & # The "system" log goes to /daqlogs/pmt
 sleep 10
 manageMu2ePilotSystem.sh init
