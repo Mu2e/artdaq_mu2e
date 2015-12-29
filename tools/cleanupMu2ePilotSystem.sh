@@ -16,7 +16,7 @@ sleep 5
 killall ruby
 killall AggregatorMain
 unsetup_all
-pssh -h /home/mu2edaq/pilotSystem.txt "killall BoardReaderMain"
-pssh -h /home/mu2edaq/pilotSystem.txt "killall EventBuilderMain"
+rgang "mu2edaq0{4-8}" killall BoardReaderMain
+rgang "mu2edaq0{4-8}" killall EventBuilderMain
 
 /home/mu2edaq/cleanup_trace.sh $startTime
