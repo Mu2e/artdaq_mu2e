@@ -1,5 +1,5 @@
 #!/bin/bash
-startTime=`cat runNumbers.log|tail -1|cut -f2`
+startTime=`cat runNumbers.log|tail -1|awk '{print $2}'`
 echo "Killing system from $startTime"
 
 cd /home/mu2edaq

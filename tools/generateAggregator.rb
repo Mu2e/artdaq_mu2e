@@ -20,6 +20,16 @@ daq: {
     file_duration: %{file_duration}
     file_event_count: %{file_event_count}
   }
+  metrics: {
+    ganglia: {
+      metricPluginType: \"ganglia\"
+      level: 3
+      reporting_interval: 15.0
+
+      configFile: \"/home/mu2edaq/daqlogs/gmond.conf\"
+      group: \"ARTDAQ\"
+    }
+  }
 }" )
 
   agConfig.gsub!(/\%\{size_words\}/, String(fragSizeWords))

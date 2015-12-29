@@ -15,6 +15,16 @@ def generateBoardReaderMain(totalEBs, totalFRs, fragSizeWords, generatorCode)
 
     %{generator_code}
     }
+  metrics: {
+    ganglia: {
+      metricPluginType: \"ganglia\"
+      level: 3
+      reporting_interval: 15.0
+
+      configFile: \"/home/mu2edaq/daqlogs/gmond.conf\"
+      group: \"ARTDAQ\"
+    }
+  }
 }"
 )
   

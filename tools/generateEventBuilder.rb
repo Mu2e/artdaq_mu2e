@@ -13,6 +13,14 @@ daq: {
     print_event_store_stats: true
     verbose: %{verbose}
   }
+  metrics: {
+    ganglia: {
+      metricPluginType: \"ganglia\"
+      level: 3
+      configFile: \"/home/mu2edaq/daqlogs/gmond.conf\"
+      group: \"ARTDAQ\"
+    }
+  }
 } "
 )
 
