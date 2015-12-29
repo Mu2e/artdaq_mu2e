@@ -15,8 +15,10 @@ manageMu2ePilotSystem.sh shutdown
 sleep 5
 killall ruby
 killall AggregatorMain
-unsetup_all
+
 rgang "mu2edaq0{4-8}" killall BoardReaderMain
 rgang "mu2edaq0{4-8}" killall EventBuilderMain
 
-/home/mu2edaq/cleanup_trace.sh $startTime
+mkdir -p /home/mu2edaq/daqlogs/traceBuffers/$startTime
+
+rgang --do-local "mu2edaq0{1,4-8}" 'mv /tmp/trace_buffer_$USER /home/mu2edaq/daqlogs/traceBuffers/$startTime/`hostname`.trace'
