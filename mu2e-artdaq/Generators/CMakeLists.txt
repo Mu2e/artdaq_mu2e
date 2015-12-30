@@ -29,18 +29,7 @@ simple_plugin(OverlayTest "generator"
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${CETLIB}
-  DTCInterface
-  )
-
-simple_plugin( RootFile "generator"
-  mu2e-artdaq-core_Overlays
-  ${ARTDAQ_APPLICATION}
-  ${ARTDAQ_DAQDATA}
-  ${ARTDAQ_UTILITIES}
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${CETLIB}
-  ${MF_MESSAGELOGGER}
+  MF_MessageLogger
   DTCInterface
   )
 
