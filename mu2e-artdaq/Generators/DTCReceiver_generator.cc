@@ -92,6 +92,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
 	}
 
 	// Set fragment's metadata
+	TRACE(3, "DTCReceiver::getNextDTCFragment allocating DTCFragment metadata");
 	DTCFragment::Metadata metadata;
 	metadata.sim_mode = static_cast<int>(mode_);
 	metadata.run_number = run_number();

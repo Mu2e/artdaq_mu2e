@@ -1,5 +1,6 @@
 #!/bin/bash
 export TRACE_FILE=/tmp/trace_buffer_$USER
+export RGANG_RSH=/usr/bin/rsh
 rgang --do-local "mu2edaq0{1,4-8}" "/home/mu2edaq/setup_trace.sh"
 cd /home/mu2edaq
 if [ -z "$MU2E_ARTDAQ_DIR" ]; then
