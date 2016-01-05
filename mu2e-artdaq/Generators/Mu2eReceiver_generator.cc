@@ -26,7 +26,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 	, fragment_type_(toFragmentType("MU2E"))
 	, fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id()) }
 	, fragments_read_(0)
-    , mode_(DTCLib::DTC_SimMode_Disabled)
+	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
 {
   TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
@@ -63,16 +63,16 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 	};
 
 	for (int ring = 0; ring < 6; ++ring)
-	{
-		if (ringRocs[ring] >= 0)
-		{
-			theInterface_->EnableRing(DTCLib::DTC_Rings[ring],
-									  DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
-									  DTCLib::DTC_ROCS[ringRocs[ring]]);
-			if (ringEmulators[ring]) { theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]); }
-			else { theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]); }
-		}
-	}
+	  {
+	    if (ringRocs[ring] >= 0)
+	      {
+		theInterface_->EnableRing(DTCLib::DTC_Rings[ring],
+					  DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
+					  DTCLib::DTC_ROCS[ringRocs[ring]]);
+		if (ringEmulators[ring]) { theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]); }
+		else { theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]); }
+	      }
+	  }
 }
 
 mu2e::Mu2eReceiver::~Mu2eReceiver()
