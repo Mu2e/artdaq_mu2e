@@ -1,19 +1,9 @@
 #ifndef mu2e_artdaq_Generators_Mu2eReceiver_hh
 #define mu2e_artdaq_Generators_Mu2eReceiver_hh
 
-// Mu2eReceiver is a simple type of fragment generator intended to be
-// studied by new users of artdaq as an example of how to create such
-// a generator in the "best practices" manner. Derived from artdaq's
-// CommandableFragmentGenerator class, it can be used in a full DAQ
-// simulation, generating all ADC counts with equal probability via
-// the std::uniform_int_distribution class
-
-// Mu2eReceiver is designed to simulate values coming in from one of
-// two types of digitizer boards, one called "TOY1" and the other
-// called "TOY2"; the only difference between the two boards is the #
-// of bits in the ADC values they send. These values are declared as
-// FragmentType enum's in mu2e-artdaq's
-// mu2e-artdaq/Overlays/FragmentType.hh header.
+// Mu2eReceiver is designed to call the DTCInterfaceLibrary a certain number of times
+// (set in the mu2eFragment header) and pack that data into DTCFragments contained
+// in a single mu2eFragment object.
 
 // Some C++ conventions used:
 
@@ -22,8 +12,10 @@
 #include "fhiclcpp/fwd.h"
 #include "artdaq-core/Data/Fragments.hh"
 #include "artdaq/Application/CommandableFragmentGenerator.hh"
-#include "mu2e-artdaq/Generators/DTCReceiver.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
+
+#include "dtcInterfaceLib/DTC.h"
+#include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 #include <vector>
 #include <atomic>
@@ -65,7 +57,8 @@ namespace mu2e {
     DTCLib::DTC_SimMode mode_;
     uint8_t board_id_;
 
-    DTCReceiver *theReceiver_;
+    DTCLib::DTC* theInterface_;
+    DTCLib::DTCSoftwareCFO* theCFO_;
   };
 }
 
