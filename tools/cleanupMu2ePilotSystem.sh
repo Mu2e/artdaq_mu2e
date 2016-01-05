@@ -1,5 +1,9 @@
 #!/bin/bash
 startTime=`cat runNumbers.log|tail -1|awk '{print $2}'`
+if [[ "x$USER" == "xmu2edaq" ]]; then
+  exec 2>&1
+  exec > /home/mu2edaq/daqlogs/cron/cleanupMu2ePilotSystem_${startTime}.log
+fi
 echo "Killing system from $startTime"
 
 cd /home/mu2edaq
