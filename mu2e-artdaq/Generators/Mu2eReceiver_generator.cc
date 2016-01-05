@@ -94,12 +94,6 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
   metadata.run_number = run_number();
   metadata.board_id = board_id_;
 
-  TRACE(3, "mu2eReceiver::getNext allocating DTCFragment metadata");
-  DTCFragment::Metadata dtcmetadata;
-  metadata.sim_mode = static_cast<int>(mode_);
-  metadata.run_number = run_number();
-  metadata.board_id = board_id_;
-
   // And use it, along with the artdaq::Fragment header information
   // (fragment id, sequence id, and user type) to create a fragment
   TRACE(1, "mu2eReceiver::getNext: Creating new mu2eFragment!");
@@ -109,16 +103,20 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
   // Now we make an instance of the overlay to put the data into...
   TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
   mu2eFragmentWriter newfrag(*frags.back());
-  newfrag.set_hdr_fragment_type(toFragmentType("DTC"));
+
+  TRACE(1, "mu2eReceiver::getNext: Reserving space for 2 * BLOCK_COUNT_MAX packets");
+  newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 2 * sizeof(packet_t));
        
   //Get data from DTCReceiver
   TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
-  long subEvtId = ev_counter() * mu2e::DTC_FRAGMENT_MAX;
   uint64_t z = 0;
   DTCLib::DTC_Timestamp zero(z);
-  if (mode_ != 0) { theCFO_->SendRequestsForRange(mu2e::DTC_FRAGMENT_MAX, DTCLib::DTC_Timestamp(ev_counter())); }
+  if (mode_ != 0) { 
+	TRACE(1, "Sending requests for %i timestamps, starting at %lu", mu2e::BLOCK_COUNT_MAX, mu2e::BLOCK_COUNT_MAX * ev_counter());
+	theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter())); 
+  }
 
-  while(newfrag.subEvtCount() < mu2e::DTC_FRAGMENT_MAX) 
+  while(newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) 
 	{
 	  if(should_stop()) { break; }
 
@@ -137,7 +135,10 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 			}
 		  retryCount--;
 		}
-	  if (retryCount < 0 && data.size() == 0) { return false; }
+	  if (retryCount < 0 && data.size() == 0) { 
+		TRACE(1, "Retry count exceeded. Something is very wrong indeed");
+		return false; 
+	  }
 
 	  auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
 	  DTCLib::DTC_Timestamp ts = first.GetTimestamp();
@@ -150,41 +151,27 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 		  packetCount += packet.GetPacketCount() + 1;
 		}
 
-
-	  TRACE(1, "mu2eReceiver::getNext Allocating new DTCFragment");
-	  auto frag = new artdaq::Fragment(0, subEvtId, fragment_ids_[0],fragment_type_, dtcmetadata);
-      auto fragSize = frag->size() * sizeof(artdaq::Fragment::value_type);
       auto dataSize = packetCount * sizeof(packet_t);
-      TRACE(1, "mu2eReceiver::getNext Resizing mu2eFragment, adding %lu + %lu = %lu", fragSize, dataSize, fragSize + dataSize );
-      newfrag.addSpace(fragSize + dataSize );
-      TRACE(1, "mu2eReciever::getNext setting pointer for DTCFragment");
-	  artdaq::Fragment* dtcFrag = newfrag.dataEnd();
-      TRACE(1, "mu2eReceiver::getNext copying fragment header information into mu2eFragment at %p", (void*)dtcFrag);
-      memcpy(dtcFrag, frag, fragSize);
-
-	  // Now we make an instance of the overlay to put the data into...
-	  DTCFragmentWriter dtcfragwriter(*dtcFrag);
-
-	  dtcfragwriter.set_hdr_timestamp(ts.GetTimestamp(true));
-	  TRACE(3, "DTC Response for timestamp %lu includes %i packets.", ts.GetTimestamp(true), packetCount);
-	  dtcfragwriter.resize(packetCount);
-
-      TRACE(3, "Copying DTC packets into DTCFragment");
+      if(dataSize + newfrag.dataSize() > newfrag.fragSize()) { 
+		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for 1%% BLOCK_COUNT_MAX more packets", dataSize, newfrag.dataSize(), newfrag.fragSize());
+		newfrag.addSpace((1 + (BLOCK_COUNT_MAX / 100)) * sizeof(packet_t)); 
+	  }      
+      
+      TRACE(3, "Copying DTC packets into Mu2eFragment");
 	  size_t packetsProcessed = 0;
+      packet_t* offset = reinterpret_cast<packet_t*>((uint8_t*)newfrag.dataBegin() + newfrag.dataSize());
 	  for (size_t i = 0; i < data.size(); ++i)
 		{
 		  TRACE(3, "Creating packet object to determine data block size: i=%lu, data=%p", i, data[i]);
 		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-          TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu",i,  data[i],(void*)(dtcfragwriter.dataBegin() + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t));
-		  memcpy((void*)(dtcfragwriter.dataBegin() + packetsProcessed), data[i], (1 + packet.GetPacketCount())*sizeof(packet_t));
+          TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t));
+		  memcpy((void*)(offset + packetsProcessed), data[i], (1 + packet.GetPacketCount())*sizeof(packet_t));
           TRACE(3, "Incrementing packet counter");
 		  packetsProcessed += 1 + packet.GetPacketCount();
 		}
 
       TRACE(3, "Ending SubEvt");
-	  newfrag.endSubEvt(dtcFrag->size() * sizeof(artdaq::Fragment::value_type));
-
-	  ++subEvtId;
+	  newfrag.endSubEvt( packetsProcessed * sizeof(packet_t) );
 	}
 
   TRACE(1, "Incrementing event counter");
