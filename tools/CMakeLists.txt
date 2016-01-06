@@ -18,7 +18,6 @@ art_make_exec(driver
   ${FHICLCPP}
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${MPI_C_LIBRARIES}
-  trace
   )
   
 # Install FCL files needed for configuring the system
