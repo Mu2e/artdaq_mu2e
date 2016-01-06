@@ -2,6 +2,7 @@ cet_script(setupDemoEnvironment.sh DemoControl.rb
 start2x2System.sh manage2x2System.sh 
 start2x2x2System.sh manage2x2x2System.sh
 startMu2ePilotSystem.sh manageMu2ePilotSystem.sh
+startMu2eSingleNodeSystem.sh manageMu2eSingleNodeSystem.sh
 start2x2x2SingleNodeSystem.sh manage2x2x2SingleNodeSystem.sh
 CreateNewFragmentGenerator.rb  generateEventBuilderMain.rb
 generateWFViewer.rb generateEventBuilder.rb demo_utilities.rb generateMu2e.rb
@@ -17,6 +18,7 @@ art_make_exec(driver
   ${FHICLCPP}
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${MPI_C_LIBRARIES}
+  trace
   )
   
 # Install FCL files needed for configuring the system

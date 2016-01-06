@@ -1,4 +1,10 @@
 #!/bin/bash
+startTime=`date +%Y-%m-%d_%H:%M:%S`
+if [[ "x$USER" == "xmu2edaq" ]]; then
+  exec 2>&1
+  exec > /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
+fi
+
 export TRACE_FILE=/tmp/trace_buffer_$USER
 export RGANG_RSH=/usr/bin/rsh
 rgang --do-local "mu2edaq0{1,4-8}" "/home/mu2edaq/setup_trace.sh"
@@ -15,7 +21,6 @@ startMu2ePilotSystem.sh >/dev/null 2>&1 & # The "system" log goes to /daqlogs/pm
 sleep 10
 manageMu2ePilotSystem.sh init
 runNum=$((1 + `cat runNumbers.log|tail -1|awk '{print $1}'`))
-startTime=`date +%Y-%m-%d_%H:%M:%S`
 echo "$runNum $startTime" >>runNumbers.log
 sleep 10
 manageMu2ePilotSystem.sh -N $runNum start
