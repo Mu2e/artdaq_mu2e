@@ -88,6 +88,14 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 	  return false;
 	}
 
+  TRACE(1, "mu2eReceiver::getNext: Starting CFO thread");
+  uint64_t z = 0;
+  DTCLib::DTC_Timestamp zero(z);
+  if (mode_ != 0) { 
+	TRACE(1, "Sending requests for %i timestamps, starting at %lu", mu2e::BLOCK_COUNT_MAX, mu2e::BLOCK_COUNT_MAX * ev_counter());
+	theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter())); 
+  }
+
   TRACE(1, "mu2eReceiver::getNext: Initializing mu2eFragment metadata");
   mu2eFragment::Metadata metadata;
   metadata.sim_mode = static_cast<int>(mode_);
@@ -109,13 +117,6 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
        
   //Get data from DTCReceiver
   TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
-  uint64_t z = 0;
-  DTCLib::DTC_Timestamp zero(z);
-  if (mode_ != 0) { 
-	TRACE(1, "Sending requests for %i timestamps, starting at %lu", mu2e::BLOCK_COUNT_MAX, mu2e::BLOCK_COUNT_MAX * ev_counter());
-	theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter())); 
-  }
-
   while(newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) 
 	{
 	  if(should_stop()) { break; }
@@ -152,9 +153,10 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 		}
 
       auto dataSize = packetCount * sizeof(packet_t);
-      if(dataSize + newfrag.dataSize() > newfrag.fragSize()) { 
-		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for 1%% BLOCK_COUNT_MAX more packets", dataSize, newfrag.dataSize(), newfrag.fragSize());
-		newfrag.addSpace((1 + (BLOCK_COUNT_MAX / 100)) * sizeof(packet_t)); 
+      int64_t diff = dataSize + newfrag.dataSize() - (newfrag.fragSize() * sizeof(artdaq::Fragment::value_type));
+      if(diff > 0) {
+		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for 1%% BLOCK_COUNT_MAX more packets", dataSize, newfrag.dataSize(), newfrag.fragSize() * sizeof(artdaq::Fragment::value_type));
+		newfrag.addSpace(diff + (mu2e::BLOCK_COUNT_MAX / 100) * sizeof(packet_t)); 
 	  }      
       
       TRACE(3, "Copying DTC packets into Mu2eFragment");
