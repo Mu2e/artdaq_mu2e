@@ -25,7 +25,9 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 	: CommandableFragmentGenerator(ps)
 	, fragment_type_(toFragmentType("MU2E"))
 	, fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id()) }
-	, fragments_read_(0)
+	, timestamps_read_(0)
+    , timestamp_rate_(0.0)
+    , lastReportTime_(0)
 	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
 {
@@ -178,6 +180,16 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 
   TRACE(1, "Incrementing event counter");
   ev_counter_inc();
+
+  TRACE(1, "Reporting Metrics");
+  timestamps_read_ += newfrag.hdr_block_count();
+  clock_t now = 0;
+  timestamp_rate_ = newfrag.hdr_block_count() / _timeSinceLastSend( now );
+  lastReportTime_ = now;
+
+  metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, true, false);
+  metricMan_->sendMetric("Timestamp Rate", timestamp_rate_, "timestamps/s", 1);
+  
 
   TRACE(1, "Returning true");
   return true;

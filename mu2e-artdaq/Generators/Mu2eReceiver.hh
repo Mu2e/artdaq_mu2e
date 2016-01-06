@@ -18,6 +18,7 @@
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 #include <vector>
+#include <sys/times.h>
 #include <atomic>
 
 namespace mu2e {    
@@ -53,12 +54,21 @@ namespace mu2e {
     std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_; 
 
     // State
-    size_t fragments_read_;
+    size_t timestamps_read_;
+    double timestamp_rate_;
+    clock_t lastReportTime_;
     DTCLib::DTC_SimMode mode_;
     uint8_t board_id_;
 
     DTCLib::DTC* theInterface_;
     DTCLib::DTCSoftwareCFO* theCFO_;
+    double _timeSinceLastSend(clock_t& currenttime)
+    {
+      struct tms ctime;
+      currenttime = times(&ctime);
+      double deltaw = ((double)(currenttime - lastReportTime_))*10000./CLOCKS_PER_SEC;
+      return deltaw;
+    }
   };
 }
 

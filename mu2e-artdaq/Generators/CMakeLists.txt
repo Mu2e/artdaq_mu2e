@@ -11,12 +11,14 @@ simple_plugin(DTCReceiver "generator"
 
 simple_plugin(Mu2eReceiver "generator"
   mu2e-artdaq-core_Overlays
+  artdaq-core_Utilities
   ${ARTDAQ_APPLICATION}
   ${ARTDAQ_DAQDATA}
   ${ARTDAQ_UTILITIES}
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${CETLIB}
+  MF_MessageLogger
   DTCInterface
   )
 
@@ -31,6 +33,11 @@ simple_plugin(OverlayTest "generator"
   MF_MessageLogger
   DTCInterface
   )
+
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
 
 install_headers()
 install_source()
