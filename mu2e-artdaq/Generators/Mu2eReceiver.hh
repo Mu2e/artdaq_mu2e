@@ -55,18 +55,26 @@ namespace mu2e {
 
     // State
     size_t timestamps_read_;
-    double timestamp_rate_;
     clock_t lastReportTime_;
+	clock_t hwStartTime_;
     DTCLib::DTC_SimMode mode_;
     uint8_t board_id_;
 
     DTCLib::DTC* theInterface_;
     DTCLib::DTCSoftwareCFO* theCFO_;
-    double _timeSinceLastSend(clock_t& currenttime)
+    double _timeSinceLastSend()
     {
       struct tms ctime;
-      currenttime = times(&ctime);
+      clock_t currenttime = times(&ctime);
       double deltaw = ((double)(currenttime - lastReportTime_))*10000./CLOCKS_PER_SEC;
+	  lastReportTime_ = currenttime;
+      return deltaw;
+    }
+    double _timeSinceHWStart()
+    {
+      struct tms ctime;
+      clock_t currenttime = times(&ctime);
+      double deltaw = ((double)(currenttime - hwStartTime_))*10000./CLOCKS_PER_SEC;
       return deltaw;
     }
   };
