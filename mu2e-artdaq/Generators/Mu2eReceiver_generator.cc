@@ -26,8 +26,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 	, fragment_type_(toFragmentType("MU2E"))
 	, fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id()) }
 	, timestamps_read_(0)
-    , timestamp_rate_(0.0)
     , lastReportTime_(0)
+    , hwStartTime_(0)
 	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
 {
@@ -119,6 +119,8 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
        
   //Get data from DTCReceiver
   TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
+  struct tms ctime;
+  hwStartTime_ = times(&ctime);
   while(newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) 
 	{
 	  if(should_stop()) { break; }
@@ -130,7 +132,9 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 		{
 		  try
 			{
+			  TRACE(4, "Calling theInterface->GetData(zero)" );
 			  data = theInterface_->GetData(zero);
+			  TRACE(4, "Done calling theInterface->GetData(zero)");
 			}
 		  catch (std::exception ex)
 			{
@@ -183,12 +187,12 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 
   TRACE(1, "Reporting Metrics");
   timestamps_read_ += newfrag.hdr_block_count();
-  clock_t now = 0;
-  timestamp_rate_ = newfrag.hdr_block_count() / _timeSinceLastSend( now );
-  lastReportTime_ = now;
+  double timestamp_rate = newfrag.hdr_block_count() / _timeSinceLastSend( );
+  double hw_timestamp_rate = newfrag.hdr_block_count() / _timeSinceHWStart( );
 
   metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, true, false);
-  metricMan_->sendMetric("Timestamp Rate", timestamp_rate_, "timestamps/s", 1);
+  metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1);
+  metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1);
   
 
   TRACE(1, "Returning true");
