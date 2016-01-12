@@ -127,54 +127,60 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
       std::vector<void*> data;
       int retryCount = 5;
       while (data.size() == 0 && retryCount >= 0)
-	{
-	  try
-	    {
-	      TRACE(4, "Calling theInterface->GetData(zero)" );
-	      data = theInterface_->GetData(zero);
-	      TRACE(4, "Done calling theInterface->GetData(zero)");
-	    }
-	  catch (std::exception ex)
-	    {
-	      std::cerr << ex.what() << std::endl;
-	    }
-	  retryCount--;
-	}
+		{
+		  try
+			{
+			  TRACE(4, "Calling theInterface->GetData(zero)" );
+			  data = theInterface_->GetData(zero);
+			  TRACE(4, "Done calling theInterface->GetData(zero)");
+			}
+		  catch (std::exception ex)
+			{
+			  std::cerr << ex.what() << std::endl;
+			}
+		  retryCount--;
+		  if (data.size() == 0) { usleep(10000); }
+		}
       if (retryCount < 0 && data.size() == 0) { 
-	TRACE(1, "Retry count exceeded. Something is very wrong indeed");
-	return false; 
+		TRACE(1, "Retry count exceeded. Something is very wrong indeed");
+		std::cout << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter() << std::endl;
+		break;
       }
 
-      auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
-      DTCLib::DTC_Timestamp ts = first.GetTimestamp();
-      int packetCount = first.GetPacketCount() + 1;
-      TRACE(1, "There are %lu data blocks in timestamp %lu. Packet count of first data block: %i", data.size(), ts.GetTimestamp(true), packetCount);
-
-      for (size_t i = 1; i < data.size(); ++i)
-	{
-	  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-	  packetCount += packet.GetPacketCount() + 1;
-	}
-
-      auto dataSize = packetCount * sizeof(packet_t);
-      int64_t diff = dataSize + newfrag.dataSize() - (newfrag.fragSize() * sizeof(artdaq::Fragment::value_type));
-      if(diff > 0) {
-	TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for 1%% BLOCK_COUNT_MAX more packets", dataSize, newfrag.dataSize(), newfrag.fragSize() * sizeof(artdaq::Fragment::value_type));
-	newfrag.addSpace(diff + (mu2e::BLOCK_COUNT_MAX / 100) * sizeof(packet_t)); 
-      }      
-      
       TRACE(3, "Copying DTC packets into Mu2eFragment");
+	  size_t packetCount = 0;
       size_t packetsProcessed = 0;
-      packet_t* offset = reinterpret_cast<packet_t*>((uint8_t*)newfrag.dataBegin() + newfrag.dataSize());
+      packet_t* offset = newfrag.dataEnd();
       for (size_t i = 0; i < data.size(); ++i)
-	{
-	  TRACE(3, "Creating packet object to determine data block size: i=%lu, data=%p", i, data[i]);
-	  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-          TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t));
-	  memcpy((void*)(offset + packetsProcessed), data[i], (1 + packet.GetPacketCount())*sizeof(packet_t));
+		{
+		  TRACE(3, "Creating packet object to determine data block size: i=%lu, data=%p", i, data[i]);
+		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
+		  packetCount += packet.GetPacketCount() + 1;
+		  if(i == 0) {
+			DTCLib::DTC_Timestamp ts = packet.GetTimestamp();
+			TRACE(1, "There are %lu data blocks in timestamp %lu.", data.size(), ts.GetTimestamp(true));
+		  }
+		}
+
+	  auto dataSize = packetCount * sizeof(packet_t);
+	  int64_t diff = dataSize + newfrag.blockSizeBytes() - newfrag.dataSize();
+	  if(diff > 0) {
+		double currSize = newfrag.dataSize() / (double)sizeof(packet_t);
+		double remaining = 1 - (newfrag.hdr_block_count() / (double)BLOCK_COUNT_MAX);
+		size_t newSize = static_cast<size_t>(currSize * remaining) * sizeof(packet_t);
+		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", dataSize, newfrag.blockSizeBytes(), newfrag.dataSize(), newSize + diff);
+		newfrag.addSpace(diff + newSize); 
+		offset = newfrag.dataEnd();
+	  }     
+
+	  for(size_t i = 0; i < data.size(); ++i)
+		{
+		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
+          TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu, begin=%p", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t), (void*)newfrag.dataBegin());
+		  memcpy((void*)(offset + packetsProcessed), data[i], (1 + packet.GetPacketCount())*sizeof(packet_t));
           TRACE(3, "Incrementing packet counter");
-	  packetsProcessed += 1 + packet.GetPacketCount();
-	}
+		  packetsProcessed += 1 + packet.GetPacketCount();
+		}
 
       TRACE(3, "Ending SubEvt");
       newfrag.endSubEvt( packetsProcessed * sizeof(packet_t) );
