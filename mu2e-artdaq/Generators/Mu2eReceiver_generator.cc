@@ -26,8 +26,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 	, fragment_type_(toFragmentType("MU2E"))
 	, fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id()) }
 	, timestamps_read_(0)
-    , lastReportTime_(0)
-    , hwStartTime_(0)
+        , lastReportTime_(0)
+        , hwStartTime_(0)
 	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
 {
@@ -107,9 +107,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
   // And use it, along with the artdaq::Fragment header information
   // (fragment id, sequence id, and user type) to create a fragment
   TRACE(1, "mu2eReceiver::getNext: Creating new mu2eFragment!");
-  frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0],
-										  fragment_type_, metadata));
-
+  frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
   // Now we make an instance of the overlay to put the data into...
   TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
   mu2eFragmentWriter newfrag(*frags.back());
@@ -122,13 +120,13 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
   struct tms ctime;
   hwStartTime_ = times(&ctime);
   while(newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) 
-	{
-	  if(should_stop()) { break; }
+    {
+      if(should_stop()) { break; }
 
-	  TRACE(1, "Getting DTC Data");
-	  std::vector<void*> data;
-	  int retryCount = 5;
-	  while (data.size() == 0 && retryCount >= 0)
+      TRACE(1, "Getting DTC Data");
+      std::vector<void*> data;
+      int retryCount = 5;
+      while (data.size() == 0 && retryCount >= 0)
 		{
 		  try
 			{
@@ -141,46 +139,52 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 			  std::cerr << ex.what() << std::endl;
 			}
 		  retryCount--;
+		  if (data.size() == 0) { usleep(10000); }
 		}
-	  if (retryCount < 0 && data.size() == 0) { 
+      if (retryCount < 0 && data.size() == 0) { 
 		TRACE(1, "Retry count exceeded. Something is very wrong indeed");
-		return false; 
-	  }
+		std::cout << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter() << std::endl;
+		break;
+      }
 
-	  auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
-	  DTCLib::DTC_Timestamp ts = first.GetTimestamp();
-	  int packetCount = first.GetPacketCount() + 1;
-	  TRACE(1, "There are %lu data blocks in timestamp %lu. Packet count of first data block: %i", data.size(), ts.GetTimestamp(true), packetCount);
-
-	  for (size_t i = 1; i < data.size(); ++i)
-		{
-		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-		  packetCount += packet.GetPacketCount() + 1;
-		}
-
-      auto dataSize = packetCount * sizeof(packet_t);
-      int64_t diff = dataSize + newfrag.dataSize() - (newfrag.fragSize() * sizeof(artdaq::Fragment::value_type));
-      if(diff > 0) {
-		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for 1%% BLOCK_COUNT_MAX more packets", dataSize, newfrag.dataSize(), newfrag.fragSize() * sizeof(artdaq::Fragment::value_type));
-		newfrag.addSpace(diff + (mu2e::BLOCK_COUNT_MAX / 100) * sizeof(packet_t)); 
-	  }      
-      
       TRACE(3, "Copying DTC packets into Mu2eFragment");
-	  size_t packetsProcessed = 0;
-      packet_t* offset = reinterpret_cast<packet_t*>((uint8_t*)newfrag.dataBegin() + newfrag.dataSize());
-	  for (size_t i = 0; i < data.size(); ++i)
+	  size_t packetCount = 0;
+      size_t packetsProcessed = 0;
+      packet_t* offset = newfrag.dataEnd();
+      for (size_t i = 0; i < data.size(); ++i)
 		{
 		  TRACE(3, "Creating packet object to determine data block size: i=%lu, data=%p", i, data[i]);
 		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-          TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t));
+		  packetCount += packet.GetPacketCount() + 1;
+		  if(i == 0) {
+			DTCLib::DTC_Timestamp ts = packet.GetTimestamp();
+			TRACE(1, "There are %lu data blocks in timestamp %lu.", data.size(), ts.GetTimestamp(true));
+		  }
+		}
+
+	  auto dataSize = packetCount * sizeof(packet_t);
+	  int64_t diff = dataSize + newfrag.blockSizeBytes() - newfrag.dataSize();
+	  if(diff > 0) {
+		double currSize = newfrag.dataSize() / (double)sizeof(packet_t);
+		double remaining = 1 - (newfrag.hdr_block_count() / (double)BLOCK_COUNT_MAX);
+		size_t newSize = static_cast<size_t>(currSize * remaining) * sizeof(packet_t);
+		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", dataSize, newfrag.blockSizeBytes(), newfrag.dataSize(), newSize + diff);
+		newfrag.addSpace(diff + newSize); 
+		offset = newfrag.dataEnd();
+	  }     
+
+	  for(size_t i = 0; i < data.size(); ++i)
+		{
+		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
+          TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu, begin=%p", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t), (void*)newfrag.dataBegin());
 		  memcpy((void*)(offset + packetsProcessed), data[i], (1 + packet.GetPacketCount())*sizeof(packet_t));
           TRACE(3, "Incrementing packet counter");
 		  packetsProcessed += 1 + packet.GetPacketCount();
 		}
 
       TRACE(3, "Ending SubEvt");
-	  newfrag.endSubEvt( packetsProcessed * sizeof(packet_t) );
-	}
+      newfrag.endSubEvt( packetsProcessed * sizeof(packet_t) );
+    }
 
   TRACE(1, "Incrementing event counter");
   ev_counter_inc();
@@ -191,8 +195,8 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
   double hw_timestamp_rate = newfrag.hdr_block_count() / _timeSinceHWStart( );
 
   metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, true, false);
-  metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1);
-  metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1);
+  metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true, true);
+  metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true, true);
   
 
   TRACE(1, "Returning true");

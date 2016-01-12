@@ -30,7 +30,7 @@ function launch() {
     --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,1 \
     --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,1 \
     --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,1 \
-    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,2 \
+    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,1 \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[0]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[1]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[2]} \
