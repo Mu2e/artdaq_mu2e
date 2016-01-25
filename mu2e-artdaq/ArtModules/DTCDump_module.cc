@@ -13,7 +13,7 @@
 #include "art/Utilities/Exception.h"
 #include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 #include "artdaq-core/Data/Fragments.hh"
-#include "dtcInterfaceLib/DTC_Types.h"
+#include "dtcInterfaceLib/DTC_Packets.h"
 
 #include "trace.h"
 
