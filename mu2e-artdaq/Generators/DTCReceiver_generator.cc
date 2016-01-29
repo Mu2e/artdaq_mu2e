@@ -71,10 +71,33 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
 			else { theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]); }
 		}
 	}
+
+    auto sim_file = ps.get<std::string>("sim_file","");
+    if(sim_file.size() > 0)
+	{
+	  std::ifstream is(sim_file, std::ifstream::binary);
+		while (is && is.good())
+		{
+			TRACE(4, "Reading a DMA from file...");
+			mu2e_databuff_t* buf = (mu2e_databuff_t*)new mu2e_databuff_t();
+			is.read((char*)buf, sizeof(uint64_t));
+			uint64_t sz = *((uint64_t*)*buf);
+			TRACE(4, "Size is %llu, writing to device", (long long unsigned)sz);
+			is.read((char*)buf + 8, sz - sizeof(uint64_t));
+			if (sz > 0) {
+				theInterface_->WriteDetectorEmulatorData(buf, sz);
+			}
+		}
+		is.close();
+        // Go "Forever"
+        theInterface_->SetDetectorEmulationDMACount(0);
+		theInterface_->EnableDetectorEmulator();
+	}
 }
 
 mu2e::DTCReceiver::~DTCReceiver()
 {
+  theInterface_->DisableDetectorEmulator();
 	delete theInterface_;
 	delete theCFO_;
 }

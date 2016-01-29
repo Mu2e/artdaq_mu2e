@@ -18,6 +18,8 @@ THIS_NODE=`hostname -s`
 # 10) the desired number of events in each file
 # 11) the desired time duration of each file (minutes)
 # 12) whether to print out CFG information (verbose)
+# 13) Whether to enable the sim_file
+# 14) the sim file path
 function launch() {
 
   enableSerial=""
@@ -26,7 +28,7 @@ function launch() {
   fi
 
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --mu2e `hostname`,${MU2EARTDAQ_BR_PORT[0]},0,1 \
+    --mu2e `hostname`,${MU2EARTDAQ_BR_PORT[0]},0,4,${13},${14} \
     --eb `hostname`,${MU2EARTDAQ_EB_PORT[0]} \
     --eb `hostname`,${MU2EARTDAQ_EB_PORT[1]} \
     --ag `hostname`,${MU2EARTDAQ_AG_PORT[0]},1 \
@@ -58,6 +60,7 @@ Configuration options (init commands):
   --file-duration <duration>: specifies the desired duration of each file (minutes)
       [default=0, which means no duration limit for files]
   -o <data dir>: specifies the directory for data files [default=/tmp]
+  -f <sim file>: specifies the file to be loaded into the DTC memory [default=""]
 Begin-run options (start command):
   -N <run number>: specifies the run number
 End-run options (stop command):
@@ -108,8 +111,10 @@ fsChoiceSpecified=0
 fileEventCount=0
 fileDuration=0
 verbose=0
+useSimFile=0
+simFilePath=""
 OPTIND=1
-while getopts "hc:N:o:t:m:Dn:d:s:w:v-:" opt; do
+while getopts "hc:N:o:t:m:Dn:d:f:s:w:v-:" opt; do
     if [ "$opt" = "-" ]; then
         opt=$OPTARG
     fi
@@ -136,6 +141,10 @@ while getopts "hc:N:o:t:m:Dn:d:s:w:v-:" opt; do
         d)
             runDuration=${OPTARG}
             ;;
+        f)
+            simFilePath=${OPTARG}
+            useSimFile=1
+			;;
         run-events)
             runEventCount=${!OPTIND}
             let OPTIND=$OPTIND+1
@@ -243,11 +252,11 @@ if [[ "$command" == "shutdown" ]]; then
     # first send a stop command to end the run (in case it is needed)
     launch "stop" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
     # next send a shutdown command to move the processes to their ground state
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
     # stop the MPI program
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     # clean up any stale shared memory segment
@@ -259,11 +268,11 @@ elif [[ "$command" == "restart" ]]; then
     # first send a stop command to end the run (in case it is needed)
     launch "stop" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
     # next send a shutdown command to move the processes to their ground state
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
     # stop the MPI program
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     # clean up any stale shared memory segment
@@ -274,11 +283,11 @@ elif [[ "$command" == "reinit" ]]; then
     # first send a stop command to end the run (in case it is needed)
     launch "stop" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
     # next send a shutdown command to move the processes to their ground state
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
     # stop the MPI program
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     # clean up any stale shared memory segment
@@ -289,11 +298,11 @@ elif [[ "$command" == "reinit" ]]; then
     sleep 5
     launch "init" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
 elif [[ "$command" == "exit" ]]; then
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.exit
     ssh ${AGGREGATOR_NODE} "ipcs | grep ${shmKeyString} | awk '{print \$2}' | xargs ipcrm -m 2>/dev/null"
@@ -312,7 +321,7 @@ elif [[ "$command" == "fast-reinit" ]]; then
     sleep 5
     launch "init" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
 elif [[ "$command" == "fast-exit" ]]; then
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.exit
@@ -321,5 +330,5 @@ elif [[ "$command" == "fast-exit" ]]; then
 else
     launch $command $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $useSimFile $simFilePath
 fi
