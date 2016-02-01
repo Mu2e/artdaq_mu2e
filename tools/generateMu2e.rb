@@ -19,7 +19,7 @@ def generateMu2e(startingFragmentId, boardId, simMode = 0, useSimFile = 0, simFi
     ring_0_roc_emulator_enabled: true \
     debug_print: false \
     sim_mode: %{simulation_mode} \
-    %{use_sim_file}sim_file: %{sim_file}" \
+    %{use_sim_file}sim_file: \"%{sim_file}\"" \
                           + read_fcl("DTCReceiver.fcl") )
   
   mu2eConfig.gsub!(/\%\{starting_fragment_id\}/, String(startingFragmentId))
