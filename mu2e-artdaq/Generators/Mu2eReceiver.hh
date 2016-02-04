@@ -35,6 +35,7 @@ namespace mu2e {
     // getNext_ function declared in CommandableFragmentGenerator
 
     bool getNext_(artdaq::FragmentPtrs & output) override;
+    void readSimFile_(std::string sim_file);
 
     // Like "getNext_", "fragmentIDs_" is a mandatory override; it
     // returns a vector of the fragment IDs an instance of this class
@@ -59,6 +60,7 @@ namespace mu2e {
 	clock_t hwStartTime_;
     DTCLib::DTC_SimMode mode_;
     uint8_t board_id_;
+    bool simFileRead_;
 
     DTCLib::DTC* theInterface_;
     DTCLib::DTCSoftwareCFO* theCFO_;

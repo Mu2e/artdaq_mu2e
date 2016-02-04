@@ -73,8 +73,19 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
 	}
 
     auto sim_file = ps.get<std::string>("sim_file","");
-    if(sim_file.size() > 0)
+  if(sim_file.size() > 0)
 	{
+	  simFileRead_ = false;
+	  std::thread reader(&mu2e::DTCReceiver::readSimFile_, this, sim_file);
+          reader.detach();
+	}
+
+    
+}
+
+void mu2e::DTCReceiver::readSimFile_(std::string sim_file)
+{
+  mf::LogInfo("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << std::endl << "Please wait to start the run until finished.";
 	  std::ifstream is(sim_file, std::ifstream::binary);
 		while (is && is.good())
 		{
@@ -92,7 +103,8 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
         // Go "Forever"
         theInterface_->SetDetectorEmulationDMACount(0);
 		theInterface_->EnableDetectorEmulator();
-	}
+  simFileRead_ = true;
+  mf::LogInfo("DTCReceiver") << "Done reading simulation file into DTC memory.";
 }
 
 mu2e::DTCReceiver::~DTCReceiver()
@@ -109,6 +121,8 @@ bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs & frags)
 
 bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
 {
+  while(!simFileRead_ && !should_stop()) { usleep(5000); }
+
 	if (should_stop())
 	{
 		return false;

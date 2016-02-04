@@ -79,24 +79,35 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
     auto sim_file = ps.get<std::string>("sim_file","");
     if(sim_file.size() > 0)
 	{
-	  std::ifstream is(sim_file, std::ifstream::binary);
-		while (is && is.good())
-		{
-			TRACE(4, "Reading a DMA from file...");
-			mu2e_databuff_t* buf = (mu2e_databuff_t*)new mu2e_databuff_t();
-			is.read((char*)buf, sizeof(uint64_t));
-			uint64_t sz = *((uint64_t*)*buf);
-			TRACE(4, "Size is %llu, writing to device", (long long unsigned)sz);
-			is.read((char*)buf + 8, sz - sizeof(uint64_t));
-			if (sz > 0) {
-				theInterface_->WriteDetectorEmulatorData(buf, sz);
-			}
-		}
-		is.close();
-        // Go "Forever"
-        theInterface_->SetDetectorEmulationDMACount(0);
-		theInterface_->EnableDetectorEmulator();
+	  simFileRead_ = false;
+	  std::thread reader(&mu2e::Mu2eReceiver::readSimFile_, this, sim_file);
+          reader.detach();
 	}
+}
+
+void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
+{
+  mf::LogInfo("Mu2eReceiver") << "Starting read of simulation file " << sim_file << "." << std::endl << "Please wait to start the run until finished.";
+  std::ifstream is(sim_file, std::ifstream::binary);
+  while (is && is.good())
+    {
+      TRACE(4, "Reading a DMA from file...");
+      mu2e_databuff_t* buf = (mu2e_databuff_t*)new mu2e_databuff_t();
+      is.read((char*)buf, sizeof(uint64_t));
+      uint64_t sz = *((uint64_t*)*buf);
+      TRACE(4, "Size is %llu, writing to device", (long long unsigned)sz);
+      is.read((char*)buf + 8, sz - sizeof(uint64_t));
+      if (sz > 0) {
+	theInterface_->WriteDetectorEmulatorData(buf, sz);
+      }
+      delete buf;
+    }
+  is.close();
+  // Go "Forever"
+  theInterface_->SetDetectorEmulationDMACount(0);
+  theInterface_->EnableDetectorEmulator();
+  simFileRead_ = true;
+  mf::LogInfo("Mu2eReceiver") << "Done reading simulation file into DTC memory.";
 }
 
 mu2e::Mu2eReceiver::~Mu2eReceiver()
@@ -108,6 +119,8 @@ mu2e::Mu2eReceiver::~Mu2eReceiver()
 
 bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 {
+  while(!simFileRead_ && !should_stop()) { usleep(5000); }
+
   if (should_stop())
 	{
 	  return false;
