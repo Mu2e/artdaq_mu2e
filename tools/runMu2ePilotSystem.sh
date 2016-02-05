@@ -17,9 +17,10 @@ if [ ! -z "$MRB_BUILDDIR" ]; then
   export FHICL_FILE_PATH=$FHICL_FILE_PATH:$MRB_BUILDDIR/mu2e_artdaq/fcl
 fi
 
+export DTCLIB_SIM_PATH=/home/mu2edaq/data/simData
 startMu2ePilotSystem.sh >/dev/null 2>&1 & # The "system" log goes to /daqlogs/pmt
 sleep 10
-manageMu2ePilotSystem.sh init
+manageMu2ePilotSystem.sh -D init
 runNum=$((1 + `cat runNumbers.log|tail -1|awk '{print $1}'`))
 echo "$runNum $startTime" >>runNumbers.log
 sleep 10

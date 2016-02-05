@@ -257,11 +257,11 @@ class CommandLineParser
         @options.aggregators << agConfig
       end
     
-      opts.on("--mu2e [host,port,board_id,sim_mode]", Array, 
+      opts.on("--mu2e [host,port,board_id,sim_mode,use_sim_file,sim_file]", Array, 
               "Add a Mu2e fragment receiver that runs on the specified host, port, ",
-              "board ID, and Simulation Mode.") do |mu2e|
-        if mu2e.length != 4
-          puts "You must specify a host, port, board ID, and sim_mode."
+              "board ID, Sim Mode, Sim Data file reading enabled, and Sim Data File.") do |mu2e|
+        if mu2e.length < 5
+          puts "You must specify a host, port, board ID, sim_mode, and use_sim_file flag."
           exit
         end
         mu2eConfig = OpenStruct.new
@@ -269,6 +269,12 @@ class CommandLineParser
         mu2eConfig.port = Integer(mu2e[1])
         mu2eConfig.board_id = Integer(mu2e[2])
         mu2eConfig.sim_mode = Integer(mu2e[3])
+        mu2eConfig.use_sim_file = Integer(mu2e[4])
+        if mu2e.length > 5
+            mu2eConfig.sim_file = mu2e[5]
+        else
+            mu2eConfig.sim_file = ""
+        end
         mu2eConfig.kind = "MU2E"
         mu2eConfig.index = (@options.mu2es).length
         mu2eConfig.board_reader_index = addToBoardReaderList(mu2eConfig.host, mu2eConfig.port,
@@ -276,11 +282,11 @@ class CommandLineParser
         @options.mu2es << mu2eConfig
       end
 
-      opts.on("--dtc [host,port,board_id,sim_mode]", Array, 
+      opts.on("--dtc [host,port,board_id,sim_mode,use_sim_file,sim_file]", Array, 
               "Add a DTC fragment receiver that runs on the specified host, port, ",
-              "board ID, and Simulation Mode.") do |dtc|
-        if dtc.length != 4
-          puts "You must specify a host, port, board ID, and simMode."
+              "board ID, Sim Mode, Sim Data file reading enabled, and Sim Data File.") do |dtc|
+        if dtc.length < 5
+          puts "You must specify a host, port, board ID, simMode, and use_sim_file flag."
           exit
         end
         dtcConfig = OpenStruct.new
@@ -288,6 +294,12 @@ class CommandLineParser
         dtcConfig.port = Integer(dtc[1])
         dtcConfig.board_id = Integer(dtc[2])
         dtcConfig.sim_mode = Integer(dtc[3])
+        dtcConfig.use_sim_file = Integer(dtc[4])
+        if dtc.length > 5
+          dtcConfig.sim_file = dtc[5]
+        else
+          dtcConfig.sim_file = ""
+        end
         dtcConfig.kind = "DTC"
         dtcConfig.index = (@options.dtcs).length
         dtcConfig.board_reader_index = addToBoardReaderList(dtcConfig.host, dtcConfig.port,
@@ -434,15 +446,15 @@ class CommandLineParser
         when "ag"
           puts "    Aggregator, port %d, rank %d" % [item.port, totalEBs + totalFRs + item.index]
         when "MU2E"
-          puts "    FragmentReceiver, DTC Card Fragment Bundler, port %s, rank %d, board_id %s, sim_mode %d" % 
+          puts "    FragmentReceiver, DTC Card Fragment Bundler, port %s, rank %d, board_id %s, sim_mode %d, use_sim_file %d, sim_file %s" % 
             [item.port,
              item.index,
-             item.board_id, item.sim_mode]
+             item.board_id, item.sim_mode, item.use_sim_file, item.sim_file]
         when "DTC"
-          puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d, sim_mode %d" %
+          puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d, sim_mode %d, use_sim_file %d, sim_file %s" %
             [item.port,
              item.index,
-             item.board_id, item.sim_mode]
+             item.board_id, item.sim_mode, item.use_sim_file, item.sim_file]
         end
       end
       puts ""
@@ -479,7 +491,7 @@ class SystemControl
     totalFRs = @options.boardReaders.length
     totalEBs = @options.eventBuilders.length
     totalAGs = @options.aggregators.length
-    inputBuffSizeWords = 2097152
+    inputBuffSizeWords = 20971520
 
     #if Integer(totalv1720s) > 0
     #  inputBuffSizeWords = 8192 * @options.v1720s[0].gate_width
@@ -503,10 +515,12 @@ class SystemControl
 
     	  if kind == "MU2E"
             generatorCode = generateMu2e(boardreaderOptions.index,
-                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode)
+                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode,
+                                        boardreaderOptions.use_sim_file, boardreaderOptions.sim_file)
           elsif kind == "DTC"
             generatorCode = generateDTC(boardreaderOptions.index,
-                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode)
+                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode,
+                                        boardreaderOptions.use_sim_file, boardreaderOptions.sim_file)
           end
 
           cfg = generateBoardReaderMain(totalEBs, totalFRs,

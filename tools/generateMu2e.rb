@@ -7,7 +7,7 @@
 
 require File.join( File.dirname(__FILE__), 'demo_utilities' )
   
-def generateMu2e(startingFragmentId, boardId, simMode = 0)
+def generateMu2e(startingFragmentId, boardId, simMode = 0, useSimFile = 0, simFile = "")
 
   mu2eConfig = String.new( "\
     generator: Mu2eReceiver
@@ -18,12 +18,20 @@ def generateMu2e(startingFragmentId, boardId, simMode = 0)
     ring_0_timing_enabled: false \
     ring_0_roc_emulator_enabled: true \
     debug_print: false \
-    sim_mode: %{simulation_mode}" \
+    sim_mode: %{simulation_mode} \
+    %{use_sim_file}sim_file: \"%{sim_file}\"" \
                           + read_fcl("DTCReceiver.fcl") )
   
   mu2eConfig.gsub!(/\%\{starting_fragment_id\}/, String(startingFragmentId))
   mu2eConfig.gsub!(/\%\{board_id\}/, String(boardId))
   mu2eConfig.gsub!(/\%\{simulation_mode\}/, String(simMode))
+
+  if Integer(useSimFile) != 0
+    mu2eConfig.gsub!(/\%\{use_sim_file\}/, "")
+  else
+    mu2eConfig.gsub!(/\%\{use_sim_file\}/, "#")
+  end
+  mu2eConfig.gsub!(/\%\{sim_file\}/, String(simFile))
 
   return mu2eConfig
 

@@ -6,6 +6,7 @@ simple_plugin(DTCReceiver "generator"
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${CETLIB}
+  MF_MessageLogger
   DTCInterface
   )
 
