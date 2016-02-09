@@ -33,7 +33,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 {
   TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
 	// mode_ can still be overridden by environment!
-	theInterface_ = new DTCLib::DTC(mode_);
+  theInterface_ = new DTCLib::DTC(mode_,"",false);
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 
@@ -87,6 +87,10 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 
 void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 {
+  theInterface_->ResetDDRWriteAddress();
+  theInterface_->SetDDRLocalEndAddress(1);
+  theInterface_->SetDetectorEmulationDMACount(0);
+  theInterface_->SetDetectorEmulationDMADelayCount(0);
   mf::LogInfo("Mu2eReceiver") << "Starting read of simulation file " << sim_file << "." << std::endl << "Please wait to start the run until finished.";
   std::ifstream is(sim_file, std::ifstream::binary);
   while (is && is.good())
