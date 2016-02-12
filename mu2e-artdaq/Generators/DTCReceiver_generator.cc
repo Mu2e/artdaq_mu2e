@@ -85,24 +85,8 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
 
 void mu2e::DTCReceiver::readSimFile_(std::string sim_file)
 {
-  mf::LogInfo("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << std::endl << "Please wait to start the run until finished.";
-	  std::ifstream is(sim_file, std::ifstream::binary);
-		while (is && is.good())
-		{
-			TRACE(4, "Reading a DMA from file...");
-			mu2e_databuff_t* buf = (mu2e_databuff_t*)new mu2e_databuff_t();
-			is.read((char*)buf, sizeof(uint64_t));
-			uint64_t sz = *((uint64_t*)*buf);
-			TRACE(4, "Size is %llu, writing to device", (long long unsigned)sz);
-			is.read((char*)buf + 8, sz - sizeof(uint64_t));
-			if (sz > 0) {
-				theInterface_->WriteDetectorEmulatorData(buf, sz);
-			}
-		}
-		is.close();
-        // Go "Forever"
-        theInterface_->SetDetectorEmulationDMACount(0);
-		theInterface_->EnableDetectorEmulator();
+  mf::LogInfo("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << " Please wait to start the run until finished.";
+  theInterface_->WriteSimFileToDTC(sim_file, true);
   simFileRead_ = true;
   mf::LogInfo("DTCReceiver") << "Done reading simulation file into DTC memory.";
 }
