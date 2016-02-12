@@ -26,11 +26,11 @@ function launch() {
   fi
 
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,4,1,$DTCLIB_SIM_PATH/mu2edaq04.bin \
-    --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,4,1,$DTCLIB_SIM_PATH/mu2edaq05.bin \
-    --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,4,1,$DTCLIB_SIM_PATH/mu2edaq06.bin \
-    --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,4,1,$DTCLIB_SIM_PATH/mu2edaq07.bin \
-    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,4,1,$DTCLIB_SIM_PATH/mu2edaq08.bin \
+    --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,1,1,$DTCLIB_SIM_PATH/mu2edaq04.bin \
+    --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,1,1,$DTCLIB_SIM_PATH/mu2edaq05.bin \
+    --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,1,1,$DTCLIB_SIM_PATH/mu2edaq06.bin \
+    --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,1,1,$DTCLIB_SIM_PATH/mu2edaq07.bin \
+    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,2,1,$DTCLIB_SIM_PATH/mu2edaq08.bin \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[0]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[1]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[2]} \

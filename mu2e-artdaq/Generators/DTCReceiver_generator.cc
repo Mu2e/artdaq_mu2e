@@ -85,7 +85,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const & ps)
 
 void mu2e::DTCReceiver::readSimFile_(std::string sim_file)
 {
-  mf::LogInfo("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << std::endl << "Please wait to start the run until finished.";
+  mf::LogInfo("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << " Please wait to start the run until finished.";
   theInterface_->WriteSimFileToDTC(sim_file, true);
   simFileRead_ = true;
   mf::LogInfo("DTCReceiver") << "Done reading simulation file into DTC memory.";
