@@ -8,6 +8,7 @@
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "fhiclcpp/ParameterSet.h"
 #include "artdaq-core/Utilities/SimpleLookupPolicy.h"
+#include "dtcInterfaceLib/DTC_Types.h"
 
 #include <fstream>
 #include <iomanip>
@@ -136,7 +137,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
 	// Now we make an instance of the overlay to put the data into...
 	DTCFragmentWriter newfrag(*frags.back());
 
-	std::vector<void*> data;
+	std::vector<DTCLib::DTC_DataBlock> data;
 
 	if (mode_ != 0) { theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter())); }
 
@@ -155,7 +156,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
 	}
 	if (retryCount < 0 && data.size() == 0) { return false; }
 
-	auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0]));
+	auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
 	DTCLib::DTC_Timestamp ts = first.GetTimestamp();
 	int packetCount = first.GetPacketCount() + 1;
 	if (print_packets_)
@@ -163,20 +164,20 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
 		std::cout << first.toJSON() << std::endl;
 		for (int ii = 0; ii < first.GetPacketCount(); ++ii)
 		{
-			std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0]) + ((ii + 1) * 16)).toJSON() << std::endl;
+			std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON() << std::endl;
 		}
 	}
 
 	for (size_t i = 1; i < data.size(); ++i)
 	{
-		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
+		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
 		packetCount += packet.GetPacketCount() + 1;
 		if (print_packets_)
 		{
 			std::cout << packet.toJSON() << std::endl;
 			for (int ii = 0; ii < packet.GetPacketCount(); ++ii)
 			{
-				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i]) + ((ii + 1) * 16)).toJSON() << std::endl;
+				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON() << std::endl;
 			}
 		}
 	}
@@ -190,8 +191,8 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs & frags)
 	size_t packetsProcessed = 0;
 	for (size_t i = 0; i < data.size(); ++i)
 	{
-		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-		memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i], (1 + packet.GetPacketCount())*sizeof(packet_t));
+		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
+		memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i].blockPointer, (1 + packet.GetPacketCount())*sizeof(packet_t));
 		packetsProcessed += 1 + packet.GetPacketCount();
 	}
 

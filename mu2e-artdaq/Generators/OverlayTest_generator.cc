@@ -255,7 +255,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
   
   std::cout << "Determining total number of packets in payload: " << std::endl;
   for(size_t curDataIdx=0; curDataIdx<data.size(); curDataIdx++) {
-    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[curDataIdx]));
+    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[curDataIdx].blockPointer));
     totalNumPackets += packet.GetPacketCount()+1;
 
     //    std::cout << "ERR: curDataIdx: " << curDataIdx << " packet.GetPacketCount()+1: " << packet.GetPacketCount()+1 << std::endl << std::flush;
@@ -345,7 +345,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
   size_t numPacketsRecorded = 0;
   while(!data.empty()) {
 
-    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx]));
+    DTCLib::DTC_DataHeaderPacket packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[dataIdx].blockPointer));
 
     std::cout << "================ DATA INDEX " << dataIdx << "/" << data.size()-1 << " (" << packet.GetPacketCount()+1 << " packets total) ================" << std::endl;
 
@@ -364,7 +364,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs & frags) {
     // Take pairs of 8-bit words from the DTC header and data packets, combine them,
     // and store them as 16-bit adc_t values in the fragment:
     for(int packetNum = 0; packetNum<packet.GetPacketCount()+1; packetNum++) {
-      DTCLib::DTC_DataPacket curPacket((char*)data[dataIdx] + 16*packetNum);
+      DTCLib::DTC_DataPacket curPacket((char*)data[dataIdx].blockPointer + 16*packetNum);
 
       // Print the words being written to the adc_t array:
       std::cout << "PACKETNUM: " << packetNum << std::endl;

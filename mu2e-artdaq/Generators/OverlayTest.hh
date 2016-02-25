@@ -94,7 +94,7 @@ namespace mu2e {
     std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_; 
     
     size_t dataIdx;
-    std::vector<void*> data;
+    std::vector<DTCLib::DTC_DataBlock> data;
 
     // State
     size_t data_packets_read_;

@@ -140,10 +140,11 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
   hwStartTime_ = times(&ctime);
   while(newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) 
     {
-      if(should_stop()) { break; }
+      if(should_stop()) { 
+break; }
 
       TRACE(1, "Getting DTC Data");
-      std::vector<void*> data;
+      std::vector<DTCLib::DTC_DataBlock> data;
       int retryCount = 5;
       while (data.size() == 0 && retryCount >= 0)
 		{
@@ -167,42 +168,37 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
       }
 
       TRACE(3, "Copying DTC packets into Mu2eFragment");
-	  size_t packetCount = 0;
-      size_t packetsProcessed = 0;
-      packet_t* offset = newfrag.dataEnd();
+      size_t totalSize = 0;
       for (size_t i = 0; i < data.size(); ++i)
 		{
-		  TRACE(3, "Creating packet object to determine data block size: i=%lu, data=%p", i, data[i]);
-		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-		  packetCount += packet.GetPacketCount() + 1;
-		  if(i == 0) {
-			DTCLib::DTC_Timestamp ts = packet.GetTimestamp();
-			TRACE(1, "There are %lu data blocks in timestamp %lu.", data.size(), ts.GetTimestamp(true));
-		  }
+		  totalSize += data[i].byteSize;
 		}
 
-	  auto dataSize = packetCount * sizeof(packet_t);
-	  int64_t diff = dataSize + newfrag.blockSizeBytes() - newfrag.dataSize();
+	  int64_t diff = totalSize + newfrag.blockSizeBytes() - newfrag.dataSize();
 	  if(diff > 0) {
-		double currSize = newfrag.dataSize() / (double)sizeof(packet_t);
-		double remaining = 1 - (newfrag.hdr_block_count() / (double)BLOCK_COUNT_MAX);
-		size_t newSize = static_cast<size_t>(currSize * remaining) * sizeof(packet_t);
-		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", dataSize, newfrag.blockSizeBytes(), newfrag.dataSize(), newSize + diff);
-		newfrag.addSpace(diff + newSize); 
-		offset = newfrag.dataEnd();
+	    auto currSize = newfrag.dataSize();
+	    auto remaining = 1 - (newfrag.hdr_block_count() / static_cast<double>(BLOCK_COUNT_MAX));
+
+
+
+		auto newSize = static_cast<size_t>(currSize * remaining);
+		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", totalSize, newfrag.blockSizeBytes(), newfrag.dataSize(), newSize + diff);
+		newfrag.addSpace(diff + newSize);
 	  }     
 
+	      auto offset = newfrag.dataBegin() + newfrag.dataSize();
+	    size_t intraBlockOffset = 0;
 	  for(size_t i = 0; i < data.size(); ++i)
 		{
-		  auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-          TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu, begin=%p", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t), (void*)newfrag.dataBegin());
-		  memcpy((void*)(offset + packetsProcessed), data[i], (1 + packet.GetPacketCount())*sizeof(packet_t));
-          TRACE(3, "Incrementing packet counter");
-		  packetsProcessed += 1 + packet.GetPacketCount();
+		  // auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
+		  //TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu, begin=%p", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t), (void*)newfrag.dataBegin());
+		  memcpy((void*)(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
+		  //TRACE(3, "Incrementing packet counter");
+		  intraBlockOffset+=data[i].byteSize;
 		}
 
       TRACE(3, "Ending SubEvt");
-      newfrag.endSubEvt( packetsProcessed * sizeof(packet_t) );
+      newfrag.endSubEvt( intraBlockOffset );
     }
 
   TRACE(1, "Incrementing event counter");
