@@ -35,6 +35,10 @@ namespace mu2e {
     // getNext_ function declared in CommandableFragmentGenerator
 
     bool getNext_(artdaq::FragmentPtrs & output) override;
+    void start() override {}
+    void stopNoMutex() override {}
+    void stop() override {}
+
     void readSimFile_(std::string sim_file);
 
     // Like "getNext_", "fragmentIDs_" is a mandatory override; it

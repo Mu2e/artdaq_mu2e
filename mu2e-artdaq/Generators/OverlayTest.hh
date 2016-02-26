@@ -73,6 +73,10 @@ namespace mu2e {
 
     bool getNext_(artdaq::FragmentPtrs & output) override;
 
+    void start() override {}
+    void stop() override {}
+    void stopNoMutex() override {}
+  
     // Like "getNext_", "fragmentIDs_" is a mandatory override; it
     // returns a vector of the fragment IDs an instance of this class
     // is responsible for. Currently, the fragment IDs in OverlayTest

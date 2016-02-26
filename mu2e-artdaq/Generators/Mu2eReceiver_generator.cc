@@ -26,8 +26,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 	, fragment_type_(toFragmentType("MU2E"))
 	, fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id()) }
 	, timestamps_read_(0)
-	, lastReportTime_(0)
-	, hwStartTime_(0)
+  , lastReportTime_(std::chrono::high_resolution_clock::now())
+  , hwStartTime_(std::chrono::high_resolution_clock::now())
 	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
 {
@@ -117,14 +117,6 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter()));
 	}
 
-  TRACE(1, "mu2eReceiver::getNext: Starting CFO thread");
-  uint64_t z = 0;
-  DTCLib::DTC_Timestamp zero(z);
-  if (mode_ != 0) { 
-	TRACE(1, "Sending requests for %i timestamps, starting at %lu", mu2e::BLOCK_COUNT_MAX, mu2e::BLOCK_COUNT_MAX * ev_counter());
-	theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter())); 
-  }
-
   TRACE(1, "mu2eReceiver::getNext: Initializing mu2eFragment metadata");
   mu2eFragment::Metadata metadata;
   metadata.sim_mode = static_cast<int>(mode_);
@@ -144,7 +136,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
        
   //Get data from DTCReceiver
   TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
-	hwStartTime_ = std::high_resolution_clock::now();
+  hwStartTime_ = std::chrono::high_resolution_clock::now();
   while(newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) 
     {
       if(should_stop()) { break; }
@@ -172,7 +164,6 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 			std::cout << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter() << std::endl;
 			break;
 		}
-<<<<<<< Updated upstream
 
       TRACE(3, "Copying DTC packets into Mu2eFragment");
       size_t totalSize = 0;
