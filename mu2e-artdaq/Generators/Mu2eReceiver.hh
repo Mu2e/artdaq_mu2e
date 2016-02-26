@@ -18,7 +18,7 @@
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 #include <vector>
-#include <sys/times.h>
+#include <chrono>
 #include <atomic>
 
 namespace mu2e {    
@@ -56,8 +56,8 @@ namespace mu2e {
 
     // State
     size_t timestamps_read_;
-    clock_t lastReportTime_;
-	clock_t hwStartTime_;
+	std::chrono::high_resolution_clock::time_point lastReportTime_;
+	std::chrono::high_resolution_clock::time_point hwStartTime_;
     DTCLib::DTC_SimMode mode_;
     uint8_t board_id_;
     bool simFileRead_;
@@ -66,17 +66,17 @@ namespace mu2e {
     DTCLib::DTCSoftwareCFO* theCFO_;
     double _timeSinceLastSend()
     {
-      struct tms ctime;
-      clock_t currenttime = times(&ctime);
-      double deltaw = ((double)(currenttime - lastReportTime_))*10000./CLOCKS_PER_SEC;
-	  lastReportTime_ = currenttime;
+	  auto now = std::chrono::high_resolution_clock::now();
+	  auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
+		(now - lastReportTime_).count();
+	  lastReportTime_ = now;
       return deltaw;
     }
     double _timeSinceHWStart()
     {
-      struct tms ctime;
-      clock_t currenttime = times(&ctime);
-      double deltaw = ((double)(currenttime - hwStartTime_))*10000./CLOCKS_PER_SEC;
+	  auto now = std::chrono::high_resolution_clock::now();
+	  auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
+		(now - hwStartTime_).count();
       return deltaw;
     }
   };
