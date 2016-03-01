@@ -21,69 +21,77 @@
 #include <chrono>
 #include <atomic>
 
-namespace mu2e {    
+namespace mu2e
+{
+	class Mu2eReceiver : public artdaq::CommandableFragmentGenerator
+	{
+	public:
+		explicit Mu2eReceiver(fhicl::ParameterSet const& ps);
+		virtual ~Mu2eReceiver();
 
-  class Mu2eReceiver : public artdaq::CommandableFragmentGenerator {
-  public:
-    explicit Mu2eReceiver(fhicl::ParameterSet const & ps);
-    virtual ~Mu2eReceiver();
+	private:
 
-  private:
+		// The "getNext_" function is used to implement user-specific
+		// functionality; it's a mandatory override of the pure virtual
+		// getNext_ function declared in CommandableFragmentGenerator
 
-    // The "getNext_" function is used to implement user-specific
-    // functionality; it's a mandatory override of the pure virtual
-    // getNext_ function declared in CommandableFragmentGenerator
+		bool getNext_(artdaq::FragmentPtrs& output) override;
 
-    bool getNext_(artdaq::FragmentPtrs & output) override;
-    void start() override {}
-    void stopNoMutex() override {}
-    void stop() override {}
+		void start() override {}
 
-    void readSimFile_(std::string sim_file);
+		void stopNoMutex() override {}
 
-    // Like "getNext_", "fragmentIDs_" is a mandatory override; it
-    // returns a vector of the fragment IDs an instance of this class
-    // is responsible for (in the case of Mu2eReceiver, this is just
-    // the fragment_id_ variable declared in the parent
-    // CommandableFragmentGenerator class)
-    
-    std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_() {
-      return fragment_ids_;
-    }
+		void stop() override {}
 
-    // FHiCL-configurable variables. Note that the C++ variable names
-    // are the FHiCL variable names with a "_" appended
+		void readSimFile_(std::string sim_file);
 
-    FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh)
-    
-    std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_; 
+		// Like "getNext_", "fragmentIDs_" is a mandatory override; it
+		// returns a vector of the fragment IDs an instance of this class
+		// is responsible for (in the case of Mu2eReceiver, this is just
+		// the fragment_id_ variable declared in the parent
+		// CommandableFragmentGenerator class)
 
-    // State
-    size_t timestamps_read_;
-	std::chrono::high_resolution_clock::time_point lastReportTime_;
-	std::chrono::high_resolution_clock::time_point hwStartTime_;
-    DTCLib::DTC_SimMode mode_;
-    uint8_t board_id_;
-    bool simFileRead_;
+		std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_()
+		{
+			return fragment_ids_;
+		}
 
-    DTCLib::DTC* theInterface_;
-    DTCLib::DTCSoftwareCFO* theCFO_;
-    double _timeSinceLastSend()
-    {
-	  auto now = std::chrono::high_resolution_clock::now();
-	  auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
-		(now - lastReportTime_).count();
-	  lastReportTime_ = now;
-      return deltaw;
-    }
-    double _timeSinceHWStart()
-    {
-	  auto now = std::chrono::high_resolution_clock::now();
-	  auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
-		(now - hwStartTime_).count();
-      return deltaw;
-    }
-  };
+		// FHiCL-configurable variables. Note that the C++ variable names
+		// are the FHiCL variable names with a "_" appended
+
+		FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh)
+
+		std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
+
+		// State
+		size_t timestamps_read_;
+		std::chrono::high_resolution_clock::time_point lastReportTime_;
+		std::chrono::high_resolution_clock::time_point hwStartTime_;
+		DTCLib::DTC_SimMode mode_;
+		uint8_t board_id_;
+		bool simFileRead_;
+
+		DTCLib::DTC* theInterface_;
+		DTCLib::DTCSoftwareCFO* theCFO_;
+
+		double _timeSinceLastSend()
+		{
+			auto now = std::chrono::high_resolution_clock::now();
+			auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
+				(now - lastReportTime_).count();
+			lastReportTime_ = now;
+			return deltaw;
+		}
+
+		double _timeSinceHWStart()
+		{
+			auto now = std::chrono::high_resolution_clock::now();
+			auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
+				(now - hwStartTime_).count();
+			return deltaw;
+		}
+	};
 }
 
 #endif /* mu2e_artdaq_Generators_Mu2eReceiver_hh */
+

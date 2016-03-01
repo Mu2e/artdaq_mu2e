@@ -21,15 +21,15 @@
 
 #define TRACE_NAME "MU2EDEV"
 
-mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
+mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	: CommandableFragmentGenerator(ps)
-	, fragment_type_(toFragmentType("MU2E"))
-	, fragment_ids_{ static_cast<artdaq::Fragment::fragment_id_t>(fragment_id()) }
-	, timestamps_read_(0)
-  , lastReportTime_(std::chrono::high_resolution_clock::now())
-  , hwStartTime_(std::chrono::high_resolution_clock::now())
-	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
-	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
+	  , fragment_type_(toFragmentType("MU2E"))
+	  , fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
+	  , timestamps_read_(0)
+	  , lastReportTime_(std::chrono::high_resolution_clock::now())
+	  , hwStartTime_(std::chrono::high_resolution_clock::now())
+	  , mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
 {
 	TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
 	// mode_ can still be overridden by environment!
@@ -38,30 +38,30 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 	mode_ = theInterface_->ReadSimMode();
 
 	int ringRocs[] = {
-	ps.get<int>("ring_0_roc_count",-1),
-	ps.get<int>("ring_1_roc_count",-1),
-	ps.get<int>("ring_2_roc_count",-1),
-	ps.get<int>("ring_3_roc_count",-1),
-	ps.get<int>("ring_4_roc_count",-1),
-	ps.get<int>("ring_5_roc_count",-1)
+		ps.get<int>("ring_0_roc_count", -1),
+		ps.get<int>("ring_1_roc_count", -1),
+		ps.get<int>("ring_2_roc_count", -1),
+		ps.get<int>("ring_3_roc_count", -1),
+		ps.get<int>("ring_4_roc_count", -1),
+		ps.get<int>("ring_5_roc_count", -1)
 	};
 
 	bool ringTiming[] = {
-	  ps.get<bool>("ring_0_timing_enabled",true),
-	  ps.get<bool>("ring_1_timing_enabled",true),
-	  ps.get<bool>("ring_2_timing_enabled",true),
-	  ps.get<bool>("ring_3_timing_enabled",true),
-	  ps.get<bool>("ring_4_timing_enabled",true),
-	  ps.get<bool>("ring_5_timing_enabled",true)
+		ps.get<bool>("ring_0_timing_enabled", true),
+		ps.get<bool>("ring_1_timing_enabled", true),
+		ps.get<bool>("ring_2_timing_enabled", true),
+		ps.get<bool>("ring_3_timing_enabled", true),
+		ps.get<bool>("ring_4_timing_enabled", true),
+		ps.get<bool>("ring_5_timing_enabled", true)
 	};
 
 	bool ringEmulators[] = {
-	  ps.get<bool>("ring_0_roc_emulator_enabled",false),
-	  ps.get<bool>("ring_1_roc_emulator_enabled",false),
-	  ps.get<bool>("ring_2_roc_emulator_enabled",false),
-	  ps.get<bool>("ring_3_roc_emulator_enabled",false),
-	  ps.get<bool>("ring_4_roc_emulator_enabled",false),
-	  ps.get<bool>("ring_5_roc_emulator_enabled",false)
+		ps.get<bool>("ring_0_roc_emulator_enabled", false),
+		ps.get<bool>("ring_1_roc_emulator_enabled", false),
+		ps.get<bool>("ring_2_roc_emulator_enabled", false),
+		ps.get<bool>("ring_3_roc_emulator_enabled", false),
+		ps.get<bool>("ring_4_roc_emulator_enabled", false),
+		ps.get<bool>("ring_5_roc_emulator_enabled", false)
 	};
 
 	for (int ring = 0; ring < 6; ++ring)
@@ -69,10 +69,16 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const & ps)
 		if (ringRocs[ring] >= 0)
 		{
 			theInterface_->EnableRing(DTCLib::DTC_Rings[ring],
-				DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
-				DTCLib::DTC_ROCS[ringRocs[ring]]);
-			if (ringEmulators[ring]) { theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]); }
-			else { theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]); }
+			                          DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
+			                          DTCLib::DTC_ROCS[ringRocs[ring]]);
+			if (ringEmulators[ring])
+			{
+				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
+			}
+			else
+			{
+				theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]);
+			}
 		}
 	}
 
@@ -100,9 +106,12 @@ mu2e::Mu2eReceiver::~Mu2eReceiver()
 	delete theCFO_;
 }
 
-bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
+bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 {
-	while (!simFileRead_ && !should_stop()) { usleep(5000); }
+	while (!simFileRead_ && !should_stop())
+	{
+		usleep(5000);
+	}
 
 	if (should_stop())
 	{
@@ -112,39 +121,44 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 	TRACE(1, "mu2eReceiver::getNext: Starting CFO thread");
 	uint64_t z = 0;
 	DTCLib::DTC_Timestamp zero(z);
-	if (mode_ != 0) {
+	if (mode_ != 0)
+	{
 		TRACE(1, "Sending requests for %i timestamps, starting at %lu", mu2e::BLOCK_COUNT_MAX, mu2e::BLOCK_COUNT_MAX * ev_counter());
 		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter()));
 	}
 
-  TRACE(1, "mu2eReceiver::getNext: Initializing mu2eFragment metadata");
-  mu2eFragment::Metadata metadata;
-  metadata.sim_mode = static_cast<int>(mode_);
-  metadata.run_number = run_number();
-  metadata.board_id = board_id_;
+	TRACE(1, "mu2eReceiver::getNext: Initializing mu2eFragment metadata");
+	mu2eFragment::Metadata metadata;
+	metadata.sim_mode = static_cast<int>(mode_);
+	metadata.run_number = run_number();
+	metadata.board_id = board_id_;
 
-  // And use it, along with the artdaq::Fragment header information
-  // (fragment id, sequence id, and user type) to create a fragment
-  TRACE(1, "mu2eReceiver::getNext: Creating new mu2eFragment!");
-  frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
-  // Now we make an instance of the overlay to put the data into...
-  TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
-  mu2eFragmentWriter newfrag(*frags.back());
+	// And use it, along with the artdaq::Fragment header information
+	// (fragment id, sequence id, and user type) to create a fragment
+	TRACE(1, "mu2eReceiver::getNext: Creating new mu2eFragment!");
+	frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
+	// Now we make an instance of the overlay to put the data into...
+	TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
+	mu2eFragmentWriter newfrag(*frags.back());
 
-  TRACE(1, "mu2eReceiver::getNext: Reserving space for 2 * BLOCK_COUNT_MAX packets");
-  newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 2 * sizeof(packet_t));
-       
-  //Get data from DTCReceiver
-  TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
-  hwStartTime_ = std::chrono::high_resolution_clock::now();
-  while(newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) 
-    {
-      if(should_stop()) { break; }
+	TRACE(1, "mu2eReceiver::getNext: Reserving space for 2 * BLOCK_COUNT_MAX packets");
+	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 2 * sizeof(packet_t));
 
-      TRACE(1, "Getting DTC Data");
-      std::vector<DTCLib::DTC_DataBlock> data;
-      int retryCount = 5;
-      while (data.size() == 0 && retryCount >= 0)
+	//Get data from DTCReceiver
+	TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
+	theInterface_->GetDevice()->ResetDeviceTime();
+		size_t totalSize = 0;
+	while (newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX)
+	{
+		if (should_stop())
+		{
+			break;
+		}
+
+		TRACE(1, "Getting DTC Data");
+		std::vector<DTCLib::DTC_DataBlock> data;
+		int retryCount = 5;
+		while (data.size() == 0 && retryCount >= 0)
 		{
 			try
 			{
@@ -157,56 +171,64 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 				std::cerr << ex.what() << std::endl;
 			}
 			retryCount--;
-			if (data.size() == 0) { usleep(10000); }
+			if (data.size() == 0)
+			{
+				usleep(10000);
+			}
 		}
-		if (retryCount < 0 && data.size() == 0) {
+		if (retryCount < 0 && data.size() == 0)
+		{
 			TRACE(1, "Retry count exceeded. Something is very wrong indeed");
 			std::cout << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter() << std::endl;
 			break;
 		}
 
-      TRACE(3, "Copying DTC packets into Mu2eFragment");
-      size_t totalSize = 0;
-      for (size_t i = 0; i < data.size(); ++i)
+		TRACE(3, "Copying DTC packets into Mu2eFragment");
+		for (size_t i = 0; i < data.size(); ++i)
 		{
-		  totalSize += data[i].byteSize;
+			totalSize += data[i].byteSize;
 		}
 
-	  int64_t diff = totalSize + newfrag.blockSizeBytes() - newfrag.dataSize();
-	  if(diff > 0) {
-	    auto currSize = newfrag.dataSize();
-	    auto remaining = 1 - (newfrag.hdr_block_count() / static_cast<double>(BLOCK_COUNT_MAX));
-
-		auto newSize = static_cast<size_t>(currSize * remaining);
-		TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", totalSize, newfrag.blockSizeBytes(), newfrag.dataSize(), newSize + diff);
-		newfrag.addSpace(diff + newSize);
-	  }     
-
-	      auto offset = newfrag.dataBegin() + newfrag.dataSize();
-	    size_t intraBlockOffset = 0;
-	  for(size_t i = 0; i < data.size(); ++i)
+		int64_t diff = totalSize + newfrag.blockSizeBytes() - newfrag.dataSize();
+		if (diff > 0)
 		{
-		  // auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-		  //TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu, begin=%p", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t), (void*)newfrag.dataBegin());
-		  memcpy((void*)(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
-		  //TRACE(3, "Incrementing packet counter");
-		  intraBlockOffset+=data[i].byteSize;
+			auto currSize = newfrag.dataSize();
+			auto remaining = 1 - (newfrag.hdr_block_count() / static_cast<double>(BLOCK_COUNT_MAX));
+
+			auto newSize = static_cast<size_t>(currSize * remaining);
+			TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", totalSize, newfrag.blockSizeBytes(), newfrag.dataSize(), newSize + diff);
+			newfrag.addSpace(diff + newSize);
 		}
 
-      TRACE(3, "Ending SubEvt");
-      newfrag.endSubEvt( intraBlockOffset );
-    }
+		auto offset = newfrag.dataBegin() + newfrag.dataSize();
+		size_t intraBlockOffset = 0;
+		for (size_t i = 0; i < data.size(); ++i)
+		{
+			// auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
+			//TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu, begin=%p", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t), (void*)newfrag.dataBegin());
+			memcpy((void*)(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
+			//TRACE(3, "Incrementing packet counter");
+			intraBlockOffset += data[i].byteSize;
+		}
+
+		TRACE(3, "Ending SubEvt");
+		newfrag.endSubEvt(intraBlockOffset);
+	}
 	TRACE(1, "Incrementing event counter");
 	ev_counter_inc();
 
 	TRACE(1, "Reporting Metrics");
 	timestamps_read_ += newfrag.hdr_block_count();
+	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 	double timestamp_rate = newfrag.hdr_block_count() / _timeSinceLastSend();
-	double hw_timestamp_rate = newfrag.hdr_block_count() / _timeSinceHWStart();
+	double hw_timestamp_rate = newfrag.hdr_block_count() / hwTime;
+	double hw_data_rate = totalSize / hwTime;
 
 	metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, true, false);
 	metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true, true);
 	metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true, true);
+	auto p = DTCLib::Utilities::FormatBytes(hw_data_rate,true);
+	metricMan_->sendMetric("PCIe Transfer Rate", p.first, p.second + "/s",1, true ,true);
 
 
 	TRACE(1, "Returning true");
@@ -215,3 +237,4 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs & frags)
 
 // The following macro is defined in artdaq's GeneratorMacros.hh header
 DEFINE_ARTDAQ_COMMANDABLE_GENERATOR(mu2e::Mu2eReceiver)
+
