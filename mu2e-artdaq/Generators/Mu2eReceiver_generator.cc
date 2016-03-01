@@ -3,8 +3,6 @@
 #include "art/Utilities/Exception.h"
 #include "artdaq/Application/GeneratorMacros.hh"
 #include "cetlib/exception.h"
-#include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
-#include "mu2e-artdaq-core/Overlays/DTCFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 #include "mu2e-artdaq-core/Overlays/mu2eFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
@@ -16,8 +14,10 @@
 #include <iterator>
 #include <iostream>
 
+#ifndef _WIN32
 #include <unistd.h>
 #include "trace.h"
+#endif
 
 #define TRACE_NAME "MU2EDEV"
 
@@ -27,13 +27,12 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	  , fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
 	  , timestamps_read_(0)
 	  , lastReportTime_(std::chrono::high_resolution_clock::now())
-	  , hwStartTime_(std::chrono::high_resolution_clock::now())
 	  , mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
 {
 	TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
 	// mode_ can still be overridden by environment!
-	theInterface_ = new DTCLib::DTC(mode_, "", false);
+	theInterface_ = new DTCLib::DTC(mode_);
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 

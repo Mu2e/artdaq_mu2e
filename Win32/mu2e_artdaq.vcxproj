@@ -74,7 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>X:\Desktop\mu2e-mrb-base\srcs\pcie_linux_kernel_module\;X:\products\artdaq_core\v1_04_23\include;X:\products\artdaq\v1_12_14\include;X:\products\fhiclcpp\v3_18_02\include;X:\Desktop\mu2e-mrb-base\srcs\mu2e_artdaq_core;X:\Desktop\mu2e-mrb-base\srcs\mu2e_artdaq;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>X:\products\messagefacility\v1_16_23\include;X:\products\art\v1_18_05\include;X:\products\cetlib\v1_17_02\include;X:\Desktop\mu2e-mrb-base\srcs\pcie_linux_kernel_module\;X:\products\artdaq_core\v1_04_23\include;X:\products\artdaq\v1_12_14\include;X:\products\fhiclcpp\v3_18_02\include;X:\Desktop\mu2e-mrb-base\srcs\mu2e_artdaq_core;X:\Desktop\mu2e-mrb-base\srcs\mu2e_artdaq;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
