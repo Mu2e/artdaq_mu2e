@@ -5,6 +5,11 @@ if [[ "x$USER" == "xmu2edaq" ]]; then
   exec > /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
 fi
 
+hardwareArg=""
+if [[ "x$!" == "xhardware" ]]; then
+  hardwareArg="-H"
+fi
+
 export TRACE_FILE=/tmp/trace_buffer_$USER
 export RGANG_RSH=/usr/bin/rsh
 rgang --do-local "mu2edaq0{1,4-8}" "/home/mu2edaq/setup_trace.sh"
@@ -20,7 +25,7 @@ fi
 export DTCLIB_SIM_PATH=/home/mu2edaq/data/simData
 startMu2ePilotSystem.sh >/dev/null 2>&1 & # The "system" log goes to /daqlogs/pmt
 sleep 10
-manageMu2ePilotSystem.sh -D init
+manageMu2ePilotSystem.sh -D $hardwareArg init
 runNum=$((1 + `cat runNumbers.log|tail -1|awk '{print $1}'`))
 echo "$runNum $startTime" >>runNumbers.log
 sleep 10

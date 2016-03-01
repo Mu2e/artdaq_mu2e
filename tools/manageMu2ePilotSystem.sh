@@ -18,6 +18,7 @@ THIS_NODE=`hostname -s`
 # 10) the desired number of events in each file
 # 11) the desired time duration of each file (minutes)
 # 12) whether to print out CFG information (verbose)
+# 13) whether we're in hardware or software mode
 function launch() {
 
   enableSerial=""
@@ -25,12 +26,19 @@ function launch() {
       enableSerial="-e"
   fi
 
+  CAL=2
+  TRK=1
+  if [[ "${13}" == "1" ]]; then
+    CAL=4
+    TRK=4  
+  fi
+
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,1,1,$DTCLIB_SIM_PATH/mu2edaq04.bin \
-    --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,1,1,$DTCLIB_SIM_PATH/mu2edaq05.bin \
-    --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,1,1,$DTCLIB_SIM_PATH/mu2edaq06.bin \
-    --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,1,1,$DTCLIB_SIM_PATH/mu2edaq07.bin \
-    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,2,1,$DTCLIB_SIM_PATH/mu2edaq08.bin \
+    --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
+    --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
+    --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
+    --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
+    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},1,$DTCLIB_SIM_PATH/bigPackets.bin \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[0]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[1]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[2]} \
@@ -110,6 +118,7 @@ Configuration options (init commands):
   --file-duration <duration>: specifies the desired duration of each file (minutes)
       [default=0, which means no duration limit for files]
   -o <data dir>: specifies the directory for data files [default=/tmp]
+  -H: Hardware mode (Currently using Detector Emulation mode of the DTC)
 Begin-run options (start command):
   -N <run number>: specifies the run number
 End-run options (stop command):
@@ -159,9 +168,10 @@ fileSize=8000
 fsChoiceSpecified=0
 fileEventCount=0
 fileDuration=0
+hardwareMode=0
 verbose=0
 OPTIND=1
-while getopts "hc:N:o:t:m:Dn:d:s:w:v-:" opt; do
+while getopts "hHc:N:o:t:m:Dn:d:s:w:v-:" opt; do
     if [ "$opt" = "-" ]; then
         opt=$OPTARG
     fi
@@ -182,6 +192,9 @@ while getopts "hc:N:o:t:m:Dn:d:s:w:v-:" opt; do
         D)
             diskWriting=0
             ;;
+	H)
+	    hardwareMode=1
+	    ;;
         n)
             runEventCount=${OPTARG}
             ;;
@@ -295,11 +308,11 @@ if [[ "$command" == "shutdown" ]]; then
     # first send a stop command to end the run (in case it is needed)
     launch "stop" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
     # next send a shutdown command to move the processes to their ground state
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
     # stop the MPI program
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     # clean up any stale shared memory segment
@@ -311,11 +324,11 @@ elif [[ "$command" == "restart" ]]; then
     # first send a stop command to end the run (in case it is needed)
     launch "stop" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
     # next send a shutdown command to move the processes to their ground state
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
     # stop the MPI program
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     # clean up any stale shared memory segment
@@ -326,11 +339,11 @@ elif [[ "$command" == "reinit" ]]; then
     # first send a stop command to end the run (in case it is needed)
     launch "stop" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
     # next send a shutdown command to move the processes to their ground state
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
     # stop the MPI program
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     # clean up any stale shared memory segment
@@ -341,11 +354,11 @@ elif [[ "$command" == "reinit" ]]; then
     sleep 5
     launch "init" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
 elif [[ "$command" == "exit" ]]; then
     launch "shutdown" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.exit
     ssh ${AGGREGATOR_NODE} "ipcs | grep ${shmKeyString} | awk '{print \$2}' | xargs ipcrm -m 2>/dev/null"
@@ -364,7 +377,7 @@ elif [[ "$command" == "fast-reinit" ]]; then
     sleep 5
     launch "init" $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
 elif [[ "$command" == "fast-exit" ]]; then
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.stopSystem
     xmlrpc ${THIS_NODE}:${MU2EARTDAQ_PMT_PORT}/RPC2 pmt.exit
@@ -373,5 +386,5 @@ elif [[ "$command" == "fast-exit" ]]; then
 else
     launch $command $runNumber $onmonEnable $dataDir \
         $logFile $diskWriting $runEventCount $runDuration $fileSize \
-        $fileEventCount $fileDuration $verbose
+        $fileEventCount $fileDuration $verbose $hardwareMode
 fi

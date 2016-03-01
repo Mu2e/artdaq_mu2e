@@ -26,7 +26,7 @@ services: {
     data_receiver_count: 1 # %{ag_count}
     #broadcast_sends: true
   }
-  TimeTracker: { summaryOnly: true }
+  TimeTracker: { }
   #SimpleMemoryCheck: { }
 }
 
