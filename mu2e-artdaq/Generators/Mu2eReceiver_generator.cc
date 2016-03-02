@@ -140,8 +140,8 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
 	mu2eFragmentWriter newfrag(*frags.back());
 
-	TRACE(1, "mu2eReceiver::getNext: Reserving space for 2 * BLOCK_COUNT_MAX packets");
-	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 2 * sizeof(packet_t));
+	TRACE(1, "mu2eReceiver::getNext: Reserving space for 64 * BLOCK_COUNT_MAX bytes");
+	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 64);
 
 	//Get data from DTCReceiver
 	TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
