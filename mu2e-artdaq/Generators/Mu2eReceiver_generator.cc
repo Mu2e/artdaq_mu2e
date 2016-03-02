@@ -161,19 +161,16 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		{
 			try
 			{
-				TRACE(4, "Calling theInterface->GetData(zero)");
+			  //TRACE(4, "Calling theInterface->GetData(zero)");
 				data = theInterface_->GetData(zero);
-				TRACE(4, "Done calling theInterface->GetData(zero)");
+				//TRACE(4, "Done calling theInterface->GetData(zero)");
 			}
 			catch (std::exception ex)
 			{
 				std::cerr << ex.what() << std::endl;
 			}
 			retryCount--;
-			if (data.size() == 0)
-			{
-				usleep(10000);
-			}
+			//if (data.size() == 0){usleep(10000);}
 		}
 		if (retryCount < 0 && data.size() == 0)
 		{
@@ -201,19 +198,17 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			newfrag.addSpace(diff + newSize);
 		}
 
+		TRACE(3, "Copying DTC packets into Mu2eFragment");
 		auto offset = newfrag.dataBegin() + newfrag.blockSizeBytes();
 		size_t intraBlockOffset = 0;
 		for (size_t i = 0; i < data.size(); ++i)
 		{
-			// auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i]));
-			//TRACE(3, "Copying packet %lu. src=%p, dst=%p, sz=%lu, begin=%p", i, data[i],(void*)(offset + packetsProcessed),(1 + packet.GetPacketCount())*sizeof(packet_t), (void*)newfrag.dataBegin());
 			TRACE(4, "Copying data from %p to %p (sz=%llu)", reinterpret_cast<void*>(data[i].blockPointer), reinterpret_cast<void*>(offset + intraBlockOffset), (unsigned long long)data[i].byteSize);
-			memcpy((void*)(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
-			//TRACE(3, "Incrementing packet counter");
+			memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
 			intraBlockOffset += data[i].byteSize;
 		}
 
-		TRACE(3, "Ending SubEvt");
+		TRACE(3, "Ending SubEvt %lu", newfrag.hdr_block_count());
 		newfrag.endSubEvt(intraBlockOffset);
 	}
 	TRACE(1, "Incrementing event counter");
@@ -229,8 +224,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, true, false);
 	metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true, true);
 	metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true, true);
-	auto p = DTCLib::Utilities::FormatBytes(hw_data_rate,true);
-	metricMan_->sendMetric("PCIe Transfer Rate", p.first, p.second + "/s",1, true ,true);
+	metricMan_->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s",1, true ,true);
 
 
 	TRACE(1, "Returning true");
