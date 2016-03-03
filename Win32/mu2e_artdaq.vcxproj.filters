@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\mu2e-artdaq\artmodules\DTCDump_module.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mu2e-artdaq\artmodules\DetectorDump_module.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mu2e-artdaq\artmodules\Mu2eArtdaqBuildInfo_module.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mu2e-artdaq\artmodules\dqm\WFViewer_module.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mu2e-artdaq\artmodules\dqm\RootApplication_module.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mu2e-artdaq\generators\OverlayTest_generator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mu2e-artdaq\generators\Mu2eReceiver_generator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mu2e-artdaq\generators\DTCReceiver_generator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tools\driver.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\mu2e-artdaq\buildinfo\GetPackageBuildInfo.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mu2e-artdaq\generators\DTCReceiver.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mu2e-artdaq\generators\OverlayTest.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mu2e-artdaq\generators\Mu2eReceiver.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\tools\rename.rb" />
+    <None Include="..\tools\CreateNewFragmentGenerator.rb" />
+    <None Include="..\tools\DemoControl.rb" />
+    <None Include="..\tools\generateMu2e.rb" />
+    <None Include="..\tools\RunDriver.rb" />
+    <None Include="..\tools\generateEventBuilderMain.rb" />
+    <None Include="..\tools\generateWFViewer.rb" />
+    <None Include="..\tools\generateEventBuilder.rb" />
+    <None Include="..\tools\demo_utilities.rb" />
+    <None Include="..\tools\generateDTC.rb" />
+    <None Include="..\tools\generateBoardReaderMain.rb" />
+    <None Include="..\tools\generateAggregator.rb" />
+    <None Include="..\tools\generateAggregatorMain.rb" />
+    <None Include="..\tools\cleanupMu2ePilotSystem.sh" />
+    <None Include="..\tools\setup_trace.sh" />
+    <None Include="..\tools\downloadDeps.sh" />
+    <None Include="..\tools\xt_cmd.sh" />
+    <None Include="..\tools\startMu2ePilotSystem.sh" />
+    <None Include="..\tools\manageMu2ePilotSystem.sh" />
+    <None Include="..\tools\quick-start.sh" />
+    <None Include="..\tools\startMu2eSingleNodeSystem.sh" />
+    <None Include="..\tools\manageMu2eSingleNodeSystem.sh" />
+    <None Include="..\tools\installArtDaqDemo.sh" />
+    <None Include="..\tools\runMu2ePilotSystem.sh" />
+    <None Include="..\tools\setupDemoEnvironment.sh" />
+  </ItemGroup>
+</Project>

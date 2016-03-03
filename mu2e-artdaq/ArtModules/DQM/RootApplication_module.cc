@@ -18,40 +18,47 @@
 #include <TSystem.h>
 #include <unistd.h>
 
-namespace mu2e {
-  class RootApplication : public art::EDAnalyzer {
-    public:
-      explicit RootApplication (fhicl::ParameterSet const & p);
-      virtual ~RootApplication ();
+namespace mu2e
+{
+	class RootApplication : public art::EDAnalyzer
+	{
+	public:
+		explicit RootApplication(fhicl::ParameterSet const& p);
+		virtual ~RootApplication();
 
-      void beginJob() override;
-      void analyze (art::Event const & e) override;
-      void endJob() override;
+		void beginJob() override;
+		void analyze(art::Event const& e) override;
+		void endJob() override;
 
-    private:
-      std::unique_ptr<TApplication> app_;
-      bool force_new_;
-      bool dont_quit_;
-  };
+	private:
+		std::unique_ptr<TApplication> app_;
+		bool force_new_;
+		bool dont_quit_;
+	};
 }
 
-mu2e::RootApplication::RootApplication (fhicl::ParameterSet const &ps): art::EDAnalyzer(ps), force_new_(ps.get<bool> ("force_new", true)), dont_quit_(ps.get<bool> ("dont_quit", false)) {}
+mu2e::RootApplication::RootApplication(fhicl::ParameterSet const& ps): art::EDAnalyzer(ps), force_new_(ps.get<bool>("force_new", true)), dont_quit_(ps.get<bool>("dont_quit", false)) {}
 
-mu2e::RootApplication::~RootApplication () { }
+mu2e::RootApplication::~RootApplication() { }
 
-void mu2e::RootApplication::analyze (art::Event const &) {
-  gSystem->ProcessEvents();
+void mu2e::RootApplication::analyze(art::Event const&)
+{
+	gSystem->ProcessEvents();
 }
 
-void mu2e::RootApplication::beginJob () { 
-  if (!gApplication || force_new_) {
-    int tmp_argc(0);
-    app_ = std::unique_ptr<TApplication>(new TApplication("noapplication", &tmp_argc, 0));
-  }
+void mu2e::RootApplication::beginJob()
+{
+	if (!gApplication || force_new_)
+	{
+		int tmp_argc(0);
+		app_ = std::unique_ptr<TApplication>(new TApplication("noapplication", &tmp_argc, 0));
+	}
 }
 
-void mu2e::RootApplication::endJob() {
-  if (dont_quit_) app_->Run (true);
+void mu2e::RootApplication::endJob()
+{
+	if (dont_quit_) app_->Run(true);
 }
 
 DEFINE_ART_MODULE(mu2e::RootApplication)
+

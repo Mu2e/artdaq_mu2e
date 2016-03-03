@@ -31,65 +31,83 @@
 #include "dtcInterfaceLib/DTC.h"
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
-namespace mu2e {    
+namespace mu2e
+{
+	class DTCReceiver : public artdaq::CommandableFragmentGenerator
+	{
+	public:
+		explicit DTCReceiver(fhicl::ParameterSet const& ps);
+		virtual ~DTCReceiver();
 
-  class DTCReceiver : public artdaq::CommandableFragmentGenerator {
-  public:
-    explicit DTCReceiver(fhicl::ParameterSet const & ps);
-    virtual ~DTCReceiver();
+		bool getNextDTCFragment(artdaq::FragmentPtrs& output);
 
-    bool getNextDTCFragment(artdaq::FragmentPtrs & output);
-	DTCLib::DTC_SimMode GetMode() { return mode_; }
-    FragmentType GetFragmentType() { return fragment_type_; }
+		DTCLib::DTC_SimMode GetMode()
+		{
+			return mode_;
+		}
 
-  private:
+		FragmentType GetFragmentType()
+		{
+			return fragment_type_;
+		}
 
-    // The "getNext_" function is used to implement user-specific
-    // functionality; it's a mandatory override of the pure virtual
-    // getNext_ function declared in CommandableFragmentGenerator
+	private:
 
-    bool getNext_(artdaq::FragmentPtrs & output) override;
-    void readSimFile_(std::string sim_file);
+		// The "getNext_" function is used to implement user-specific
+		// functionality; it's a mandatory override of the pure virtual
+		// getNext_ function declared in CommandableFragmentGenerator
 
-    // Like "getNext_", "fragmentIDs_" is a mandatory override; it
-    // returns a vector of the fragment IDs an instance of this class
-    // is responsible for (in the case of DTCReceiver, this is just
-    // the fragment_id_ variable declared in the parent
-    // CommandableFragmentGenerator class)
-    
-    std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_() {
-      return fragment_ids_;
-    }
+		bool getNext_(artdaq::FragmentPtrs& output) override;
 
-    // FHiCL-configurable variables. Note that the C++ variable names
-    // are the FHiCL variable names with a "_" appended
+		void start() override {}
 
-    FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh)
-    
-    std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_; 
+		void stopNoMutex() override {}
 
-    // State
-    size_t packets_read_;
-    DTCLib::DTC_SimMode mode_;
-    uint8_t board_id_;
-    bool simFileRead_;
+		void stop() override {}
 
-    DTCLib::DTC* theInterface_;
-    DTCLib::DTCSoftwareCFO* theCFO_;
+		void readSimFile_(std::string sim_file);
 
-    // For Debugging:
-    bool print_packets_;
+		// Like "getNext_", "fragmentIDs_" is a mandatory override; it
+		// returns a vector of the fragment IDs an instance of this class
+		// is responsible for (in the case of DTCReceiver, this is just
+		// the fragment_id_ variable declared in the parent
+		// CommandableFragmentGenerator class)
 
-//    //    std::pair<std::vector<std::string>::const_iterator, uint64_t> next_point_;
-//    //    std::atomic<bool> should_stop_;
-//    //    std::independent_bits_engine<std::minstd_rand, 2, V172xFragment::adc_type> twoBits_;
-//
-//    // Root Input
-//    int64_t gen_from_file_;
-//    TFile * file_;
-//    TTree *eventTree_;
-//    art::Wrapper< std::vector<artdaq::Fragment> >* wrapper_;
-  };
+		std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_()
+		{
+			return fragment_ids_;
+		}
+
+		// FHiCL-configurable variables. Note that the C++ variable names
+		// are the FHiCL variable names with a "_" appended
+
+		FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh)
+
+		std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
+
+		// State
+		size_t packets_read_;
+		DTCLib::DTC_SimMode mode_;
+		uint8_t board_id_;
+		bool simFileRead_;
+
+		DTCLib::DTC* theInterface_;
+		DTCLib::DTCSoftwareCFO* theCFO_;
+
+		// For Debugging:
+		bool print_packets_;
+
+		//    //    std::pair<std::vector<std::string>::const_iterator, uint64_t> next_point_;
+		//    //    std::atomic<bool> should_stop_;
+		//    //    std::independent_bits_engine<std::minstd_rand, 2, V172xFragment::adc_type> twoBits_;
+		//
+		//    // Root Input
+		//    int64_t gen_from_file_;
+		//    TFile * file_;
+		//    TTree *eventTree_;
+		//    art::Wrapper< std::vector<artdaq::Fragment> >* wrapper_;
+	};
 }
 
 #endif /* mu2e_artdaq_Generators_DTCReceiver_hh */
+

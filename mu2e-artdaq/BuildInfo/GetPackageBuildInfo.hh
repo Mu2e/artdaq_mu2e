@@ -5,13 +5,13 @@
 
 #include <string>
 
-namespace mu2e {
-
-  struct GetPackageBuildInfo {
-
-    static artdaq::PackageBuildInfo getPackageBuildInfo();
-  };
-
+namespace mu2e
+{
+	struct GetPackageBuildInfo
+	{
+		static artdaq::PackageBuildInfo getPackageBuildInfo();
+	};
 }
 
 #endif /* mu2e_artdaq_BuildInfo_GetPackageBuildInfo_hh */
+
