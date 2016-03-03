@@ -8,7 +8,7 @@ export TRACE_FILE=/tmp/trace_buffer_$USER
 export TRACE_NAME=MU2EDEV
 
 # Trace everything
-${TRACE_BIN}/trace_cntl lvlset `bitN_to_mask "1-21"` 0 0;
+${TRACE_BIN}/trace_cntl lvlset `bitN_to_mask "1-5"` 0 0;
 # Trace much less
 #${TRACE_BIN}/trace_cntl lvlset 0xF 0 0;
 # Trace most things to memory buffer, also output to stdout
