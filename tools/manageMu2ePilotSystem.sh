@@ -34,11 +34,11 @@ function launch() {
   fi
 
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
-    --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
-    --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
-    --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},1,$DTCLIB_SIM_PATH/bigPackets.bin \
-    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},1,$DTCLIB_SIM_PATH/bigPackets.bin \
+    --mu2e mu2edaq04.fnal.gov,${MU2EARTDAQ_BR_PORT[0]},0,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq05.fnal.gov,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq06.fnal.gov,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq07.fnal.gov,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq08.fnal.gov,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[0]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[1]} \
     --eb mu2edaq04.fnal.gov,${MU2EARTDAQ_EB_PORT[2]} \

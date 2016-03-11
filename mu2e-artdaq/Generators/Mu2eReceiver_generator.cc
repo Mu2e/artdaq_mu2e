@@ -12,7 +12,6 @@
 #include <fstream>
 #include <iomanip>
 #include <iterator>
-#include <iostream>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -32,7 +31,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 {
 	TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
 	// mode_ can still be overridden by environment!
-	theInterface_ = new DTCLib::DTC(mode_);
+	theInterface_ = new DTCLib::DTC(mode_);	
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 
@@ -167,7 +166,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			}
 			catch (std::exception ex)
 			{
-				std::cerr << ex.what() << std::endl;
+			  mf::LogError("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what();
 			}
 			retryCount--;
 			//if (data.size() == 0){usleep(10000);}
@@ -175,7 +174,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		if (retryCount < 0 && data.size() == 0)
 		{
 			TRACE(1, "Retry count exceeded. Something is very wrong indeed");
-			std::cout << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter() << std::endl;
+			mf::LogError("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter();
 			break;
 		}
 

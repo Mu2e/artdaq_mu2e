@@ -1,9 +1,12 @@
 #!/bin/bash
 startTime=`date +%Y-%m-%d_%H:%M:%S`
 if [[ "x$USER" == "xmu2edaq" ]]; then
+  mkdir -p /home/mu2edaq/daqlogs/cron
   exec 2>&1
   exec > /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
 fi
+
+/home/mu2edaq/cleanupMu2ePilotSystem.sh
 
 hardwareArg=""
 if [[ "x$!" == "xhardware" ]]; then
@@ -25,7 +28,12 @@ fi
 export DTCLIB_SIM_PATH=/home/mu2edaq/data/simData
 startMu2ePilotSystem.sh >/dev/null 2>&1 & # The "system" log goes to /daqlogs/pmt
 sleep 10
+
+# No Data File
 manageMu2ePilotSystem.sh -D $hardwareArg init
+# Data File
+#manageMu2ePilotSystem.sh  $hardwareArg init
+
 runNum=$((1 + `cat runNumbers.log|tail -1|awk '{print $1}'`))
 echo "$runNum $startTime" >>runNumbers.log
 sleep 10
