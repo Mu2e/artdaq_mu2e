@@ -47,16 +47,16 @@ physics:
 {
   analyzers:
   {
-    toyDump:
+    detectorDump:
     {
-      module_type: ToyDump
+      module_type: DetectorDump
       raw_data_label: daq
       frag_type: @local::fragment_receiver.fragment_type
       num_adcs_to_show: 10   # Obviously this should be no more than ADC counts per fragment
     }
   }
 
-  a1: [ toyDump ]
+  a1: [ detectorDump ]
 #  e1: [ out1 ]
   end_paths: [ a1 ]
 }
