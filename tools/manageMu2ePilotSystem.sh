@@ -89,8 +89,8 @@ function launch() {
     --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[47]} \
     --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[48]} \
     --eb mu2edaq08.fnal.gov,${MU2EARTDAQ_EB_PORT[49]} \
-    --ag mu2edaq01.fnal.gov,${MU2EARTDAQ_AG_PORT[0]},1 \
-    --ag mu2edaq01.fnal.gov,${MU2EARTDAQ_AG_PORT[1]},1 \
+    --ag mu2edaq01,${MU2EARTDAQ_AG_PORT[0]},1 \
+    --ag mu2edaq01,${MU2EARTDAQ_AG_PORT[1]},1 \
     --data-dir ${4} --online-monitoring $3 \
     --write-data ${6} --run-event-count ${7} \
     --run-duration ${8} --file-size ${9} \

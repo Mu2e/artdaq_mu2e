@@ -63,8 +63,8 @@ echo "EventBuilderMain mu2edaq08.fnal.gov ${MU2EARTDAQ_EB_PORT[46]}" >> $tempFil
 echo "EventBuilderMain mu2edaq08.fnal.gov ${MU2EARTDAQ_EB_PORT[47]}" >> $tempFile
 echo "EventBuilderMain mu2edaq08.fnal.gov ${MU2EARTDAQ_EB_PORT[48]}" >> $tempFile
 echo "EventBuilderMain mu2edaq08.fnal.gov ${MU2EARTDAQ_EB_PORT[49]}" >> $tempFile
-echo "AggregatorMain mu2edaq01.fnal.gov ${MU2EARTDAQ_AG_PORT[0]}" >> $tempFile
-echo "AggregatorMain mu2edaq01.fnal.gov ${MU2EARTDAQ_AG_PORT[1]}" >> $tempFile
+echo "AggregatorMain mu2edaq01 ${MU2EARTDAQ_AG_PORT[0]}" >> $tempFile
+echo "AggregatorMain mu2edaq01 ${MU2EARTDAQ_AG_PORT[1]}" >> $tempFile
 
 # create the logfile directories, if needed
 mkdir -p -m 0777 ${logroot}/pmt

@@ -63,24 +63,38 @@ namespace mu2e
 
 		std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
 
-		// State
-		size_t timestamps_read_;
-		std::chrono::high_resolution_clock::time_point lastReportTime_;
-		DTCLib::DTC_SimMode mode_;
-		uint8_t board_id_;
-		bool simFileRead_;
+	  // State
+	  size_t timestamps_read_;
+	  std::chrono::high_resolution_clock::time_point lastReportTime_;
+	  std::chrono::high_resolution_clock::time_point procStartTime_;
+	  DTCLib::DTC_SimMode mode_;
+	  uint8_t board_id_;
+	  bool simFileRead_;
 
-		DTCLib::DTC* theInterface_;
-		DTCLib::DTCSoftwareCFO* theCFO_;
+	  DTCLib::DTC* theInterface_;
+	  DTCLib::DTCSoftwareCFO* theCFO_;
 
-		double _timeSinceLastSend()
-		{
-			auto now = std::chrono::high_resolution_clock::now();
-			auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
-				(now - lastReportTime_).count();
-			lastReportTime_ = now;
-			return deltaw;
-		}
+	  double _timeSinceLastSend()
+	  {
+	    auto now = std::chrono::high_resolution_clock::now();
+	    auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
+	      (now - lastReportTime_).count();
+	    lastReportTime_ = now;
+	    return deltaw;
+	  }
+
+	  void _startProcTimer() 
+	  {
+	    procStartTime_ = std::chrono::high_resolution_clock::now();
+	  }
+
+	  double _getProcTimerCount()
+	  {
+	    auto now = std::chrono::high_resolution_clock::now();
+	    auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
+	      (now - procStartTime_).count();
+	    return deltaw;
+	  }
 	};
 }
 
