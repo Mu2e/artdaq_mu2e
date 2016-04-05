@@ -34,6 +34,8 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 
+	mf::LogDebug("DTCReceiver") << "DTCReceiver Initialized with mode " << mode_;
+
 	int ringRocs[] = {
 		ps.get<int>("ring_0_roc_count", -1),
 		ps.get<int>("ring_1_roc_count", -1),
@@ -79,12 +81,19 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 		}
 	}
 
+	char* file_c = getenv("DTCLIB_SIM_FILE");
+
 	auto sim_file = ps.get<std::string>("sim_file", "");
+	if (file_c != nullptr) { sim_file = std::string(file_c); }
 	if (sim_file.size() > 0)
 	{
 		simFileRead_ = false;
 		std::thread reader(&mu2e::DTCReceiver::readSimFile_, this, sim_file);
 		reader.detach();
+	}
+	else
+	{
+		simFileRead_ = true;
 	}
 }
 

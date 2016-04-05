@@ -67,8 +67,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 		if (ringRocs[ring] >= 0)
 		{
 			theInterface_->EnableRing(DTCLib::DTC_Rings[ring],
-			                          DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
-			                          DTCLib::DTC_ROCS[ringRocs[ring]]);
+									  DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
+									  DTCLib::DTC_ROCS[ringRocs[ring]]);
 			if (ringEmulators[ring])
 			{
 				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
@@ -89,6 +89,10 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 		simFileRead_ = false;
 		std::thread reader(&mu2e::Mu2eReceiver::readSimFile_, this, sim_file);
 		reader.detach();
+	} 
+	else
+	{
+		simFileRead_ = true;
 	}
 }
 
@@ -183,14 +187,14 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		}
 
 		TRACE(3, "Copying DTC packets into Mu2eFragment");
-                totalSize = 0;
+				totalSize = 0;
 		for (size_t i = 0; i < data.size(); ++i)
 		{
 			totalSize += data[i].byteSize;
 		}
 
 		int64_t diff = totalSize + newfrag.blockSizeBytes() - newfrag.dataSize();
-                TRACE(4, "diff=%lli, totalSize=%llu, dataSize=%llu, fragSize=%llu", (long long)diff, (long long unsigned)totalSize, (long long unsigned)newfrag.blockSizeBytes(), (long long unsigned)newfrag.dataSize());	
+				TRACE(4, "diff=%lli, totalSize=%llu, dataSize=%llu, fragSize=%llu", (long long)diff, (long long unsigned)totalSize, (long long unsigned)newfrag.blockSizeBytes(), (long long unsigned)newfrag.dataSize());	
 		if (diff > 0)
 		{
 			auto currSize = newfrag.dataSize();
