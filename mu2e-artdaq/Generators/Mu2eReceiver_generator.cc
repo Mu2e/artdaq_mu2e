@@ -12,7 +12,6 @@
 #include <fstream>
 #include <iomanip>
 #include <iterator>
-#include <iostream>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -32,7 +31,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 {
 	TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
 	// mode_ can still be overridden by environment!
-	theInterface_ = new DTCLib::DTC(mode_);
+	theInterface_ = new DTCLib::DTC(mode_);	
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 
@@ -68,8 +67,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 		if (ringRocs[ring] >= 0)
 		{
 			theInterface_->EnableRing(DTCLib::DTC_Rings[ring],
-			                          DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
-			                          DTCLib::DTC_ROCS[ringRocs[ring]]);
+									  DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
+									  DTCLib::DTC_ROCS[ringRocs[ring]]);
 			if (ringEmulators[ring])
 			{
 				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
@@ -81,12 +80,19 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 		}
 	}
 
+	char* file_c = getenv("DTCLIB_SIM_FILE");
+
 	auto sim_file = ps.get<std::string>("sim_file", "");
+	if(file_c != nullptr) { sim_file = std::string(file_c); }
 	if (sim_file.size() > 0)
 	{
 		simFileRead_ = false;
 		std::thread reader(&mu2e::Mu2eReceiver::readSimFile_, this, sim_file);
 		reader.detach();
+	} 
+	else
+	{
+		simFileRead_ = true;
 	}
 }
 
@@ -117,6 +123,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		return false;
 	}
 
+	_startProcTimer();
 	TRACE(1, "mu2eReceiver::getNext: Starting CFO thread");
 	uint64_t z = 0;
 	DTCLib::DTC_Timestamp zero(z);
@@ -140,8 +147,8 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
 	mu2eFragmentWriter newfrag(*frags.back());
 
-	TRACE(1, "mu2eReceiver::getNext: Reserving space for 64 * BLOCK_COUNT_MAX bytes");
-	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 64);
+	TRACE(1, "mu2eReceiver::getNext: Reserving space for 16 * 201 * BLOCK_COUNT_MAX bytes");
+	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 16 * 201);
 
 	//Get data from DTCReceiver
 	TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
@@ -167,7 +174,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			}
 			catch (std::exception ex)
 			{
-				std::cerr << ex.what() << std::endl;
+			  mf::LogError("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what();
 			}
 			retryCount--;
 			//if (data.size() == 0){usleep(10000);}
@@ -175,19 +182,19 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		if (retryCount < 0 && data.size() == 0)
 		{
 			TRACE(1, "Retry count exceeded. Something is very wrong indeed");
-			std::cout << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter() << std::endl;
+			mf::LogError("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter();
 			break;
 		}
 
 		TRACE(3, "Copying DTC packets into Mu2eFragment");
-                totalSize = 0;
+				totalSize = 0;
 		for (size_t i = 0; i < data.size(); ++i)
 		{
 			totalSize += data[i].byteSize;
 		}
 
 		int64_t diff = totalSize + newfrag.blockSizeBytes() - newfrag.dataSize();
-                TRACE(4, "diff=%lli, totalSize=%llu, dataSize=%llu, fragSize=%llu", (long long)diff, (long long unsigned)totalSize, (long long unsigned)newfrag.blockSizeBytes(), (long long unsigned)newfrag.dataSize());	
+				TRACE(4, "diff=%lli, totalSize=%llu, dataSize=%llu, fragSize=%llu", (long long)diff, (long long unsigned)totalSize, (long long unsigned)newfrag.blockSizeBytes(), (long long unsigned)newfrag.dataSize());	
 		if (diff > 0)
 		{
 			auto currSize = newfrag.dataSize();
@@ -199,17 +206,18 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		}
 
 		TRACE(3, "Copying DTC packets into Mu2eFragment");
-		auto offset = newfrag.dataBegin() + newfrag.blockSizeBytes();
-		size_t intraBlockOffset = 0;
+		//auto offset = newfrag.dataBegin() + newfrag.blockSizeBytes();
+		size_t offset = newfrag.blockSizeBytes();
 		for (size_t i = 0; i < data.size(); ++i)
 		{
-			TRACE(4, "Copying data from %p to %p (sz=%llu)", reinterpret_cast<void*>(data[i].blockPointer), reinterpret_cast<void*>(offset + intraBlockOffset), (unsigned long long)data[i].byteSize);
-			memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
-			intraBlockOffset += data[i].byteSize;
+		  TRACE(4, "Copying data from %p to %p (sz=%llu)", reinterpret_cast<void*>(data[i].blockPointer), reinterpret_cast<void*>(newfrag.dataAtBytes(offset)), (unsigned long long)data[i].byteSize);
+			//memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
+		  std::copy(data[i].blockPointer, data[i].blockPointer + (data[i].byteSize/sizeof(DTCLib::DTC_DataBlock::pointer_t)), newfrag.dataAtBytes(offset));
+			offset += data[i].byteSize;
 		}
 
 		TRACE(3, "Ending SubEvt %lu", newfrag.hdr_block_count());
-		newfrag.endSubEvt(intraBlockOffset);
+			newfrag.endSubEvt(offset - newfrag.blockSizeBytes());
 	}
 	TRACE(1, "Incrementing event counter");
 	ev_counter_inc();
@@ -217,12 +225,15 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	TRACE(1, "Reporting Metrics");
 	timestamps_read_ += newfrag.hdr_block_count();
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
+
+	double processing_rate = newfrag.hdr_block_count() / _getProcTimerCount();
 	double timestamp_rate = newfrag.hdr_block_count() / _timeSinceLastSend();
 	double hw_timestamp_rate = newfrag.hdr_block_count() / hwTime;
-	double hw_data_rate = totalSize / hwTime;
+	double hw_data_rate = newfrag.blockSizeBytes() / hwTime;
 
 	metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, true, false);
 	metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true, true);
+	metricMan_->sendMetric("Generator Timestamo Rate", processing_rate, "timestamps/s", 1, true, true);
 	metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true, true);
 	metricMan_->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s",1, true ,true);
 
