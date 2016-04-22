@@ -20,6 +20,8 @@
 #include <vector>
 #include <chrono>
 #include <atomic>
+#include <iostream>
+#include <fstream>
 
 namespace mu2e
 {
@@ -70,6 +72,9 @@ namespace mu2e
 	  DTCLib::DTC_SimMode mode_;
 	  uint8_t board_id_;
 	  bool simFileRead_;
+      bool rawOutput_;
+	  std::string rawOutputFile_;
+	  std::ofstream rawOutputStream_;
 
 	  DTCLib::DTC* theInterface_;
 	  DTCLib::DTCSoftwareCFO* theCFO_;
