@@ -38,6 +38,8 @@ namespace mu2e
 		// getNext_ function declared in CommandableFragmentGenerator
 
 		bool getNext_(artdaq::FragmentPtrs& output) override;
+		
+		bool sendEmpty_(artdaq::FragmentPtrs& output);
 
 		void start() override {}
 
@@ -75,6 +77,9 @@ namespace mu2e
       bool rawOutput_;
 	  std::string rawOutputFile_;
 	  std::ofstream rawOutputStream_;
+	  int offset_;
+	  int nSkip_;
+	  bool sendEmpties_;
 
 	  DTCLib::DTC* theInterface_;
 	  DTCLib::DTCSoftwareCFO* theCFO_;
