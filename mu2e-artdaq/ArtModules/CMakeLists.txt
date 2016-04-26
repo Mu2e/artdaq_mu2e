@@ -4,6 +4,20 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
   LIB_LIBRARIES mu2e-artdaq-core_Overlays
 )
 
+simple_plugin(Mu2eProducer "module"
+  mu2e-artdaq-core_Overlays
+  DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
+  ${MONGODB_CXX_LIBRARIES}
+)
+
+simple_plugin(Mu2eDump "module"
+  mu2e-artdaq-core_Overlays
+  DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
+  ${MONGODB_CXX_LIBRARIES}
+)
+
 simple_plugin(DTCDump "module"
   mu2e-artdaq-core_Overlays
   DTCInterface
