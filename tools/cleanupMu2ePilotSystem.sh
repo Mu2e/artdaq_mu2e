@@ -9,7 +9,7 @@ echo "Killing system from $startTime"
 cd /home/mu2edaq
 if [ -z "$MU2E_ARTDAQ_DIR" ]; then
   source /mu2e/ups/setup
-  setup mu2e_artdaq v1_00_02 -qe7:prof:s15:eth
+  setup mu2e_artdaq -qe9:prof:s21:eth
 fi
 
 manageMu2ePilotSystem.sh stop
@@ -22,9 +22,9 @@ killall AggregatorMain
 
 export RGANG_RSH=/usr/bin/rsh
 
-rgang "mu2edaq0{4-8}" killall BoardReaderMain
-rgang "mu2edaq0{4-8}" killall EventBuilderMain
+rgang "mu2edaq0{4-8}-data" killall BoardReaderMain
+rgang "mu2edaq0{4-8}-data" killall EventBuilderMain
 
 mkdir -p /home/mu2edaq/daqlogs/traceBuffers/$startTime
 
-rgang --do-local "mu2edaq0{1,4-8}" 'mv /tmp/trace_buffer_$USER /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.trace'
+rgang --do-local "mu2edaq0{1,4-8}-data" 'mv /tmp/trace_buffer_$USER /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.trace'
