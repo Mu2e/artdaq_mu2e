@@ -106,6 +106,9 @@ int main(int argc, char* argv[]) try
 		gen(artdaq::makeCommandableFragmentGenerator(fragment_receiver_pset.get<std::string>("generator"),
 		                                             fragment_receiver_pset));
 
+	// So that generators which try to send metrics don't complain...
+	artdaq::MetricManager metricMan_;
+	gen->SetMetricManager(&metricMan_);
 	// The instance of the artdaq::EventStore object can either pass
 	// events to a thread running Art, or to a small executable called
 	// "SimpleQueueReader"

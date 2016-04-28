@@ -28,6 +28,11 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	  , lastReportTime_(std::chrono::high_resolution_clock::now())
 	  , mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
+  , rawOutput_(ps.get<bool>("raw_output_enable", false))
+  , rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
+  , offset_(ps.get<size_t>("first_fragment_id",0))
+  , nSkip_(ps.get<size_t>("fragment_receiver_count", 1))
+  , sendEmpties_(ps.get<bool>("send_empty_fragments", false))
 {
 	TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
 	// mode_ can still be overridden by environment!
@@ -94,6 +99,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	{
 		simFileRead_ = true;
 	}
+
+    if (rawOutput_) rawOutputStream_.open(rawOutputFile_, std::ios::out | std::ios::app | std::ios::binary);
 }
 
 void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
@@ -107,6 +114,7 @@ void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 mu2e::Mu2eReceiver::~Mu2eReceiver()
 {
 	theInterface_->DisableDetectorEmulator();
+	rawOutputStream_.close();
 	delete theInterface_;
 	delete theCFO_;
 }
@@ -121,6 +129,10 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	if (should_stop())
 	{
 		return false;
+	}
+	
+	if(sendEmpties_) {
+		if(ev_counter() < offset_ || ev_counter() % nSkip_ != offset_) { return sendEmpty_(frags); }
 	}
 
 	_startProcTimer();
@@ -213,6 +225,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		  TRACE(4, "Copying data from %p to %p (sz=%llu)", reinterpret_cast<void*>(data[i].blockPointer), reinterpret_cast<void*>(newfrag.dataAtBytes(offset)), (unsigned long long)data[i].byteSize);
 			//memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
 		  std::copy(data[i].blockPointer, data[i].blockPointer + (data[i].byteSize/sizeof(DTCLib::DTC_DataBlock::pointer_t)), newfrag.dataAtBytes(offset));
+		  if(rawOutput_) rawOutputStream_.write((char*)data[i].blockPointer,data[i].byteSize);
 			offset += data[i].byteSize;
 		}
 
@@ -239,6 +252,13 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 
 	TRACE(1, "Returning true");
+	return true;
+}
+
+bool mu2e::Mu2eReceiver::sendEmpty_(artdaq::FragmentPtrs& frags)
+{
+	frags.emplace_back(new artdaq::Fragment());
+	frags.back()->setSystemType(artdaq::Fragment::EmptyFragmentType);
 	return true;
 }
 

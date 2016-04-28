@@ -2,7 +2,7 @@
 #  about the FHiCL language, please look at
 #  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
 
-events_to_generate: 10
+events_to_generate: 2
 run_number: 101
 
 fragment_receiver: {
@@ -13,7 +13,7 @@ fragment_receiver: {
    ring_0_roc_count: 1
    ring_0_timing_enabled: false
    debug_print: true
-   sim_file: "/home/mu2edaq/data/simData/mediumPackets.bin"
+   sim_file: "/home/tomonari/WaveformData/New/CAL_packets.bin"
    # Parameters configuring the fragment generator's parent class
    # artdaq::CommandableFragmentGenerator
 
@@ -36,20 +36,38 @@ event_builder: {
 
 physics:
 {
-  analyzers:
+
+  producers:
   {
-#    dtcDump:
-#    {
-#      module_type: DTCDump
-#      raw_data_label: daq
-#      frag_type: @local::fragment_receiver.fragment_type
-#      num_packets_to_show: 2 # DataHeaderPacket and up to num_packets_to_show - 1 DataPackets
-#    }
+    mu2eprod:
+    {
+      module_type: Mu2eProducer
+      debug: false
+      mode: CAL
+      #mode: TRK
+    }
   }
 
-#  a1: [ dtcDump ]
-  e1: [ out1, rootout ]
-#  end_paths: [ a1 ]
+  t1: [ mu2eprod ] # Trigger path with producers and filters
+  trigger_paths: [ t1 ]
+
+
+  analyzers:
+  {
+    mu2eDump:
+    {
+      module_type: Mu2eDump
+      raw_data_label: daq
+      #      frag_type: @local::fragment_receiver.fragment_type
+      frag_type: MU2E
+      num_packets_to_show: 2 # DataHeaderPacket and up to num_packets_to_show - 1 DataPackets
+    }
+  }
+
+  a1: [ mu2eDump ]
+  e2: [ out1, rootout ]
+#  end_paths: [ a1 , e2]
+  end_paths: [ a1 ]
 }
 
 outputs:
