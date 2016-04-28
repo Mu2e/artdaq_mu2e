@@ -77,8 +77,8 @@ namespace mu2e
       bool rawOutput_;
 	  std::string rawOutputFile_;
 	  std::ofstream rawOutputStream_;
-	  int offset_;
-	  int nSkip_;
+	  size_t offset_;
+	  size_t nSkip_;
 	  bool sendEmpties_;
 
 	  DTCLib::DTC* theInterface_;

@@ -30,9 +30,9 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
   , rawOutput_(ps.get<bool>("raw_output_enable", false))
   , rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
+  , offset_(ps.get<size_t>("first_fragment_id",0))
+  , nSkip_(ps.get<size_t>("fragment_receiver_count", 1))
   , sendEmpties_(ps.get<bool>("send_empty_fragments", false))
-  , offset_(ps.get<int>("first_fragment_id",0))
-  , nSkip_(ps.get<int>("fragment_receiver_count", 1))
 {
 	TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
 	// mode_ can still be overridden by environment!
@@ -255,10 +255,10 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	return true;
 }
 
-bool sendEmpty_(artdaq::FragmentPtrs& frags)
+bool mu2e::Mu2eReceiver::sendEmpty_(artdaq::FragmentPtrs& frags)
 {
 	frags.emplace_back(new artdaq::Fragment());
-	(*frags.back())->setSystemType(artdaq::Fragment::EmptyFragmentType);
+	frags.back()->setSystemType(artdaq::Fragment::EmptyFragmentType);
 	return true;
 }
 
