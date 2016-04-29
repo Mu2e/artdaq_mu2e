@@ -9,7 +9,8 @@ fi
 /home/mu2edaq/cleanupMu2ePilotSystem.sh
 
 hardwareArg=""
-if [[ "x$!" == "xhardware" ]]; then
+if [[ "x$1" == "xhardware" ]]; then
+  echo "Running with DTC Hardware!!!"
   hardwareArg="-H"
 fi
 
@@ -37,5 +38,5 @@ manageMu2ePilotSystem.sh -D $hardwareArg init
 
 runNum=$((1 + `cat runNumbers.log|tail -1|awk '{print $1}'`))
 echo "$runNum $startTime" >>runNumbers.log
-sleep 10
+sleep 30
 manageMu2ePilotSystem.sh -N $runNum start
