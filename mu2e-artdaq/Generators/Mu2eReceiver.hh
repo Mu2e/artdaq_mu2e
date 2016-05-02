@@ -69,8 +69,8 @@ namespace mu2e
 
 	  // State
 	  size_t timestamps_read_;
-	  std::chrono::high_resolution_clock::time_point lastReportTime_;
-	  std::chrono::high_resolution_clock::time_point procStartTime_;
+	  std::chrono::steady_clock::time_point lastReportTime_;
+	  std::chrono::steady_clock::time_point procStartTime_;
 	  DTCLib::DTC_SimMode mode_;
 	  uint8_t board_id_;
 	  bool simFileRead_;
@@ -86,7 +86,7 @@ namespace mu2e
 
 	  double _timeSinceLastSend()
 	  {
-	    auto now = std::chrono::high_resolution_clock::now();
+	    auto now = std::chrono::steady_clock::now();
 	    auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
 	      (now - lastReportTime_).count();
 	    lastReportTime_ = now;
@@ -95,12 +95,12 @@ namespace mu2e
 
 	  void _startProcTimer() 
 	  {
-	    procStartTime_ = std::chrono::high_resolution_clock::now();
+	    procStartTime_ = std::chrono::steady_clock::now();
 	  }
 
 	  double _getProcTimerCount()
 	  {
-	    auto now = std::chrono::high_resolution_clock::now();
+	    auto now = std::chrono::steady_clock::now();
 	    auto deltaw = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>
 	      (now - procStartTime_).count();
 	    return deltaw;
