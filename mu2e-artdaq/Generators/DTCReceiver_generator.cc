@@ -165,7 +165,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	{
 		try
 		{
-			data = theInterface_->GetData((uint64_t)0);
+			data = theInterface_->GetData(DTCLib::DTC_Timestamp());
 		}
 		catch (std::exception ex)
 		{

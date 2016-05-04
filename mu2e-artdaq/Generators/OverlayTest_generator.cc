@@ -277,7 +277,7 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs& frags)
 	{
 		//    std::cout << "GETTING DATA" << std::endl;
 		// std::vector<void*> DTCLib::DTC::GetData(DTC_Timestamp when, bool sendDReq, bool sendRReq)
-		data = theInterface->GetData((uint64_t)0);
+		data = theInterface->GetData(DTCLib::DTC_Timestamp());
 		dataIdx = 0;
 	}
 	//  std::cout << "DONE GETTING DATA" << std::endl;

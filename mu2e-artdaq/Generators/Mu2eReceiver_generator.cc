@@ -25,7 +25,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	  , fragment_type_(toFragmentType("MU2E"))
 	  , fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
 	  , timestamps_read_(0)
-	  , lastReportTime_(std::chrono::high_resolution_clock::now())
+	  , lastReportTime_(std::chrono::steady_clock::now())
 	  , mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
 	  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
   , rawOutput_(ps.get<bool>("raw_output_enable", false))
