@@ -77,7 +77,6 @@ namespace mu2e
       bool rawOutput_;
 	  std::string rawOutputFile_;
 	  std::ofstream rawOutputStream_;
-	  size_t offset_;
 	  size_t nSkip_;
 	  bool sendEmpties_;
 
