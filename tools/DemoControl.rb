@@ -517,7 +517,7 @@ class SystemControl
     	  if kind == "MU2E"
             generatorCode = generateMu2e(boardreaderOptions.index,
                                         boardreaderOptions.board_id, boardreaderOptions.sim_mode,
-                                        boardreaderOptions.use_sim_file, boardreaderOptions.sim_file, $options.mu2es.length)
+                                        boardreaderOptions.use_sim_file, boardreaderOptions.sim_file, @options.mu2es.length)
           elsif kind == "DTC"
             generatorCode = generateDTC(boardreaderOptions.index,
                                         boardreaderOptions.board_id, boardreaderOptions.sim_mode,
