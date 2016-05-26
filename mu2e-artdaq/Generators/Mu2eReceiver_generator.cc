@@ -73,7 +73,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	  ps.get<int>("ring_3_roc_emulator_count", 0),
 	  ps.get<int>("ring_4_roc_emulator_count", 0),
 	  ps.get<int>("ring_5_roc_emulator_count", 0)
-	}
+	};
 
 	for (int ring = 0; ring < 6; ++ring)
 	{
