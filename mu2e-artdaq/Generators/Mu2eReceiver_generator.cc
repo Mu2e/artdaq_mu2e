@@ -30,7 +30,6 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
   , rawOutput_(ps.get<bool>("raw_output_enable", false))
   , rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
-  , offset_(ps.get<size_t>("first_fragment_id",0))
   , nSkip_(ps.get<size_t>("fragment_receiver_count", 1))
   , sendEmpties_(ps.get<bool>("send_empty_fragments", false))
 {
@@ -67,6 +66,15 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 		ps.get<bool>("ring_5_roc_emulator_enabled", false)
 	};
 
+	int ringEmulatorCount[] = {
+	  ps.get<int>("ring_0_roc_emulator_count", 0),
+	  ps.get<int>("ring_1_roc_emulator_count", 0),
+	  ps.get<int>("ring_2_roc_emulator_count", 0),
+	  ps.get<int>("ring_3_roc_emulator_count", 0),
+	  ps.get<int>("ring_4_roc_emulator_count", 0),
+	  ps.get<int>("ring_5_roc_emulator_count", 0)
+	};
+
 	for (int ring = 0; ring < 6; ++ring)
 	{
 		if (ringRocs[ring] >= 0)
@@ -76,6 +84,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 									  DTCLib::DTC_ROCS[ringRocs[ring]]);
 			if (ringEmulators[ring])
 			{
+			  theInterface_->SetMaxROCNumber(DTCLib::DTC_Rings[ring], DTCLib::DTC_ROCS[ringEmulatorCount[ring]]);
 				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
 			}
 			else
@@ -132,7 +141,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	}
 	
 	if(sendEmpties_) {
-		if(ev_counter() < offset_ || ev_counter() % nSkip_ != offset_) { return sendEmpty_(frags); }
+		if(ev_counter() < board_id_ || ev_counter() % nSkip_ != board_id_) { return sendEmpty_(frags); }
 	}
 
 	_startProcTimer();
