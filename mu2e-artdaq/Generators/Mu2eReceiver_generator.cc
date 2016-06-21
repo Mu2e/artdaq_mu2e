@@ -122,94 +122,102 @@ void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 
 mu2e::Mu2eReceiver::~Mu2eReceiver()
 {
-	theInterface_->DisableDetectorEmulator();
-	rawOutputStream_.close();
-	delete theInterface_;
-	delete theCFO_;
+  theInterface_->DisableDetectorEmulator();
+  rawOutputStream_.close();
+  delete theInterface_;
+  delete theCFO_;
 }
 
 bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 {
-	while (!simFileRead_ && !should_stop())
-	{
-		usleep(5000);
-	}
+  while (!simFileRead_ && !should_stop())
+    {
+      usleep(5000);
+    }
 
-	if (should_stop())
-	{
-		return false;
-	}
+  if (should_stop())
+    {
+      return false;
+    }
 	
-	if(sendEmpties_) {
-		if(ev_counter() < board_id_ || ev_counter() % nSkip_ != board_id_) { return sendEmpty_(frags); }
+  if(sendEmpties_) {
+    int mod = ev_counter() % nSkip_;
+    if(mod == board_id_ || (mod == 0 && board_id_ == nSkip_)) {
+      mf::LogDebug("Mu2eReceiver") << "Sending Data  Fragment for sequence id " << ev_counter() << " (board_id " << std::to_string(board_id_) << ")";
+    }
+    else {
+      mf::LogDebug("Mu2eReceiver") << "Sending Empty Fragment for sequence id " << ev_counter() << " (board_id " << std::to_string(board_id_) << ")";
+      return sendEmpty_(frags); 
+    }
+  }
+
+  _startProcTimer();
+  TRACE(1, "mu2eReceiver::getNext: Starting CFO thread");
+  uint64_t z = 0;
+  DTCLib::DTC_Timestamp zero(z);
+  if (mode_ != 0)
+    {
+	//theInterface_->ReleaseAllBuffers();
+      TRACE(1, "Sending requests for %i timestamps, starting at %lu", mu2e::BLOCK_COUNT_MAX, mu2e::BLOCK_COUNT_MAX * ev_counter());
+      theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter()));
+    }
+
+  TRACE(1, "mu2eReceiver::getNext: Initializing mu2eFragment metadata");
+  mu2eFragment::Metadata metadata;
+  metadata.sim_mode = static_cast<int>(mode_);
+  metadata.run_number = run_number();
+  metadata.board_id = board_id_;
+
+  // And use it, along with the artdaq::Fragment header information
+  // (fragment id, sequence id, and user type) to create a fragment
+  TRACE(1, "mu2eReceiver::getNext: Creating new mu2eFragment!");
+  frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
+  // Now we make an instance of the overlay to put the data into...
+  TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
+  mu2eFragmentWriter newfrag(*frags.back());
+
+  TRACE(1, "mu2eReceiver::getNext: Reserving space for 16 * 201 * BLOCK_COUNT_MAX bytes");
+  newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 16 * 201);
+
+  //Get data from DTCReceiver
+  TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
+  theInterface_->GetDevice()->ResetDeviceTime();
+  size_t totalSize = 0;
+  while (newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX)
+    {
+      if (should_stop())
+	{
+	  break;
 	}
 
-	_startProcTimer();
-	TRACE(1, "mu2eReceiver::getNext: Starting CFO thread");
-	uint64_t z = 0;
-	DTCLib::DTC_Timestamp zero(z);
-	if (mode_ != 0)
+      TRACE(1, "Getting DTC Data");
+      std::vector<DTCLib::DTC_DataBlock> data;
+      int retryCount = 5;
+      while (data.size() == 0 && retryCount >= 0)
 	{
-		TRACE(1, "Sending requests for %i timestamps, starting at %lu", mu2e::BLOCK_COUNT_MAX, mu2e::BLOCK_COUNT_MAX * ev_counter());
-		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter()));
+	  try
+	    {
+	      //TRACE(4, "Calling theInterface->GetData(zero)");
+	      data = theInterface_->GetData(zero);
+	      //TRACE(4, "Done calling theInterface->GetData(zero)");
+	    }
+	  catch (std::exception ex)
+	    {
+	      mf::LogError("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what();
+	    }
+	  retryCount--;
+	  //if (data.size() == 0){usleep(10000);}
+	}
+      if (retryCount < 0 && data.size() == 0)
+	{
+	  TRACE(1, "Retry count exceeded. Something is very wrong indeed");
+	  mf::LogError("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter();
+	  break;
 	}
 
-	TRACE(1, "mu2eReceiver::getNext: Initializing mu2eFragment metadata");
-	mu2eFragment::Metadata metadata;
-	metadata.sim_mode = static_cast<int>(mode_);
-	metadata.run_number = run_number();
-	metadata.board_id = board_id_;
-
-	// And use it, along with the artdaq::Fragment header information
-	// (fragment id, sequence id, and user type) to create a fragment
-	TRACE(1, "mu2eReceiver::getNext: Creating new mu2eFragment!");
-	frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
-	// Now we make an instance of the overlay to put the data into...
-	TRACE(1, "mu2eReceiver::getNext: Making mu2eFragmentWriter");
-	mu2eFragmentWriter newfrag(*frags.back());
-
-	TRACE(1, "mu2eReceiver::getNext: Reserving space for 16 * 201 * BLOCK_COUNT_MAX bytes");
-	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 16 * 201);
-
-	//Get data from DTCReceiver
-	TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
-	theInterface_->GetDevice()->ResetDeviceTime();
-		size_t totalSize = 0;
-	while (newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX)
-	{
-		if (should_stop())
-		{
-			break;
-		}
-
-		TRACE(1, "Getting DTC Data");
-		std::vector<DTCLib::DTC_DataBlock> data;
-		int retryCount = 5;
-		while (data.size() == 0 && retryCount >= 0)
-		{
-			try
-			{
-			  //TRACE(4, "Calling theInterface->GetData(zero)");
-				data = theInterface_->GetData(zero);
-				//TRACE(4, "Done calling theInterface->GetData(zero)");
-			}
-			catch (std::exception ex)
-			{
-			  mf::LogError("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what();
-			}
-			retryCount--;
-			//if (data.size() == 0){usleep(10000);}
-		}
-		if (retryCount < 0 && data.size() == 0)
-		{
-			TRACE(1, "Retry count exceeded. Something is very wrong indeed");
-			mf::LogError("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter();
-			break;
-		}
-
-		TRACE(3, "Copying DTC packets into Mu2eFragment");
-				totalSize = 0;
-		for (size_t i = 0; i < data.size(); ++i)
+      TRACE(3, "Copying DTC packets into Mu2eFragment");
+      totalSize = 0;
+      for (size_t i = 0; i < data.size(); ++i)
 		{
 			totalSize += data[i].byteSize;
 		}
@@ -266,8 +274,11 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 bool mu2e::Mu2eReceiver::sendEmpty_(artdaq::FragmentPtrs& frags)
 {
-	frags.emplace_back(new artdaq::Fragment());
+  frags.emplace_back(new artdaq::Fragment());
 	frags.back()->setSystemType(artdaq::Fragment::EmptyFragmentType);
+	frags.back()->setSequenceID(ev_counter());
+	frags.back()->setFragmentID(fragment_ids_[0]);
+	ev_counter_inc();
 	return true;
 }
 
