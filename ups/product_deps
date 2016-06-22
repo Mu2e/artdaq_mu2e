@@ -1,7 +1,7 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
 parent mu2e_artdaq	v1_00_04e
-defaultqual	e9:s21:eth
+defaultqual	e10:s35:eth
 
 # These optional lines define the installed directories where
 # headers, libraries, and executables will be found
@@ -17,11 +17,11 @@ bindir      fq_dir      bin
 
 #
 product		version		optional
-artdaq		v1_12_16
+artdaq		v1_13_00
 mu2e_artdaq_core v1_00_04e
 pcie_linux_kernel_module v1_07_00e
-mongodb         v3_0_7
-cetbuildtools	v5_01_03	-	only_for_build
+mongodb         v3_2_7
+cetbuildtools	v5_04_01	-	only_for_build
 end_product_list
 
 # e6  - with gcc 4.9.1 and -std=c++1y
@@ -31,16 +31,10 @@ end_product_list
 # a "-" means the dependent product is not required by the parent and will not be setup
 
 qualifier               artdaq              mu2e_artdaq_core	pcie_linux_kernel_module   mongodb    notes
+e10:s35:eth:debug       e10:eth:s35:debug   e10:s35:debug	e10:debug                  e10:debug   --std=c++1y
+e10:s35:eth:prof        e10:eth:s35:prof    e10:s35:prof	e10:prof                   e10:prof    --std=c++1y
 e9:s21:eth:debug        e9:eth:s21:debug    e9:s21:debug	e9:debug                   e9:debug   --std=c++1y
 e9:s21:eth:prof         e9:eth:s21:prof     e9:s21:prof		e9:prof                    e9:prof    --std=c++1y
-e7:s21:eth:debug        e7:eth:s21:debug    e7:s21:debug	e7:debug                   e7:debug   --std=c++1y
-e7:s21:eth:prof         e7:eth:s21:prof     e7:s21:prof		e7:prof                    e7:prof    --std=c++1y
-e9:s15:eth:debug        e9:eth:s15:debug    e9:s15:debug	e9:debug                   e9:debug   --std=c++1y
-e9:s15:eth:prof         e9:eth:s15:prof     e9:s15:prof		e9:prof                    e9:prof    --std=c++1y
-e7:s15:eth:debug        e7:eth:s15:debug    e7:s15:debug	e7:debug                   e7:debug   --std=c++1y
-e7:s15:eth:prof         e7:eth:s15:prof     e7:s15:prof		e7:prof                    e7:prof    --std=c++1y
-e7:s11:eth:debug        e7:eth:s11:debug    e7:s11:debug	e7:debug                   e7:debug   --std=c++1y
-e7:s11:eth:prof         e7:eth:s11:prof     e7:s11:prof		e7:prof                    e7:prof    --std=c++1y
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:

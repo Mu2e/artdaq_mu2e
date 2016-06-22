@@ -10,7 +10,12 @@
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 
+#ifdef CANVAS
+#include "canvas/Utilities/Exception.h"
+#else
 #include "art/Utilities/Exception.h"
+#endif
+
 //#include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 #include "artdaq-core/Data/Fragments.hh"
 #include "dtcInterfaceLib/DTC_Types.h"
@@ -176,7 +181,7 @@ mu2e::DetectorDump::DetectorDump(fhicl::ParameterSet const& pset)
 
 		   << finalize;
 
-	cl.coll.insert_one(variables_doc);
+	cl.coll.insert_one(variables_doc.view());
 
 	std::cout << "\t" << "Done adding variable list to database" << std::endl;
 }
@@ -265,7 +270,7 @@ void mu2e::DetectorDump::analyze(art::Event const& evt)
 
 							   << finalize;
 
-						cl.coll.insert_one(event_doc);
+						cl.coll.insert_one(event_doc.view());
 					}
 				}
 				break;
