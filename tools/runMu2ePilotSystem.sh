@@ -13,6 +13,10 @@ if [[ "x$1" == "xhardware" ]]; then
   echo "Running with DTC Hardware!!!"
   hardwareArg="-H"
 fi
+if [[ "x$1" == "xrocemulator" ]]; then
+  echo "Running with DTC ROC Emulator!!!"
+  hardwareArg="-R"
+fi
 
 export TRACE_FILE=/tmp/trace_buffer_$USER
 export RGANG_RSH=/usr/bin/rsh

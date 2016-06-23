@@ -28,9 +28,15 @@ function launch() {
 
   CAL=2
   TRK=1
+  USEFILE=1
   if [[ "${13}" == "1" ]]; then
     CAL=4
-    TRK=4  
+    TRK=4
+  fi
+  if [[ "${13}" == "2" ]]; then
+    CAL=5
+    TRK=5
+    USEFILE=0
   fi
 
 # mu2edaq04 removed for now
@@ -48,10 +54,10 @@ function launch() {
 
 
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --mu2e mu2edaq05-data,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
-    --mu2e mu2edaq06-data,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
-    --mu2e mu2edaq07-data,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
-    --mu2e mu2edaq08-data,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq05-data,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq06-data,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq07-data,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq08-data,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
     --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[1]} \
     --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[2]} \
     --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[3]} \
@@ -174,7 +180,7 @@ fileDuration=0
 hardwareMode=0
 verbose=0
 OPTIND=1
-while getopts "hHc:N:o:t:m:Dn:d:s:w:v-:" opt; do
+while getopts "hHRc:N:o:t:m:Dn:d:s:w:v-:" opt; do
     if [ "$opt" = "-" ]; then
         opt=$OPTARG
     fi
@@ -197,6 +203,9 @@ while getopts "hHc:N:o:t:m:Dn:d:s:w:v-:" opt; do
             ;;
 	H)
 	    hardwareMode=1
+	    ;;
+	R)
+	    hardwareMode=2
 	    ;;
         n)
             runEventCount=${OPTARG}
