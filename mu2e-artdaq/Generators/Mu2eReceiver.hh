@@ -45,7 +45,7 @@ namespace mu2e
 
 		void stopNoMutex() override {}
 
-		void stop() override {}
+	  void stop() override;
 
 		void readSimFile_(std::string sim_file);
 

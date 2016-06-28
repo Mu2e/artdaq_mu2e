@@ -127,10 +127,17 @@ void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 
 mu2e::Mu2eReceiver::~Mu2eReceiver()
 {
-  theInterface_->DisableDetectorEmulator();
   rawOutputStream_.close();
   delete theInterface_;
   delete theCFO_;
+}
+
+void mu2e::Mu2eReceiver::stop()
+{
+  theInterface_->DisableDetectorEmulator();
+  theInterface_->DisableDetectorEmulatorMode();
+  theInterface_->DisableCFOEmulation();
+  theInterface_->ResetDTC();
 }
 
 bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
