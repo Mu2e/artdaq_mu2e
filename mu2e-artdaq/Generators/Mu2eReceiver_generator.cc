@@ -43,6 +43,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	theInterface_ = new DTCLib::DTC(mode_);	
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
+	theInterface_->ClearDetectorEmulatorInUse(); // Needed if we're doing ROC Emulator...make sure Detector Emulation is disabled
 
 	int ringRocs[] = {
 		ps.get<int>("ring_0_roc_count", -1),
