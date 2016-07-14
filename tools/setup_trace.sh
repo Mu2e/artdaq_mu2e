@@ -5,10 +5,11 @@ source /mu2e/ups/setup
 setup TRACE v3_06_07 -qe10:prof
 
 export TRACE_FILE=/tmp/trace_buffer_$USER
+#export TRACE_FILE=/proc/trace/buffer
 
 export TRACE_NAME=KERNEL
-trace_cntl lvlset `bitN_to_mask "0-19"` 0 0;
-trace_cntl lvlclr `bitN_to_mask "4"` 0 0
+${TRACE_BIN}/trace_cntl lvlset `bitN_to_mask "0-20"` 0 0;
+${TRACE_BIN}/trace_cntl lvlclr `bitN_to_mask "4"` 0 0
 export TRACE_NAME=MU2EDEV
 
 # Trace everything

@@ -54,10 +54,10 @@ function launch() {
 
 
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --mu2e mu2edaq05-data,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
-    --mu2e mu2edaq06-data,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
-    --mu2e mu2edaq07-data,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
-    --mu2e mu2edaq08-data,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},${USEFILE},$DTCLIB_SIM_PATH/mediumPackets.bin \
+    --mu2e mu2edaq05-data,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq06-data,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq07-data,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq08-data,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
     --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[1]} \
     --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[2]} \
     --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[3]} \

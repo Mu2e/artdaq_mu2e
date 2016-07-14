@@ -8,7 +8,7 @@ require File.join( File.dirname(__FILE__), 'generateEventBuilder' )
 def generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs, 
                          dataDir, onmonEnable,
                          diskWritingEnable, fragSizeWords, totalFragments,
-                         fclWFViewer )
+                         fclWFViewer, fclDDV )
   # Do the substitutions in the event builder configuration given the options
   # that were passed in from the command line.  
 
@@ -46,12 +46,14 @@ outputs: {
 physics: {
   analyzers: {
 %{phys_anal_onmon_cfg}
+%{phys_anal_ddv_cfg}
   }
 
   producers: {
   }
 
   %{enable_onmon}a1: [ app, wf ]
+  a2: [ ddv ]
 
   %{netmon_output}my_output_modules: [ netMonOutput ]
   %{root_output}my_output_modules: [ normalOutput ]
@@ -100,6 +102,8 @@ else
     ebConfig.gsub!(/\%\{enable_onmon\}/, "#")
   end
 end
+
+ebConfig.gsub!(/\%\{phys_anal_ddv_cfg\}/, fclDDV)
 
 
 currentTime = Time.now
