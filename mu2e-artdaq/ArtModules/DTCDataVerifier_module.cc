@@ -64,10 +64,6 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 
       e.getByLabel("daq", label, fragments_with_label);
 
-      //    for (int i_l = 0; i_l < static_cast<int>(fragments_with_label->size()); ++i_l) {
-      //      fragments.emplace_back( (*fragments_with_label)[i_l] );
-      //    }
-
       for (auto frag : *fragments_with_label)
 	{
 	  fragments.emplace_back(frag);

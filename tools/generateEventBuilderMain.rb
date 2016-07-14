@@ -62,7 +62,7 @@ source: {
   module_type: RawInput
   waiting_time: 900
   resume_after_timeout: true
-  fragment_type_map: [[1, \"missed\"], [2, \"DTC\"], [3, \"TOY1\"], [4, \"TOY2\"], [231, \"EMPTY\"]]
+  fragment_type_map: [[1, \"missed\"], [2, \"DTC\"], [3, \"MU2E\"], [4, \"TRK\"], [5, \"CAL\"], [6, \"CRV\"], [7, \"DBG\"\],  [231, \"EMPTY\"]]
 }
 process_name: DAQ" )
 
