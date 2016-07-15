@@ -100,7 +100,7 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 	    auto ts = static_cast<DTCFragment>(frag).hdr_timestamp();
 	    if(ts != next_timestamp_) {
 	      std::ostringstream str;
-	      str << std::hex << "Timestamp does not match expected: ts=0x" << static_cast<double>(ts) << ", expected=0x" << static_cast<double>(next_timestamp_);
+	      str << "Timestamp does not match expected: ts=" << static_cast<double>(ts) << ", expected=" << static_cast<double>(next_timestamp_);
 	      mf::LogWarning("DTCDataVerifier") << str.str();
 	    }
 	    next_timestamp_ = ts + 1;
@@ -119,16 +119,24 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 		      
 		if(ts != next_timestamp_) {
 		  std::ostringstream str;
-		  str << std::hex << "Timestamp does not match expected: ts=0x" << static_cast<double>(ts) << ", expected=0x" << static_cast<double>(next_timestamp_);
+		  str << "Block " << static_cast<double>(ii) << ": Timestamp does not match expected: ts=" << static_cast<double>(ts) << ", expected=" << static_cast<double>(next_timestamp_);
 		  mf::LogWarning("DTCDataVerifier") << str.str();
 		}
 		next_timestamp_ = ts + 1;
 
 	      }
+	    mf::LogInfo("DTCDataVerifier") << "Finished processing " << mfrag.hdr_block_count() << " DataBlocks";
 	  }
 	  break;
+	case FragmentType::EMPTY:
+	mf::LogInfo("DTCDataVerifier") << "Not processing Empty Fragment";
+break;
 	default:
-	  throw cet::exception("Error in DTCDataVerifier: unknown fragment type supplied");
+	{
+	std::ostringstream str;
+str << "Error in DTCDataVerifier: unknown fragment type supplied (" << fragmentTypeToString(fragtype) << ")";
+	  throw cet::exception(str.str());
+}
 	}
     }
 }

@@ -37,6 +37,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
   , rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
   , nSkip_(ps.get<size_t>("fragment_receiver_count", 1))
   , sendEmpties_(ps.get<bool>("send_empty_fragments", false))
+  , verbose_(ps.get<bool>("verbose", false))
   {
     TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
     // mode_ can still be overridden by environment!
@@ -233,23 +234,29 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	  totalSize += data[i].byteSize;
 	}
 
-      int64_t diff = totalSize + newfrag.blockSizeBytes() - newfrag.dataSize();
-      TRACE(4, "diff=%lli, totalSize=%llu, dataSize=%llu, fragSize=%llu", (long long)diff, (long long unsigned)totalSize, (long long unsigned)newfrag.blockSizeBytes(), (long long unsigned)newfrag.dataSize());	
+      int64_t diff = totalSize + newfrag.dataEndBytes() - newfrag.dataSize();
+      TRACE(4, "diff=%lli, totalSize=%llu, dataSize=%llu, fragSize=%llu", (long long)diff, (long long unsigned)totalSize, (long long unsigned)newfrag.dataEndBytes(), (long long unsigned)newfrag.dataSize());	
       if (diff > 0)
 	{
 	  auto currSize = newfrag.dataSize();
 	  auto remaining = 1 - (newfrag.hdr_block_count() / static_cast<double>(BLOCK_COUNT_MAX));
 
 	  auto newSize = static_cast<size_t>(currSize * remaining);
-	  TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", totalSize, newfrag.blockSizeBytes(), newfrag.dataSize(), newSize + diff);
+	  TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", totalSize, newfrag.dataEndBytes(), newfrag.dataSize(), newSize + diff);
 	  newfrag.addSpace(diff + newSize);
 	}
 
       TRACE(3, "Copying DTC packets into Mu2eFragment");
       //auto offset = newfrag.dataBegin() + newfrag.blockSizeBytes();
-      size_t offset = newfrag.blockSizeBytes();
+      size_t offset = newfrag.dataEndBytes();
       for (size_t i = 0; i < data.size(); ++i)
 	{
+	  if(verbose_) {
+	  auto dp = DTCLib::DTC_DataPacket(data[i].blockPointer);
+	  auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
+	  mf::LogInfo("DTCReceiver") << "Placing DataBlock with timestamp " << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment";
+	  }
+
 	  TRACE(4, "Copying data from %p to %p (sz=%llu)", reinterpret_cast<void*>(data[i].blockPointer), reinterpret_cast<void*>(newfrag.dataAtBytes(offset)), (unsigned long long)data[i].byteSize);
 	  //memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
 	  std::copy(data[i].blockPointer, data[i].blockPointer + (data[i].byteSize/sizeof(DTCLib::DTC_DataBlock::pointer_t)), newfrag.dataAtBytes(offset));
@@ -258,7 +265,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	}
 
       TRACE(3, "Ending SubEvt %lu", newfrag.hdr_block_count());
-      newfrag.endSubEvt(offset - newfrag.blockSizeBytes());
+      newfrag.endSubEvt(offset - newfrag.dataEndBytes());
     }
   TRACE(1, "Incrementing event counter");
   ev_counter_inc();
@@ -270,7 +277,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
   double processing_rate = newfrag.hdr_block_count() / _getProcTimerCount();
   double timestamp_rate = newfrag.hdr_block_count() / _timeSinceLastSend();
   double hw_timestamp_rate = newfrag.hdr_block_count() / hwTime;
-  double hw_data_rate = newfrag.blockSizeBytes() / hwTime;
+  double hw_data_rate = newfrag.dataEndBytes() / hwTime;
 
   metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, true, false);
   metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true, true);

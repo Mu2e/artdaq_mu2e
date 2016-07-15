@@ -16,7 +16,7 @@ manageMu2ePilotSystem.sh stop
 sleep 10
 manageMu2ePilotSystem.sh shutdown
 
-sleep 5
+sleep 20
 killall ruby
 killall AggregatorMain
 
