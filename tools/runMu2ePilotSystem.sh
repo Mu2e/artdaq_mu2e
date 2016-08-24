@@ -3,19 +3,63 @@ startTime=`date +%Y-%m-%d_%H:%M:%S`
 if [[ "x$USER" == "xmu2edaq" ]]; then
   mkdir -p /home/mu2edaq/daqlogs/cron
   exec 2>&1
-  exec > /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
+  exec > >(tee /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log)
 fi
 
 /home/mu2edaq/cleanupMu2ePilotSystem.sh
 
+env_opts_var=`basename $0 | sed 's/\.sh$//' | tr 'a-z-' 'A-Z_'`_OPTS
+USAGE="\
+   usage: `basename $0` [options]
+examples: `basename $0`
+          `basename $0` --use-hardware
+--use-hardware, -H       Use the DTC hardware (Sets DTCLIB_SIM_ENABLE=N)
+--use-rocemulator, -R    Use the ROC Emulator on the DTC hardware (Sets DTCLIB_SIM_ENABLE=R)
+--output-path, -o [path] Where to write output data file. If not specified, disk writing will be turned off.
+"
+
+# Process script arguments and options
+eval env_opts=\${$env_opts_var-} # can be args too
+eval "set -- $env_opts \"\$@\""
+op1chr='rest=`expr "$op" : "[^-]\(.*\)"`   && set -- "-$rest" "$@"'
+op1arg='rest=`expr "$op" : "[^-]\(.*\)"`   && set --  "$rest" "$@"'
+reqarg="$op1arg;"'test -z "${1+1}" &&echo opt -$op requires arg. &&echo "$USAGE" &&exit'
+args= do_help= opt_h= opt_r= path=
+while [ -n "${1-}" ];do
+    if expr "x${1-}" : 'x-' >/dev/null;then
+        op=`expr "x$1" : 'x-\(.*\)'`; shift   # done with $1
+        leq=`expr "x$op" : 'x-[^=]*\(=\)'` lev=`expr "x$op" : 'x-[^=]*=\(.*\)'`
+        test -n "$leq"&&eval "set -- \"\$lev\" \"\$@\""&&op=`expr "x$op" : 'x\([^=]*\)'`
+        case "$op" in
+        \?*|h*)     eval $op1chr; do_help=1;;
+        H*|-use-hardware)     eval $op1arg; opt_h=`expr $opt_h + 1`;;
+        R*|-use-rocemulator)  eval $op1arg; opt_r=`expr $opt_r + 1`;;
+        o*|-output-path)      eval $reqarg; path=$1 shift;;
+        *)          echo "Unknown option -$op"; do_help=1;;
+        esac
+    else
+        aa=`echo "$1" | sed -e"s/'/'\"'\"'/g"` args="$args '$aa'"; shift
+    fi
+done
+eval "set -- $args \"\$@\""; unset args aa
+set -u   # complain about uninitialed shell variables - helps development
+
+
+test -n "${do_help-}" -o $# -ge 2 && echo "$USAGE" && exit
+test $# -eq 1 && root=$1
+
 hardwareArg=""
-if [[ "x$1" == "xhardware" ]]; then
+if [[ $opt_h -gt 0 ]]; then
   echo "Running with DTC Hardware!!!"
   hardwareArg="-H"
 fi
-if [[ "x$1" == "xrocemulator" ]]; then
+if [[ $opt_r -gt 0 ]]; then
   echo "Running with DTC ROC Emulator!!!"
   hardwareArg="-R"
+fi
+diskWritingArg="-D"
+if [ ! -z "${path:-}" ]; then
+  diskWritingArg="-o $path"
 fi
 
 export TRACE_FILE=/tmp/trace_buffer_$USER
@@ -40,7 +84,7 @@ sleep 10
 echo "!!!!!INITIALIZING SYSTEM!!!!!!"
 cd /home/mu2edaq/daqlogs/cron
 #manageMu2ePilotSystem.sh -v -o /mnt/ram/mu2edaq $hardwareArg init
-manageMu2ePilotSystem.sh -v -o /home/mu2edaq/data $hardwareArg init
+manageMu2ePilotSystem.sh -v $diskWritingArg $hardwareArg init
 #manageMu2ePilotSystem.sh -v -D $hardwareArg init
 cd /home/mu2edaq
 # Data File
