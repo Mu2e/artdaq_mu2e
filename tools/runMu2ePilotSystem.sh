@@ -39,7 +39,9 @@ sleep 10
 # No Data File
 echo "!!!!!INITIALIZING SYSTEM!!!!!!"
 cd /home/mu2edaq/daqlogs/cron
-manageMu2ePilotSystem.sh -v -D $hardwareArg init
+#manageMu2ePilotSystem.sh -v -o /mnt/ram/mu2edaq $hardwareArg init
+manageMu2ePilotSystem.sh -v -o /home/mu2edaq/data $hardwareArg init
+#manageMu2ePilotSystem.sh -v -D $hardwareArg init
 cd /home/mu2edaq
 # Data File
 #manageMu2ePilotSystem.sh  $hardwareArg init
