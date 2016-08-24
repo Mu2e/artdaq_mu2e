@@ -1,12 +1,5 @@
 #!/bin/bash
 startTime=`date +%Y-%m-%d_%H:%M:%S`
-if [[ "x$USER" == "xmu2edaq" ]]; then
-  mkdir -p /home/mu2edaq/daqlogs/cron
-  exec 2>&1
-  exec > >(tee /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log)
-fi
-
-/home/mu2edaq/cleanupMu2ePilotSystem.sh
 
 env_opts_var=`basename $0 | sed 's/\.sh$//' | tr 'a-z-' 'A-Z_'`_OPTS
 USAGE="\
@@ -25,6 +18,7 @@ op1chr='rest=`expr "$op" : "[^-]\(.*\)"`   && set -- "-$rest" "$@"'
 op1arg='rest=`expr "$op" : "[^-]\(.*\)"`   && set --  "$rest" "$@"'
 reqarg="$op1arg;"'test -z "${1+1}" &&echo opt -$op requires arg. &&echo "$USAGE" &&exit'
 args= do_help= opt_h= opt_r= path=
+echo "\$*=$*"
 while [ -n "${1-}" ];do
     if expr "x${1-}" : 'x-' >/dev/null;then
         op=`expr "x$1" : 'x-\(.*\)'`; shift   # done with $1
@@ -34,7 +28,7 @@ while [ -n "${1-}" ];do
         \?*|h*)     eval $op1chr; do_help=1;;
         H*|-use-hardware)     eval $op1arg; opt_h=`expr $opt_h + 1`;;
         R*|-use-rocemulator)  eval $op1arg; opt_r=`expr $opt_r + 1`;;
-        o*|-output-path)      eval $reqarg; path=$1 shift;;
+        o*|-output-path)      eval $reqarg; path=$1; shift;;
         *)          echo "Unknown option -$op"; do_help=1;;
         esac
     else
@@ -43,10 +37,19 @@ while [ -n "${1-}" ];do
 done
 eval "set -- $args \"\$@\""; unset args aa
 set -u   # complain about uninitialed shell variables - helps development
-
+echo path=$path
 
 test -n "${do_help-}" -o $# -ge 2 && echo "$USAGE" && exit
 test $# -eq 1 && root=$1
+
+if [[ "x$USER" == "xmu2edaq" ]]; then
+  mkdir -p /home/mu2edaq/daqlogs/cron
+  #exec 2>&1
+  #exec > >(tee /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log)
+  exec 2>&1 >/home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
+fi
+
+/home/mu2edaq/cleanupMu2ePilotSystem.sh
 
 hardwareArg=""
 if [[ $opt_h -gt 0 ]]; then
