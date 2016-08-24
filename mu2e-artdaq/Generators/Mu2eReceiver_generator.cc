@@ -224,6 +224,9 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	{
 	  TRACE(1, "Retry count exceeded. Something is very wrong indeed");
 	  mf::LogError("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter();
+	  if(newfrag.hdr_block_count() == 0){
+	    throw cet::exception("DTC Retry count exceeded in first block of Event. Probably something is very wrong, aborting");
+	  }
 	  break;
 	}
 

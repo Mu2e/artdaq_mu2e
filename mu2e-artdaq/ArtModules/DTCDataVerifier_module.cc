@@ -117,7 +117,7 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 		auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
 		auto ts = dhp.GetTimestamp().GetTimestamp(true);
 		      
-		if(ts != next_timestamp_) {
+		if(ts != next_timestamp_ && ts != next_timestamp_ - BLOCK_COUNT_MAX) {
 		  std::ostringstream str;
 		  str << "Block " << static_cast<double>(ii) << ": Timestamp does not match expected: ts=" << static_cast<double>(ts) << ", expected=" << static_cast<double>(next_timestamp_);
 		  mf::LogWarning("DTCDataVerifier") << str.str();
@@ -125,7 +125,9 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 		next_timestamp_ = ts + 1;
 
 	      }
-	    mf::LogInfo("DTCDataVerifier") << "Finished processing " << mfrag.hdr_block_count() << " DataBlocks";
+	    if(mfrag.hdr_block_count() != BLOCK_COUNT_MAX) {
+	      mf::LogWarning("DTCDataVerifier") << "There were " << mfrag.hdr_block_count() << " DataBlocks, mu2eFragment capacity is " << BLOCK_COUNT_MAX;
+	    }
 	  }
 	  break;
 	case FragmentType::EMPTY:
