@@ -25,6 +25,7 @@ require File.join( File.dirname(__FILE__), 'demo_utilities' )
 require File.join( File.dirname(__FILE__), 'generateMu2e' )
 require File.join( File.dirname(__FILE__), 'generateDTC' )
 require File.join( File.dirname(__FILE__), 'generateWFViewer' )
+require File.join( File.dirname(__FILE__), 'generateDTCDataVerifier' )
 
 require File.join( File.dirname(__FILE__), 'generateBoardReaderMain' )
 require File.join( File.dirname(__FILE__), 'generateEventBuilderMain' )
@@ -491,7 +492,7 @@ class SystemControl
     totalFRs = @options.boardReaders.length
     totalEBs = @options.eventBuilders.length
     totalAGs = @options.aggregators.length
-    inputBuffSizeWords = 32024 * 1001
+    inputBuffSizeWords = 32024 * 2500
 
 
     #if Integer(totalv1720s) > 0
@@ -594,11 +595,15 @@ class SystemControl
                                       (@options.mu2es).map { |board| board.kind }
                                       )
 
+      fclDDV = generateDTCDataVerifier( (@options.mu2es).map { |board| board.board_id },
+                                      (@options.mu2es).map { |board| board.kind }
+                                      )
+
       cfg = generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs,
                                    @options.dataDir, @options.runOnmon,
                                    @options.writeData, inputBuffSizeWords,
                                    totalBoards, 
-                                   fclWFViewer
+                                   fclWFViewer, fclDDV
                                    )
 
       if @options.serialize

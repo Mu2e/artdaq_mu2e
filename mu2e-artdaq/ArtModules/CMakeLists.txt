@@ -11,6 +11,12 @@ simple_plugin(Mu2eProducer "module"
   ${MONGODB_CXX_LIBRARIES}
 )
 
+simple_plugin(DTCDataVerifier "module"
+  mu2e-artdaq-core_Overlays
+  DTCInterface
+  ${MF_MESSAGELOGGER}
+)
+
 simple_plugin(Mu2eDump "module"
   mu2e-artdaq-core_Overlays
   DTCInterface

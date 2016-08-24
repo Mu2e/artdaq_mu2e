@@ -2,7 +2,7 @@ simple_plugin(DTCReceiver "generator"
   mu2e-artdaq-core_Overlays
   artdaq_Application
   artdaq_DAQrate
-  ${ART_UTILITIES}
+  ${CANVAS}_Utilities
   ${FHICLCPP}
   ${CETLIB}
   MF_MessageLogger
@@ -15,7 +15,7 @@ simple_plugin(Mu2eReceiver "generator"
   artdaq_Application
   artdaq_DAQrate
   artdaq-core_Data
-  ${ART_UTILITIES}
+  ${CANVAS}_Utilities
   ${FHICLCPP}
   ${CETLIB}
   MF_MessageLogger
@@ -26,7 +26,7 @@ simple_plugin(OverlayTest "generator"
   mu2e-artdaq-core_Overlays
   artdaq_Application
   artdaq_DAQrate
-  ${ART_UTILITIES}
+  ${CANVAS}_Utilities
   ${FHICLCPP}
   ${CETLIB}
   MF_MessageLogger

@@ -45,7 +45,7 @@ namespace mu2e
 
 		void stopNoMutex() override {}
 
-		void stop() override {}
+	  void stop() override;
 
 		void readSimFile_(std::string sim_file);
 
@@ -79,6 +79,7 @@ namespace mu2e
 	  std::ofstream rawOutputStream_;
 	  size_t nSkip_;
 	  bool sendEmpties_;
+	  bool verbose_;
 
 	  DTCLib::DTC* theInterface_;
 	  DTCLib::DTCSoftwareCFO* theCFO_;

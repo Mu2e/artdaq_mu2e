@@ -33,6 +33,8 @@ source: {
 outputs: {
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput
+  #%{root_output}  module_type: BinaryFileOutput
+  %{root_output} compressionLevel: 0
   %{root_output}  fileName: \"%{output_file}\"
   %{root_output}}
 }

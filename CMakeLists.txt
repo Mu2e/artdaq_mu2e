@@ -51,7 +51,6 @@ find_ups_product( art v1_10_00 )
 find_ups_product( fhiclcpp v2_16_00 )
 find_ups_product( messagefacility v1_10_00 )
 find_ups_product( TRACE v3_03_00 )
-find_ups_product( cpp0x v1_03_00 )
 find_ups_product( cetlib v1_03_00 )
 find_ups_product( mongodb v3_0_4 )
 find_ups_root( v5_34_00 )
@@ -63,6 +62,16 @@ find_ups_boost( v1_50_0 filesystem
 # have to make sure cmake doesn't select the system libraries
 # define libsigc
 cet_find_library( SIGC    NAMES sigc-2.0  PATHS ENV LIBSIGCPP_LIB NO_DEFAULT_PATH )
+
+
+
+check_ups_version(art "$ENV{ART_VERSION}" v2_00_00 PRODUCT_OLDER_VAR no_canvas)
+if (no_canvas)
+  set(CANVAS "art")
+else (no_canvas)
+  set(CANVAS "canvas")
+  add_definitions(-DCANVAS)
+endif()
 
 # macros for art_dictionary and simple_plugin
 include(ArtDictionary)

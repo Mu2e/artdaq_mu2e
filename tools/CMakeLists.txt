@@ -2,7 +2,8 @@ cet_script(setupDemoEnvironment.sh DemoControl.rb
 startMu2ePilotSystem.sh manageMu2ePilotSystem.sh
 startMu2eSingleNodeSystem.sh manageMu2eSingleNodeSystem.sh
 CreateNewFragmentGenerator.rb  generateEventBuilderMain.rb
-generateWFViewer.rb generateEventBuilder.rb demo_utilities.rb generateMu2e.rb
+generateWFViewer.rb generateDTCDataVerifier.rb
+generateEventBuilder.rb demo_utilities.rb generateMu2e.rb
 generateDTC.rb generateAggregator.rb generateAggregatorMain.rb generateBoardReaderMain.rb RunDriver.rb)
 
 

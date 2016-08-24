@@ -17,7 +17,7 @@ def generateMu2e(startingFragmentId, boardId, simMode = 0, useSimFile = 0, simFi
     ring_0_roc_count: 1 \
     ring_0_timing_enabled: false \
     ring_0_roc_emulator_enabled: true \
-ring_0_roc_emulator_count: 1 \
+    ring_0_roc_emulator_count: 1 \
     fragment_receiver_count: %{fragment_recvr_count}
     send_empty_fragments: true \
     debug_print: false \

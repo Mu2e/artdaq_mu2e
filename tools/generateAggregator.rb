@@ -16,9 +16,9 @@ daq: {
     event_queue_wait_time: %{queue_timeout}
     onmon_event_prescale: %{onmon_event_prescale}
     xmlrpc_client_list: \"%{xmlrpc_client_list}\"
-    file_size_MB: %{file_size}
-    file_duration: %{file_duration}
-    file_event_count: %{file_event_count}
+    #file_size_MB: %{file_size}
+    #file_duration: %{file_duration}
+    #file_event_count: %{file_event_count}
   }
   metrics: {
     ganglia: {

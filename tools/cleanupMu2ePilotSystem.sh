@@ -16,7 +16,7 @@ manageMu2ePilotSystem.sh stop
 sleep 10
 manageMu2ePilotSystem.sh shutdown
 
-sleep 5
+sleep 20
 killall ruby
 killall AggregatorMain
 
@@ -28,3 +28,4 @@ rgang "mu2edaq0{4-8}-data" killall EventBuilderMain
 mkdir -p /home/mu2edaq/daqlogs/traceBuffers/$startTime
 
 rgang --do-local "mu2edaq0{1,4-8}-data" 'mv /tmp/trace_buffer_$USER /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.trace'
+rgang --do-local "mu2edaq0{1,4-8}-data" 'cp /proc/trace/buffer /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.kernel.trace'
