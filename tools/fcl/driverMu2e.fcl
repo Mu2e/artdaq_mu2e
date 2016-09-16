@@ -61,6 +61,8 @@ physics:
       #      frag_type: @local::fragment_receiver.fragment_type
       frag_type: MU2E
       num_packets_to_show: 2 # DataHeaderPacket and up to num_packets_to_show - 1 DataPackets
+      print_json: true
+      print_packet_format: false
     }
   }
 
