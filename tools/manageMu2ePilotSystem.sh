@@ -53,6 +53,7 @@ function launch() {
     # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[45]} \
 
 
+  wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=Mu2e Single Node System $2&host_regex=mu2edaq"
   DemoControl.rb ${enableSerial} -s -c $1 \
     --mu2e mu2edaq05-data,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
     --mu2e mu2edaq06-data,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
