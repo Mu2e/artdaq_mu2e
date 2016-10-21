@@ -256,7 +256,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	{
 	  if(verbose_) {
 	  auto dp = DTCLib::DTC_DataPacket(data[i].blockPointer);
-	  auto dhp = DTCLib::DTC_HeaderPacket(dp);
+	  auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
 	  mf::LogInfo("DTCReceiver") << "Placing DataBlock with timestamp " << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment";
 	  }
 

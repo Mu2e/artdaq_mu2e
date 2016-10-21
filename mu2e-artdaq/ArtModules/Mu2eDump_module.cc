@@ -91,41 +91,44 @@ void mu2e::Mu2eDump::analyze(art::Event const& evt)
 				std::cout << std::endl;
 			}
 			auto dmp = DTCLib::DTC_DMAPacket(DTCLib::DTC_DataPacket((uint8_t*)bb.dataBegin()));
+//			if(dmp.GetPacketType() == DTCLib::DTC_PacketType_DataHeader) {
+//			
+//			  std::cout << "DTC_DataHeaderPacket:" << std::endl;
+//			  auto dhpacket = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket((uint8_t*)bb.dataBegin()));
+//			  if (print_json_)
+//			    {
+//			      std::cout << dhpacket.toJSON() << std::endl;
+//			    }
+//			  if (print_packet_format_)
+//			    {
+//			      std::cout << dhpacket.toPacketFormat() << std::endl;
+//			    }
+//			  std::cout << std::endl;
+//
+//
+//			  std::cout << std::endl;
+//			  int packetMax = max_DataPackets_to_show_ > dhpacket.GetPacketCount() ? dhpacket.GetPacketCount() : max_DataPackets_to_show_;
+//			  for (int ii = 0; ii < packetMax; ++ii)
+//			    {
+//			      // Packets are 16 bytes. mu2eFragment::Header::data_t is a uint64_t. Therefore, each packet is an offset of 2!
+//			      auto packet = DTCLib::DTC_DataPacket((uint8_t*)(bb.dataBegin() + 2 + (ii*2)));
+//			      if (print_json_)
+//				{
+//				  std::cout << packet.toJSON() << std::endl;
+//				}
+//			      if (print_packet_format_)
+//				{
+//				  std::cout << packet.toPacketFormat() << std::endl;
+//				}
+//			      std::cout << std::endl;
+//			    }
+//			}
+			//			else if(dmp.GetPacketType() == DTCLib::DTC_PacketType_DTCHeader) {
 			if(dmp.GetPacketType() == DTCLib::DTC_PacketType_DataHeader) {
-			
+			  //			  std::cout << "DTC_DTCHeaderPacket:" << std::endl;
 			  std::cout << "DTC_DataHeaderPacket:" << std::endl;
-			  auto dhpacket = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket((uint8_t*)bb.dataBegin()));
-			  if (print_json_)
-			    {
-			      std::cout << dhpacket.toJSON() << std::endl;
-			    }
-			  if (print_packet_format_)
-			    {
-			      std::cout << dhpacket.toPacketFormat() << std::endl;
-			    }
-			  std::cout << std::endl;
-
-
-			  std::cout << std::endl;
-			  int packetMax = max_DataPackets_to_show_ > dhpacket.GetPacketCount() ? dhpacket.GetPacketCount() : max_DataPackets_to_show_;
-			  for (int ii = 0; ii < packetMax; ++ii)
-			    {
-			      // Packets are 16 bytes. mu2eFragment::Header::data_t is a uint64_t. Therefore, each packet is an offset of 2!
-			      auto packet = DTCLib::DTC_DataPacket((uint8_t*)(bb.dataBegin() + 2 + (ii*2)));
-			      if (print_json_)
-				{
-				  std::cout << packet.toJSON() << std::endl;
-				}
-			      if (print_packet_format_)
-				{
-				  std::cout << packet.toPacketFormat() << std::endl;
-				}
-			      std::cout << std::endl;
-			    }
-			}
-			else if(dmp.GetPacketType() == DTCLib::DTC_PacketType_DTCHeader) {
-			  std::cout << "DTC_DTCHeaderPacket:" << std::endl;
-			  auto ddhp = DTCLib::DTC_DTCHeaderPacket(DTCLib::DTC_DataPacket((uint8_t*)bb.dataBegin()));
+			  //			  auto ddhp = DTCLib::DTC_DTCHeaderPacket(DTCLib::DTC_DataPacket((uint8_t*)bb.dataBegin()));
+			  auto ddhp = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket((uint8_t*)bb.dataBegin()));
 			  if (print_json_)
 			    {
 			      std::cout << ddhp.toJSON() << std::endl;

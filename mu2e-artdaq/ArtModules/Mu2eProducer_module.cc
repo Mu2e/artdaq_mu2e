@@ -1,6 +1,6 @@
 // ======================================================================
 //
-// Mu2eProducer_plugin:  Add tracker data products to the event
+// Mu2eProducer_plugin:  Add tracker/cal data products to the event
 //
 // ======================================================================
 
@@ -189,6 +189,17 @@ void
 	    uint32_t timestampMedium = (adc_t) *(pos+4);
 	    size_t timestamp = timestampLow | (timestampMedium<<16);
 
+	    adc_t EVBMode_andSYSID_andDTCID = (adc_t) *(pos+7);
+	    
+	    adc_t EVBMode = (EVBMode_andSYSID_andDTCID >> 8);
+	    adc_t sysID = (EVBMode_andSYSID_andDTCID >> 6) & 0x0003;
+	    adc_t dtcID = EVBMode_andSYSID_andDTCID & 0x003F;
+
+	    if(sysID==0) {
+	      mode_ = "TRK";
+	    } else if(sysID==1) {
+	      mode_ = "CAL";
+	    }
 
 	    // Parse phyiscs information from TRK packets
 	    if(mode_ == "TRK" && packetCount>0) {
@@ -227,10 +238,13 @@ void
 	      	      
 	      if( debug_ ) {
 		std::cout << "timestamp: " << timestamp << std::endl;
+		std::cout << "sysID: " << sysID << std::endl;
+		std::cout << "dtcID: " << dtcID << std::endl;
 		std::cout << "rocID: " << rocID << std::endl;
 		std::cout << "ringID: " << ringID << std::endl;
 		std::cout << "packetCount: " << packetCount << std::endl;
 		std::cout << "valid: " << valid << std::endl;
+		std::cout << "EVB mode: " << EVBMode << std::endl;
 		
 		for(int i=7; i>=0; i--) {
 		  std::cout << (adc_t) *(pos+8+i);
@@ -294,11 +308,14 @@ void
 	      
 	      if( debug_ ) {
 		std::cout << "timestamp: " << timestamp << std::endl;
+		std::cout << "sysID: " << sysID << std::endl;
+		std::cout << "dtcID: " << dtcID << std::endl;
 		std::cout << "rocID: " << rocID << std::endl;
 		std::cout << "ringID: " << ringID << std::endl;
 		std::cout << "packetCount: " << packetCount << std::endl;
 		std::cout << "valid: " << valid << std::endl;
-		
+		std::cout << "EVB mode: " << EVBMode << std::endl;		
+
 		for(int i=7; i>=0; i--) {
 		  std::cout << (adc_t) *(pos+8+i);
 		  std::cout << " ";
