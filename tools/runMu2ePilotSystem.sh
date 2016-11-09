@@ -1,12 +1,5 @@
 #!/bin/bash
 startTime=`date +%Y-%m-%d_%H:%M:%S`
-if [[ "x$USER" == "xmu2edaq" ]]; then
-  mkdir -p /home/mu2edaq/daqlogs/cron
-  exec 2>&1
-  exec > >(tee /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log)
-fi
-
-/home/mu2edaq/cleanupMu2ePilotSystem.sh
 
 env_opts_var=`basename $0 | sed 's/\.sh$//' | tr 'a-z-' 'A-Z_'`_OPTS
 USAGE="\
@@ -34,7 +27,7 @@ while [ -n "${1-}" ];do
         \?*|h*)     eval $op1chr; do_help=1;;
         H*|-use-hardware)     eval $op1arg; opt_h=`expr $opt_h + 1`;;
         R*|-use-rocemulator)  eval $op1arg; opt_r=`expr $opt_r + 1`;;
-        o*|-output-path)      eval $reqarg; path=$1 shift;;
+        o*|-output-path)      eval $reqarg; path=$1; shift;;
         *)          echo "Unknown option -$op"; do_help=1;;
         esac
     else
@@ -44,9 +37,17 @@ done
 eval "set -- $args \"\$@\""; unset args aa
 set -u   # complain about uninitialed shell variables - helps development
 
-
 test -n "${do_help-}" -o $# -ge 2 && echo "$USAGE" && exit
 test $# -eq 1 && root=$1
+
+if [[ "x$USER" == "xmu2edaq" ]]; then
+  mkdir -p /home/mu2edaq/daqlogs/cron
+  #exec 2>&1
+  #exec > >(tee /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log)
+  exec 2>&1 >/home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
+fi
+
+/home/mu2edaq/cleanupMu2ePilotSystem.sh
 
 hardwareArg=""
 if [[ $opt_h -gt 0 ]]; then
@@ -69,7 +70,7 @@ rgang --do-local "mu2edaq0{1,5-8}-data" "/home/mu2edaq/setup_trace.sh"
 cd /home/mu2edaq
 if [ -z "$MU2E_ARTDAQ_DIR" ]; then
   source /mu2e/ups/setup
-  setup mu2e_artdaq -qe9:prof:s21:eth # Use current.chain
+  setup mu2e_artdaq -qe10:prof:s35:eth # Use current.chain
 fi
 if [ ! -z "$MRB_BUILDDIR" ]; then
   export FHICL_FILE_PATH=$FHICL_FILE_PATH:$MRB_BUILDDIR/mu2e_artdaq/fcl

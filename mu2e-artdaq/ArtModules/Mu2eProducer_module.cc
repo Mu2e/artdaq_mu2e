@@ -1,6 +1,6 @@
 // ======================================================================
 //
-// Mu2eProducer_plugin:  Add tracker data products to the event
+// Mu2eProducer_plugin:  Add tracker/cal data products to the event
 //
 // ======================================================================
 
@@ -51,7 +51,8 @@ public:
 
   using adc_t = mu2e::mu2eFragmentReader::adc_t;
 
-  typedef std::vector<unsigned short> ADCWaveform;
+  //typedef std::vector<unsigned short> ADCWaveform;
+  typedef std::vector<adc_t> ADCWaveform;
   typedef unsigned long TDCValues[2];
   typedef unsigned long StrawIndex; // COMMENT OUT ONCE INCLUDING StrawIndex.hh
   
@@ -179,35 +180,32 @@ void
 	      std::cout << std::endl;
 	    }	    
 
-	    adc_t IDline = (adc_t) *(pos+1);
-	    adc_t rocID = IDline & 15; // 15 = 0x1111
-	    adc_t ringID = (IDline >> 8) & 7; // 7 = 0x111 
-	    adc_t valid = IDline >> 15;
-	    adc_t packetCount = (adc_t) *(pos+2);
+	    adc_t rocID = cc.DBH_ROCID(pos);
+	    adc_t ringID = cc.DBH_RingID(pos);
+	    adc_t valid = cc.DBH_Valid(pos);
+	    adc_t packetCount = cc.DBH_PacketCount(pos);
 	    
-	    uint32_t timestampLow    = (adc_t) *(pos+3);
-	    uint32_t timestampMedium = (adc_t) *(pos+4);
+	    uint32_t timestampLow    = cc.DBH_TimestampLow(pos);
+	    uint32_t timestampMedium = cc.DBH_TimestampMedium(pos);
 	    size_t timestamp = timestampLow | (timestampMedium<<16);
+	    
+	    adc_t EVBMode = cc.DBH_EVBMode(pos);
+	    adc_t sysID = cc.DBH_SubsystemID(pos);
+	    adc_t dtcID = cc.DBH_DTCID(pos);
 
+	    if(sysID==0) {
+	      mode_ = "TRK";
+	    } else if(sysID==1) {
+	      mode_ = "CAL";
+	    }
 
 	    // Parse phyiscs information from TRK packets
 	    if(mode_ == "TRK" && packetCount>0) {
 
-	      adc_t strawIdx              = (adc_t) *(pos+8+0);
-	      uint32_t TDC0_low           = (adc_t) *(pos+8+1);
-	      uint32_t TDC0_high_TDC1_low = (adc_t) *(pos+8+2);
-	      uint32_t TDC1_high          = (adc_t) *(pos+8+3);
-	      
-	      uint32_t TDC0_high = TDC0_high_TDC1_low & 255;
-	      uint32_t TDC1_low = TDC0_high_TDC1_low >> 8;
-	      
-	      uint32_t TDC0 = (TDC0_high << 16) | TDC0_low;
-	      uint32_t TDC1 = (TDC1_high << 8) | TDC1_low;
-	      
-	      ADCWaveform waveform;
-	      for(size_t i=0; i<12; i++) {
-		waveform.push_back((adc_t) *(pos+8+4+i));
-	      }
+	      adc_t strawIdx = cc.DBT_StrawIndex(pos);
+	      uint32_t TDC0  = cc.DBT_TDC0(pos);
+	      uint32_t TDC1  = cc.DBT_TDC1(pos);
+	      ADCWaveform waveform = cc.DBT_Waveform(pos);
 	      
 	      // FILL StrawDigi's here
 	      TDCValues tdc = {TDC0,TDC1};
@@ -227,10 +225,13 @@ void
 	      	      
 	      if( debug_ ) {
 		std::cout << "timestamp: " << timestamp << std::endl;
+		std::cout << "sysID: " << sysID << std::endl;
+		std::cout << "dtcID: " << dtcID << std::endl;
 		std::cout << "rocID: " << rocID << std::endl;
 		std::cout << "ringID: " << ringID << std::endl;
 		std::cout << "packetCount: " << packetCount << std::endl;
 		std::cout << "valid: " << valid << std::endl;
+		std::cout << "EVB mode: " << EVBMode << std::endl;
 		
 		for(int i=7; i>=0; i--) {
 		  std::cout << (adc_t) *(pos+8+i);
@@ -280,25 +281,22 @@ void
 
 	    } else if(mode_ == "CAL" && packetCount>0) {	// Parse phyiscs information from CAL packets
 
-	      adc_t ID_Entry              = (adc_t) *(pos+8+0);
-	      adc_t crystalID = ID_Entry & 4095; // 4095 = 0b0000111111111111
-	      adc_t apdID = ID_Entry >> 12;
-
-	      adc_t time = (adc_t) *(pos+8+1);
-	      adc_t numSamples = (adc_t) *(pos+8+2);
-	      
-	      ADCWaveform waveform;
-	      for(size_t i=0; i<numSamples; i++) {
-		waveform.push_back((adc_t) *(pos+8+3+i));
-	      }	      
+	      adc_t crystalID  = cc.DBC_CrystalID(pos);
+	      adc_t apdID      = cc.DBC_apdID(pos);
+	      adc_t time       = cc.DBC_Time(pos);
+	      adc_t numSamples = cc.DBC_NumSamples(pos);
+	      ADCWaveform waveform = cc.DBC_Waveform(pos);
 	      
 	      if( debug_ ) {
 		std::cout << "timestamp: " << timestamp << std::endl;
+		std::cout << "sysID: " << sysID << std::endl;
+		std::cout << "dtcID: " << dtcID << std::endl;
 		std::cout << "rocID: " << rocID << std::endl;
 		std::cout << "ringID: " << ringID << std::endl;
 		std::cout << "packetCount: " << packetCount << std::endl;
 		std::cout << "valid: " << valid << std::endl;
-		
+		std::cout << "EVB mode: " << EVBMode << std::endl;		
+
 		for(int i=7; i>=0; i--) {
 		  std::cout << (adc_t) *(pos+8+i);
 		  std::cout << " ";
