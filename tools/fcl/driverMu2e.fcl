@@ -2,7 +2,7 @@
 #  about the FHiCL language, please look at
 #  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
 
-events_to_generate: 2
+events_to_generate: 1
 run_number: 101
 
 fragment_receiver: {
@@ -13,6 +13,9 @@ fragment_receiver: {
    ring_0_roc_count: 1
    ring_0_timing_enabled: false
    debug_print: true
+   verbose: true
+raw_output_enable: true
+raw_output_file: "mu2eReceiver.bin"
    #sim_file: "/home/mu2edaq/data/simData/mediumPackets.bin"
    # Parameters configuring the fragment generator's parent class
    # artdaq::CommandableFragmentGenerator
