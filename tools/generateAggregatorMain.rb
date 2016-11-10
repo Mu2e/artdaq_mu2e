@@ -14,6 +14,7 @@ agConfig = String.new( "\
 services: {
   scheduler: {
     fileMode: NOMERGE
+    errorOnFailureToPut: false
   }
   user: {
     NetMonTransportServiceInterface: {
@@ -21,7 +22,6 @@ services: {
       max_fragment_size_words: %{size_words}
     }
   }
-  Timing: { summaryOnly: true }
   #SimpleMemoryCheck: { }
 }
 
@@ -61,15 +61,17 @@ process_name: DAQAG"
     end
     queueDepth = 20
     queueTimeout = 5
+    agType = "data_logger"
   else
     diskWritingEnable = 0
     queueDepth = 2
     queueTimeout = 1
+    agType = "online_monitor"
   end
 
   aggregator_code = generateAggregator( totalFRs, totalEBs, bunchSize, fragSizeWords,
                                         xmlrpcClientList, fileSizeThreshold, fileDuration,
-                                        fileEventCount, queueDepth, queueTimeout, onmonEventPrescale )
+                                        fileEventCount, queueDepth, queueTimeout, onmonEventPrescale, agType )
   agConfig.gsub!(/\%\{aggregator_code\}/, aggregator_code)
 
   puts "Initial aggregator " + String(agIndex) + " disk writing setting = " +

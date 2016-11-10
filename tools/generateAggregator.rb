@@ -1,7 +1,7 @@
 
 def generateAggregator(totalFRs, totalEBs, bunchSize, fragSizeWords,
                        xmlrpcClientList, fileSizeThreshold, fileDuration,
-                       fileEventCount, queueDepth, queueTimeout, onmonEventPrescale)
+                       fileEventCount, queueDepth, queueTimeout, onmonEventPrescale, agType)
 
 agConfig = String.new( "\
 daq: {
@@ -19,6 +19,7 @@ daq: {
     #file_size_MB: %{file_size}
     #file_duration: %{file_duration}
     #file_event_count: %{file_event_count}
+    %{ag_type_param_name}: true
   }
   metrics: {
     ganglia: {
@@ -29,6 +30,16 @@ daq: {
       configFile: \"/home/mu2edaq/daqlogs/gmond.conf\"
       group: \"ARTDAQ\"
     }
+  }
+
+  transfer_to_dispatcher: {
+
+    transferPluginType: Shmem
+
+    unique_label: \"shared_memory_between_data_logger_and_dispatcher\"
+
+    max_fragment_size_words: %{size_words}
+    first_event_builder_rank: %{total_frs}
   }
 }" )
 
@@ -43,6 +54,12 @@ daq: {
   agConfig.gsub!(/\%\{file_size\}/, String(fileSizeThreshold))
   agConfig.gsub!(/\%\{file_duration\}/, String(fileDuration))
   agConfig.gsub!(/\%\{file_event_count\}/, String(fileEventCount))
+  if agType == "online_monitor"
+    #agConfig.gsub!(/\%\{ag_type_param_name\}/, "is_online_monitor")
+    agConfig.gsub!(/\%\{ag_type_param_name\}/, "is_dispatcher")
+  else
+    agConfig.gsub!(/\%\{ag_type_param_name\}/, "is_data_logger")
+  end
 
   return agConfig
 end
