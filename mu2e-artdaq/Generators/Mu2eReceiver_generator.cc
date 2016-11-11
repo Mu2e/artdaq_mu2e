@@ -284,7 +284,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
   metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, false,"",true);
   metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true,"",true);
-  metricMan_->sendMetric("Generator Timestamo Rate", processing_rate, "timestamps/s", 1, true,"",true);
+  metricMan_->sendMetric("Generator Timestamp Rate", processing_rate, "timestamps/s", 1, true,"",true);
   metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true,"", true);
   metricMan_->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s",1, true,"" ,true);
 

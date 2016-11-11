@@ -4,7 +4,7 @@ startMu2eSingleNodeSystem.sh manageMu2eSingleNodeSystem.sh
 CreateNewFragmentGenerator.rb  generateEventBuilderMain.rb
 generateWFViewer.rb generateDTCDataVerifier.rb
 generateEventBuilder.rb demo_utilities.rb generateMu2e.rb
-generateDTC.rb generateAggregator.rb generateAggregatorMain.rb generateBoardReaderMain.rb RunDriver.rb)
+generateDTC.rb generateAggregator.rb generateAggregatorMain.rb generateBoardReaderMain.rb )
 
 
 art_make_exec(driver

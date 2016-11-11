@@ -17,6 +17,7 @@ def generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs,
 services: {
   scheduler: {
     fileMode: NOMERGE
+    errorOnFailureToPut: false
   }
   NetMonTransportServiceInterface: {
     service_provider: NetMonTransportService
@@ -35,11 +36,13 @@ services: {
 outputs: {
   %{netmon_output}netMonOutput: {
   %{netmon_output}  module_type: RootMPIOutput
+  %{netmon_output} SelectEvents: [ delay ]
   %{netmon_output}}
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput
   %{root_output}  fileName: \"%{output_file}\"
   %{root_output}  compressionLevel: 0
+  %{root_output} SelectEvents: [ delay ]
   %{root_output}}
 }
 
@@ -51,9 +54,14 @@ physics: {
 
   producers: {
   }
+  
+  filters: {
+%{phys_filt_rdf_cfg}
+  }
 
   %{enable_onmon}a1: [ app, wf ]
   a2: [ ddv ]
+  delay: [ randomDelay ]
 
   %{netmon_output}my_output_modules: [ netMonOutput ]
   %{root_output}my_output_modules: [ normalOutput ]
@@ -104,7 +112,7 @@ else
 end
 
 ebConfig.gsub!(/\%\{phys_anal_ddv_cfg\}/, fclDDV)
-
+ebConfig.gsub!(/\%\{phys_filt_rdf_cfg\}/, String("") + read_fcl("Mu2eFilterSim.fcl"))
 
 currentTime = Time.now
 fileName = "mu2e_eb%02d_" % ebIndex
