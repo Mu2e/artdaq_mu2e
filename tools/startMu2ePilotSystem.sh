@@ -75,6 +75,6 @@ mkdir -p -m 0777 ${logroot}/eventbuilder
 mkdir -p -m 0777 ${logroot}/aggregator
 
 # start PMT
-wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=Mu2e Pilot System Start&host_regex=mu2edaq"
+#wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=Mu2e Pilot System Start&host_regex=mu2edaq"
 pmt.rb -p ${MU2EARTDAQ_PMT_PORT} -d $tempFile --logpath ${logroot} --display ${DISPLAY}
 rm $tempFile
