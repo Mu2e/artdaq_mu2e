@@ -52,11 +52,14 @@ simple_plugin(Mu2eArtdaqBuildInfo "module"
 cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
   SOURCE
   detail/CurrentFragment.cc
+  LIBRARIES
+  artdaq-core_Core
+  artdaq-core_Data
+  DTCInterface
   )
 
 simple_plugin(OfflineFragmentReader "source"
   MF_MessageLogger
-  artdaq-core_Core
   mu2e_artdaq_ArtModules_detail
   )
 
