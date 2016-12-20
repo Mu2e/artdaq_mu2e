@@ -38,7 +38,7 @@ simple_plugin(DetectorDump "module"
   ${MONGODB_CXX_LIBRARIES}
 )
 
-simple_plugin(Mu2eArtdaqBuildInfo "module" 
+simple_plugin(Mu2eArtdaqBuildInfo "module"
   artdaq_DAQdata
   artdaq_BuildInfo
   artdaq-core_BuildInfo
@@ -48,6 +48,17 @@ simple_plugin(Mu2eArtdaqBuildInfo "module"
   ${FHICLCPP}
   ${CETLIB}
 )
+
+cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
+  SOURCE
+  detail/CurrentFragment.cc
+  )
+
+simple_plugin(OfflineFragmentReader "source"
+  MF_MessageLogger
+  artdaq-core_Core
+  mu2e_artdaq_ArtModules_detail
+  )
 
 # Subdirectories.
 add_subdirectory(DQM)
