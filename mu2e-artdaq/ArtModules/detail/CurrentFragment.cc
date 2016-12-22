@@ -7,24 +7,22 @@ namespace mu2e {
 
     CurrentFragment::CurrentFragment(artdaq::Fragment const& f) :
       fragment_{std::make_unique<artdaq::Fragment>(f)},
-      nBlocks_{mu2eFragment{*fragment_}.nBlocks()}
+      reader_{std::make_unique<mu2eFragment>(*fragment_)},
+      current_{reader_->dataBegin()}
     {}
 
     std::unique_ptr<artdaq::Fragments>
     CurrentFragment::extractFragmentsFromBlock(DTCLib::Subsystem const subsystem)
     {
       auto result = std::make_unique<artdaq::Fragments>();
-      mu2eFragment const reader {*fragment_};
 
       // Each fragment has N super blocks--these super blocks are what
       // will be broken up into art::Events.  For a given super block,
       // there are M data blocks.
 
-      // Get boundaries of the current super block.
-      auto const begin = reader.dataAt(processedSuperBlocks_);
-      auto const end = begin + reader.blockSize(processedSuperBlocks_);
-
       // Increment through the data blocks of the current super block.
+      auto const begin = current_;
+      auto const end = current_ + reader_->blockSize(processedSuperBlocks());
       auto data = begin;
       while (data < end) {
         // Construct DTC_DataHeaderPacket to determine byte count of

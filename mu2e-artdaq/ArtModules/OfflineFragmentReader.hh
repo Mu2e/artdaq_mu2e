@@ -9,6 +9,7 @@
 #include "art/Framework/Principal/EventPrincipal.h"
 #include "art/Framework/Principal/RunPrincipal.h"
 #include "art/Framework/Principal/SubRunPrincipal.h"
+#include "art/Utilities/ConfigTable.h"
 #include "artdaq-core/Core/GlobalQueue.hh"
 #include "fhiclcpp/types/OptionalSequence.h"
 #include "fhiclcpp/types/Sequence.h"
@@ -30,14 +31,16 @@ namespace mu2e {
 
     struct Config {
       fhicl::Atom<std::string> module_type { fhicl::Name("module_type") };
-      fhicl::Sequence<std::string> fileNames { fhicl::Name("fileNames") };
       fhicl::Atom<int64_t> maxSubRuns { fhicl::Name("maxSubRuns"), -1 };
       fhicl::Atom<int64_t> maxEvents { fhicl::Name("maxEvents"), -1 };
       fhicl::Atom<double> waiting_time { fhicl::Name("waiting_time"), fhicl::Comment("Units are in seconds for below parameter."), 86400. };
       fhicl::Atom<bool> resume_after_timeout { fhicl::Name("resume_after_timeout"), true };
+      struct KeysToIgnore {
+        std::set<std::string> operator()() { return {"module_label"}; }
+      };
     };
 
-    using Parameters = fhicl::Table<Config>;
+    using Parameters = art::ConfigTable<Config, Config::KeysToIgnore>;
 
     OfflineFragmentReader(Parameters const& ps,
                           art::ProductRegistryHelper& help,
@@ -46,7 +49,7 @@ namespace mu2e {
     OfflineFragmentReader(fhicl::ParameterSet const& ps,
                           art::ProductRegistryHelper& help,
                           art::SourceHelper const& pm) :
-      OfflineFragmentReader{Parameters{ps,{}}, help, pm}
+      OfflineFragmentReader{Parameters{ps}, help, pm}
     {};
 
     void closeCurrentFile() {}
@@ -69,6 +72,7 @@ namespace mu2e {
     bool shutdownMsgReceived_ {false};
     bool outputFileCloseNeeded_ {false};
     detail::EventIDHandler idHandler_ {};
+    artdaq::RawEvent_ptr poppedEvent_ {nullptr};
     detail::CurrentFragment currentFragment_ {};
   };
 

@@ -13,15 +13,29 @@ namespace mu2e {
       CurrentFragment() = default;
       CurrentFragment(artdaq::Fragment const& f);
 
-      void advanceOneBlock() { ++processedSuperBlocks_; }
-      bool empty() { return processedSuperBlocks_ == 0ull && processedSuperBlocks_ == nBlocks_; }
+      std::size_t processedSuperBlocks() const
+      {
+        assert(reader_);
+        return current_-reader_->dataBegin();
+      }
+
+      void advanceOneBlock()
+      {
+        assert(reader_);
+        current_ = reader_->dataAt(processedSuperBlocks() + 1ull);
+      }
+
+      bool empty() const
+      {
+        return current_ == nullptr || current_ == reader_->dataEnd();
+      }
 
       std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::Subsystem);
 
     private:
       artdaq::FragmentPtr fragment_ {nullptr};
-      mu2eFragment::Header::count_t nBlocks_ {};
-      mu2eFragment::Header::count_t processedSuperBlocks_ {};
+      std::unique_ptr<mu2eFragment const> reader_ {nullptr};
+      mu2eFragment::Header::data_t const* current_ {nullptr};
     };
 
   } // detail
