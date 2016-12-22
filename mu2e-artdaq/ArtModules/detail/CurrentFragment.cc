@@ -1,49 +1,57 @@
-#include "artdaq-core/Data/Fragment.hh"
-#include "artdaq-core/Data/Fragments.hh"
 #include "canvas/Utilities/Exception.h"
 #include "dtcInterfaceLib/DTC_Packets.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "mu2e-artdaq/ArtModules/detail/CurrentFragment.hh"
-#include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 
 namespace mu2e {
   namespace detail {
 
-    template <DTCLib::Subsystem S>
+    CurrentFragment::CurrentFragment(artdaq::Fragment const& f) :
+      fragment_{std::make_unique<artdaq::Fragment>(f)},
+      nBlocks_{mu2eFragment{*fragment_}.nBlocks()}
+    {}
+
     std::unique_ptr<artdaq::Fragments>
-    CurrentFragment::extractFragmentsFromBlock()
+    CurrentFragment::extractFragmentsFromBlock(DTCLib::Subsystem const subsystem)
     {
+      auto result = std::make_unique<artdaq::Fragments>();
       mu2eFragment const reader {*fragment_};
 
-      artdaq::Fragments fragments;
+      // Each fragment has N super blocks--these super blocks are what
+      // will be broken up into art::Events.  For a given super block,
+      // there are M data blocks.
 
-      auto const begin = reader.dataAt(processedBlocks_);
-      auto const end = begin + reader.blockSize(processedBlocks_);
+      // Get boundaries of the current super block.
+      auto const begin = reader.dataAt(processedSuperBlocks_);
+      auto const end = begin + reader.blockSize(processedSuperBlocks_);
+
+      // Increment through the data blocks of the current super block.
       auto data = begin;
-
-      while (data != end) {
-        auto const non_const_data // Yep, you read that right.  This is a const pointer to non-const data.
-          = const_cast<mu2eFragment::Header::data_t*>(data);
+      while (data < end) {
+        // Construct DTC_DataHeaderPacket to determine byte count of
+        // current data block.
+        auto* const non_const_data = const_cast<mu2eFragment::Header::data_t*>(data);
         DTCLib::DTC_DataPacket const dataPacket {reinterpret_cast<void*>(non_const_data)};
-        DTCLib::DTC_DataHeaderPacket headerPacket {dataPacket};
-        if (headerPacket.GetSubsystem() != S)
-          continue;
-
+        DTCLib::DTC_DataHeaderPacket const headerPacket {dataPacket};
         auto const byteCount = headerPacket.GetByteCount();
 
-        // DTC_DataHeaderPacket -- add GetSystemID
-        //   - 4914 - 0 (tracker), 1 (calorimeter)
-
+        // Use byte count to calculate how many words the current data
+        // block should occupy in the new fragment.
         auto const wordCount = byteCount/sizeof(artdaq::RawDataType);
-        auto const packetSize = (byteCount%8 == 0 )? wordCount : wordCount+1;
-        fragments.emplace_back(artdaq::Fragment::dataFrag(fragment_->sequenceID(),
-                                                          fragment_->fragmentID(),
+        auto const packetSize = (byteCount%8 == 0) ? wordCount : wordCount+1;
+
+        if (headerPacket.GetSubsystem() == subsystem) {
+          result->emplace_back(artdaq::Fragment::dataFrag(fragment_->sequenceID(),
+                                                          headerPacket.GetData(), // Returns evbMode (see mu2e-docdb 4914)
                                                           reinterpret_cast<artdaq::RawDataType const*>(data),
                                                           packetSize,
                                                           fragment_->timestamp()));
+        }
         data += byteCount;
       }
-      return std::make_unique<decltype(fragments)>(std::move(fragments));
+      return data == end ? std::move(result) :
+        throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
+          << "The data pointer has shot past the 'end' pointer.";
     }
-  }
-}
+
+  } // detail
+} // mu2e

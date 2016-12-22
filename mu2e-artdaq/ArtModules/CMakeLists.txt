@@ -55,6 +55,8 @@ cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
   LIBRARIES
   artdaq-core_Core
   artdaq-core_Data
+  canvas_Utilities
+  cetlib
   DTCInterface
   )
 

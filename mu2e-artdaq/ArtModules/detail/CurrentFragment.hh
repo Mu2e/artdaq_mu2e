@@ -1,6 +1,7 @@
 #ifndef mu2e_artdaq_ArtModules_detail_CurrentFragment_hh
 #define mu2e_artdaq_ArtModules_detail_CurrentFragment_hh
 
+#include "artdaq-core/Data/Fragments.hh"
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 
@@ -10,22 +11,19 @@ namespace mu2e {
     public:
 
       CurrentFragment() = default;
-      CurrentFragment(artdaq::Fragment const& f) :
-        fragment_{std::make_unique<artdaq::Fragment>(f)},
-        nBlocks_{mu2eFragment{*fragment_}.nBlocks()}
-      {}
+      CurrentFragment(artdaq::Fragment const& f);
 
-      void advanceOneBlock() { ++processedBlocks_; }
-      bool empty() { return processedBlocks_ == 0ull && processedBlocks_ == nBlocks_; }
+      void advanceOneBlock() { ++processedSuperBlocks_; }
+      bool empty() { return processedSuperBlocks_ == 0ull && processedSuperBlocks_ == nBlocks_; }
 
-      template <DTCLib::Subsystem>
-      std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock();
+      std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::Subsystem);
 
     private:
       artdaq::FragmentPtr fragment_ {nullptr};
       mu2eFragment::Header::count_t nBlocks_ {};
-      mu2eFragment::Header::count_t processedBlocks_ {};
+      mu2eFragment::Header::count_t processedSuperBlocks_ {};
     };
+
   } // detail
 } // mu2e
 

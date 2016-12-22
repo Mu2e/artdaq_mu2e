@@ -14,8 +14,9 @@
 using namespace mu2e::detail;
 
 namespace {
-  constexpr char const* pretend_module_name {"daq"};
-  constexpr char const* unidentified_instance_name {"unidentified"};
+  constexpr char const* daq_module_label {"daq"};
+  std::string trk_instance_name() { return "trk"; }
+  std::string calo_instance_name() { return "calo"; }
 }
 
 mu2e::OfflineFragmentReader::OfflineFragmentReader(Parameters const& ps,
@@ -25,13 +26,13 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(Parameters const& ps,
   waitingTime_{ps().waiting_time()},
   resumeAfterTimeout_{ps().resume_after_timeout()}
 {
-  help.reconstitutes<artdaq::Fragments, art::InEvent>(pretend_module_name, "trk");
-  help.reconstitutes<artdaq::Fragments, art::InEvent>(pretend_module_name, "calo");
+  help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
+  help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
 }
 
 void mu2e::OfflineFragmentReader::readFile(std::string const&, art::FileBlock*& fb)
 {
-  fb = new art::FileBlock(art::FileFormatVersion{1, "RawEvent2011"}, "nothing");
+  fb = new art::FileBlock{art::FileFormatVersion{1, "RawEvent2011"}, "nothing"};
 }
 
 bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
@@ -156,14 +157,14 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
                                     currentTime);
 
   using namespace std::string_literals;
-  put_product_in_principal(currentFragment_.extractFragmentsFromBlock<DTCLib::Subsystem::Tracker>(),
+  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::Subsystem::Tracker),
                            *outE,
-                           pretend_module_name,
-                           "trk"s);
-  put_product_in_principal(currentFragment_.extractFragmentsFromBlock<DTCLib::Subsystem::Calorimeter>(),
+                           daq_module_label,
+                           trk_instance_name());
+  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::Subsystem::Calorimeter),
                            *outE,
-                           pretend_module_name,
-                           "calo"s);
+                           daq_module_label,
+                           calo_instance_name());
   currentFragment_.advanceOneBlock();
   return true;
 }
