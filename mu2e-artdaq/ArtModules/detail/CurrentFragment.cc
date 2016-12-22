@@ -5,8 +5,8 @@
 namespace mu2e {
   namespace detail {
 
-    CurrentFragment::CurrentFragment(artdaq::Fragment const& f) :
-      fragment_{std::make_unique<artdaq::Fragment>(f)},
+    CurrentFragment::CurrentFragment(artdaq::Fragment f) :
+      fragment_{std::make_unique<artdaq::Fragment>(std::move(f))},
       reader_{std::make_unique<mu2eFragment>(*fragment_)},
       current_{reinterpret_cast<const uint8_t*>(reader_->dataBegin())},
       block_count_(0)
@@ -23,8 +23,8 @@ namespace mu2e {
 
       // Increment through the data blocks of the current super block.
       auto const begin = current_;
-      auto const end = current_ + reader_->blockSize(processedSuperBlocks());
-      auto data = begin;
+      auto const end = reinterpret_cast<char const*>(current_ + reader_->blockSize(processedSuperBlocks()));
+      auto data = reinterpret_cast<char const*>(begin);
       while (data < end) {
         // Construct DTC_DataHeaderPacket to determine byte count of
         // current data block.
@@ -38,11 +38,11 @@ namespace mu2e {
         auto const packetSize = (byteCount%8 == 0) ? wordCount : wordCount+1;
 
         if (headerPacket.GetSubsystem() == subsystem) {
-          result->emplace_back(artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
-                                                          headerPacket.GetData(), // Returns evbMode (see mu2e-docdb 4914)
-                                                          reinterpret_cast<artdaq::RawDataType const*>(data),
-                                                          packetSize,
-                                                          fragment_->timestamp()));
+          result->push_back(artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
+                                                       headerPacket.GetData(), // Returns evbMode (see mu2e-docdb 4914)
+                                                       reinterpret_cast<artdaq::RawDataType const*>(data),
+                                                       packetSize,
+                                                       fragment_->timestamp()));
         }
         data += byteCount;
       }

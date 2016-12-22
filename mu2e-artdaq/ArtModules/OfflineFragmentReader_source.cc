@@ -145,7 +145,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
     // Only remaining fragment is the interesting one
     auto fragments = poppedEvent_->releaseProduct();
     assert(fragments->size() == 1ull);
-    currentFragment_ = CurrentFragment{fragments->front()};
+    currentFragment_ = CurrentFragment{std::move(fragments->front())};
   }
 
 

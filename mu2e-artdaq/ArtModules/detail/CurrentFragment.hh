@@ -7,15 +7,18 @@
 
 namespace mu2e {
   namespace detail {
+
     class CurrentFragment {
     public:
 
       CurrentFragment() = default;
-      CurrentFragment(artdaq::Fragment const& f);
+
+      // This is using pass-by-value so that we can take advantage of
+      // artdaq::Fragment's move c'tor.
+      CurrentFragment(artdaq::Fragment f);
 
       std::size_t processedSuperBlocks() const
       {
-        assert(reader_);
         return block_count_;
       }
 
@@ -33,7 +36,7 @@ namespace mu2e {
       std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::Subsystem);
 
     private:
-      artdaq::FragmentPtr fragment_ {nullptr};
+      std::unique_ptr<artdaq::Fragment const> fragment_ {nullptr};
       std::unique_ptr<mu2eFragment const> reader_ {nullptr};
       uint8_t const* current_ {nullptr};
       size_t block_count_;
