@@ -24,6 +24,10 @@ simple_plugin(Mu2eDump "module"
   ${MONGODB_CXX_LIBRARIES}
 )
 
+simple_plugin(OfflineFragmentsDumper "module"
+  mu2e-artdaq-core_Overlays
+)
+
 simple_plugin(DTCDump "module"
   mu2e-artdaq-core_Overlays
   DTCInterface
