@@ -8,7 +8,8 @@ namespace mu2e {
     CurrentFragment::CurrentFragment(artdaq::Fragment const& f) :
       fragment_{std::make_unique<artdaq::Fragment>(f)},
       reader_{std::make_unique<mu2eFragment>(*fragment_)},
-      current_{reader_->dataBegin()}
+      current_{reinterpret_cast<const uint8_t*>(reader_->dataBegin())},
+      block_count_(0)
     {}
 
     std::unique_ptr<artdaq::Fragments>
@@ -27,8 +28,7 @@ namespace mu2e {
       while (data < end) {
         // Construct DTC_DataHeaderPacket to determine byte count of
         // current data block.
-        auto* const non_const_data = const_cast<mu2eFragment::Header::data_t*>(data);
-        DTCLib::DTC_DataPacket const dataPacket {reinterpret_cast<void*>(non_const_data)};
+        DTCLib::DTC_DataPacket const dataPacket {data};
         DTCLib::DTC_DataHeaderPacket const headerPacket {dataPacket};
         auto const byteCount = headerPacket.GetByteCount();
 
@@ -38,7 +38,7 @@ namespace mu2e {
         auto const packetSize = (byteCount%8 == 0) ? wordCount : wordCount+1;
 
         if (headerPacket.GetSubsystem() == subsystem) {
-          result->emplace_back(artdaq::Fragment::dataFrag(fragment_->sequenceID(),
+          result->emplace_back(artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
                                                           headerPacket.GetData(), // Returns evbMode (see mu2e-docdb 4914)
                                                           reinterpret_cast<artdaq::RawDataType const*>(data),
                                                           packetSize,

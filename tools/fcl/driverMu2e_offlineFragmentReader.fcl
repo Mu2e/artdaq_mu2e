@@ -68,8 +68,8 @@ physics:
     }
   }
 
-  a1: [ mu2eDump ]
-  #  e2: [ out1, rootout ]
+  #a1: [ mu2eDump ]
+    e2: [ out1, rootout ]
   #  end_paths: [ a1 , e2]
   #  end_paths: [ a1 ]
 }

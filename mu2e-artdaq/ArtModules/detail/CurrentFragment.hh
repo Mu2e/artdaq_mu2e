@@ -16,18 +16,18 @@ namespace mu2e {
       std::size_t processedSuperBlocks() const
       {
         assert(reader_);
-        return current_-reader_->dataBegin();
+        return block_count_;
       }
 
       void advanceOneBlock()
       {
         assert(reader_);
-        current_ = reader_->dataAt(processedSuperBlocks() + 1ull);
+        current_ = reinterpret_cast<const uint8_t*>(reader_->dataAt(++block_count_));
       }
 
       bool empty() const
       {
-        return current_ == nullptr || current_ == reader_->dataEnd();
+        return current_ == nullptr || current_ >= reinterpret_cast<const uint8_t*>(reader_->dataEnd());
       }
 
       std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::Subsystem);
@@ -35,7 +35,8 @@ namespace mu2e {
     private:
       artdaq::FragmentPtr fragment_ {nullptr};
       std::unique_ptr<mu2eFragment const> reader_ {nullptr};
-      mu2eFragment::Header::data_t const* current_ {nullptr};
+      uint8_t const* current_ {nullptr};
+      size_t block_count_;
     };
 
   } // detail
