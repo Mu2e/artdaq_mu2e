@@ -47,8 +47,26 @@ mu2e::Mu2eDump::Mu2eDump(fhicl::ParameterSet const& pset)
 
 void mu2e::Mu2eDump::analyze(art::Event const& e)
 {
-  std::cout << e.getValidHandle<artdaq::Fragments>(trkFragmentsTag_)->size() << '\n';
-  std::cout << e.getValidHandle<artdaq::Fragments>(caloFragmentsTag_)->size() << '\n';
+  auto trkFragments = e.getValidHandle<artdaq::Fragments>(trkFragmentsTag_);
+  auto calFragments = e.getValidHandle<artdaq::Fragments>(caloFragmentsTag_);
+
+  std::cout << "Event " << e.event() << " has ";
+  std::cout << trkFragments->size() << " TRK fragments, and ";
+  std::cout << calFragments->size() << " CAL fragments." << std::endl;
+
+  size_t totalSize = 0;
+  for(size_t idx = 0; idx < trkFragments->size(); ++idx) {
+    auto size = ((*trkFragments)[idx]).size() * sizeof(artdaq::RawDataType);
+    totalSize += size;
+    std::cout << "\tTRK Fragment " << idx << " has size " << size << std::endl;
+  }
+  for(size_t idx = 0; idx < calFragments->size(); ++idx) {
+    auto size = ((*calFragments)[idx]).size() * sizeof(artdaq::RawDataType);
+    totalSize += size;
+    std::cout << "\tCAL Fragment " << idx << " has size " << size << std::endl;
+  }
+
+  std::cout << "\tTotal Size: " << (int)totalSize << " bytes." << std::endl;
 }
 
 DEFINE_ART_MODULE(mu2e::Mu2eDump)

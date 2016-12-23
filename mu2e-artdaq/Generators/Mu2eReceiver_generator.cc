@@ -1,10 +1,6 @@
 #include "mu2e-artdaq/Generators/Mu2eReceiver.hh"
 
-#ifdef CANVAS
 #include "canvas/Utilities/Exception.h"
-#else
-#include "art/Utilities/Exception.h"
-#endif
 
 #include "artdaq/Application/GeneratorMacros.hh"
 #include "cetlib/exception.h"
@@ -242,7 +238,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
       if (diff > 0)
 	{
 	  auto currSize = newfrag.dataSize();
-	  auto remaining = 1 - (newfrag.hdr_block_count() / static_cast<double>(BLOCK_COUNT_MAX));
+	  auto remaining = 1.0 - (newfrag.hdr_block_count() / static_cast<double>(BLOCK_COUNT_MAX));
 
 	  auto newSize = static_cast<size_t>(currSize * remaining);
 	  TRACE(1, "mu2eReceiver::getNext: %lu + %lu > %lu, allocating space for %lu more bytes", totalSize, newfrag.dataEndBytes(), newfrag.dataSize(), newSize + diff);
@@ -260,11 +256,18 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	  mf::LogInfo("DTCReceiver") << "Placing DataBlock with timestamp " << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment";
 	  }
 
-	  TRACE(4, "Copying data from %p to %p (sz=%llu)", reinterpret_cast<void*>(data[i].blockPointer), reinterpret_cast<void*>(newfrag.dataAtBytes(offset)), (unsigned long long)data[i].byteSize);
+	  auto begin = data[i].blockPointer;
+	  auto size = data[i].byteSize;
+
+	  while(data[i + 1].blockPointer == data[i].blockPointer + (data[i].byteSize/sizeof(DTCLib::DTC_DataBlock::pointer_t))) {
+	    size += data[++i].byteSize;
+	  }
+
+	  TRACE(4, "Copying data from %p to %p (sz=%llu)", reinterpret_cast<void*>(begin), reinterpret_cast<void*>(newfrag.dataAtBytes(offset)), (unsigned long long)size);
 	  //memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
-	  std::copy(data[i].blockPointer, data[i].blockPointer + (data[i].byteSize/sizeof(DTCLib::DTC_DataBlock::pointer_t)), newfrag.dataAtBytes(offset));
-	  if(rawOutput_) rawOutputStream_.write((char*)data[i].blockPointer,data[i].byteSize);
-	  offset += data[i].byteSize;
+	  std::copy(begin, begin + (size/sizeof(DTCLib::DTC_DataBlock::pointer_t)), newfrag.dataAtBytes(offset));
+	  if(rawOutput_) rawOutputStream_.write((char*)begin,size);
+	  offset += size;
 	}
 
       TRACE(3, "Ending SubEvt %lu", newfrag.hdr_block_count());

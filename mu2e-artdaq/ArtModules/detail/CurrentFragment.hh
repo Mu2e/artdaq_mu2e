@@ -30,7 +30,8 @@ namespace mu2e {
 
       bool empty() const
       {
-        return current_ == nullptr || current_ >= reinterpret_cast<const uint8_t*>(reader_->dataEnd());
+	if(!reader_ || !fragment_) return true;
+        return block_count_ >= reader_->hdr_block_count();
       }
 
       std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::Subsystem);
