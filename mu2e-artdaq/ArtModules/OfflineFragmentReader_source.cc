@@ -1,7 +1,6 @@
 #include "art/Framework/Core/InputSourceMacros.h"
 #include "art/Framework/IO/Sources/Source.h"
 #include "art/Framework/IO/Sources/put_product_in_principal.h"
-#include "artdaq-core/Data/Fragment.hh"
 #include "artdaq-core/Data/Fragments.hh"
 #include "canvas/Persistency/Provenance/FileFormatVersion.h"
 #include "canvas/Utilities/Exception.h"
@@ -11,9 +10,63 @@
 
 #include <sys/time.h>
 
+// Notes:
+//
+// This input source started from the artdaq RawInput source.  Various
+// simplifications were introduced based on the specifics required by
+// Mu2e.  The implementation for fetching artdaq events and setting
+// Run and SubRun principles was taken from the RawInput source
+// directly, with minor updates to reflect C++14 syntax.
+//
+// Where things differ is in how art::Events are emitted.  The
+// implemented behavior is as follows:
+//
+//  - If there is no artdaq event/fragment being processed, fetch an
+//    event from the global queue.
+//
+//  - Set up the Run and SubRun principals as necessary.
+//
+//  - Dump all uninteresting fragments from the artdaq Event, denoted
+//    by the type EmptyFragmentType.
+//
+//  - Cache the one remaining interesting fragment.
+//
+//  - Break apart the remaining fragment into its superblocks (around
+//    2500 per artdaq fragment).
+//
+//  - Per superblock, create two objects of type artdaq::Fragments
+//    that store the tracker and calorimeter data blocks separately,
+//    but where each data block has been converted to an
+//    artdaq::Fragment.  There should now be two artdaq::Fragments
+//    objects, where one object contains all tracker-related artdaq
+//    fragments, and the other contains all calorimeter-related artdaq
+//    fragments.
+//
+//  - The objects mentioned perviously are placed onto an art::Event,
+//    with the instance names "trk" and "calo" for the tracker- and
+//    calorimeter-related fragments, respectively.
+//
+//  - An art::Event is then emitted (since readNext returns 'true'
+//    with a nonzero EventPrincipal pointer), and the superblock
+//    counter is incremented so that a new art::Event can be created
+//    from the currently-cached fragment.
+//
+// To test this source, please specify it as the input source in your
+// configuration, and then run the OfflineFragmentsDumper analyzer
+// module with it.
+//
+// N.B. The art::EventIDs are incremental--i.e. the timestamp
+//      information from the fragment is not used to create an
+//      art::EventID.  Rather, the ID is monotonically increasing
+//      based on the number of processed superblocks.  The experiment
+//      may decide it wants to change this behavior.
+
 using namespace mu2e::detail;
 
 namespace {
+  // Per agreement, the fictitious module label is "daq" and the
+  // instance names of the fragments corresponding to the tracker and
+  // calorimeter are "trk" and "calo", respectively.
   constexpr char const* daq_module_label {"daq"};
   std::string trk_instance_name() { return "trk"; }
   std::string calo_instance_name() { return "calo"; }
@@ -52,7 +105,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
   outE = nullptr;
   art::Timestamp const currentTime = time(0);
 
-  // Get new fragment
+  // Get new fragment if nothing is stored
   if (currentFragment_.empty()) {
 
     // Try to get an event from the queue. We'll continuously loop, either until:
@@ -149,13 +202,19 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
   }
 
 
-  idHandler_.update(*poppedEvent_);
+  idHandler_.update(*poppedEvent_); // See note in mu2e::detail::EventIDHandler::update()
   outE = pMaker_.makeEventPrincipal(idHandler_.run(),
                                     idHandler_.subRun(),
                                     idHandler_.event(),
                                     currentTime);
 
-  using namespace std::string_literals;
+  // Making two calls to extractFragmentsFromBlock is likely
+  // inefficient.  However, it is used here for now to clean up the
+  // interface.  If efficiency becomes important at this stage, then
+  // we can alter the call structure to be something like:
+  //
+  //    auto fragmentsColls = currentFragment_.extractFragmentsFromBlock(Tracker, Calorimeter);
+  //    auto const& trkFragments = fragmentsColls[Tracker]; // etc.
   put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::Subsystem::Tracker),
                            *outE,
                            daq_module_label,
@@ -168,4 +227,23 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
   return true;
 }
 
-DEFINE_ART_INPUT_SOURCE(art::Source<mu2e::OfflineFragmentReader>)
+
+//======================================================================
+// The below code is identical to what is injected by calling
+//    DEFINE_ART_INPUT_SOURCE(art::Source<mu2e::OfflineFragmentReader>)
+// except the argument provided to the PROVIDE_DESCRIPTION macro is
+// the detail source class, and not the fully wrapped type
+// 'art::Source<mu2e::OfflineFragmentReader>'.  Calling the macro
+// above would insert the incorrect type to the PROVIDE_DESCRIPTION
+// macro--this should be fixed in art so developers of source detail
+// classes should not have to go through these gymnastics. -KJK
+
+extern "C" {
+  PROVIDE_FILE_PATH()
+  PROVIDE_DESCRIPTION(mu2e::OfflineFragmentReader)
+  std::unique_ptr<art::InputSource>
+  make(fhicl::ParameterSet const& ps, art::InputSourceDescription& desc)
+  {
+    return std::make_unique<art::Source<mu2e::OfflineFragmentReader>>(ps, desc);
+  }
+}

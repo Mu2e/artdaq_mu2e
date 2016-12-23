@@ -10,6 +10,11 @@ namespace mu2e {
     class EventIDHandler {
     public:
 
+      // N.B. The current behavior is that if the run and subRun IDs
+      //      are the same as the cached values, then the event number
+      //      is just incremented.  This behavior may need to change
+      //      if encapsulating the timestamp into the art::EventID is
+      //      desired.
       void update(artdaq::RawEvent const& re)
       {
         if (re.runID() != run_) {

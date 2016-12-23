@@ -1,7 +1,6 @@
 #ifndef mu2e_artdaq_core_Overlays_Offline_OfflineFragmentReader_hh
 #define mu2e_artdaq_core_Overlays_Offline_OfflineFragmentReader_hh
 
-#include "art/Framework/Core/Frameworkfwd.h"
 #include "art/Framework/Core/FileBlock.h"
 #include "art/Framework/Core/ProductRegistryHelper.h"
 #include "art/Framework/IO/Sources/SourceHelper.h"
@@ -11,14 +10,12 @@
 #include "art/Framework/Principal/SubRunPrincipal.h"
 #include "art/Utilities/ConfigTable.h"
 #include "artdaq-core/Core/GlobalQueue.hh"
-#include "fhiclcpp/types/OptionalSequence.h"
-#include "fhiclcpp/types/Sequence.h"
-#include "fhiclcpp/types/Table.h"
-#include "fhiclcpp/types/Tuple.h"
+#include "fhiclcpp/types/Atom.h"
 #include "mu2e-artdaq/ArtModules/detail/CurrentFragment.hh"
 #include "mu2e-artdaq/ArtModules/detail/EventIDHandler.hh"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 
+#include <set>
 #include <string>
 
 namespace mu2e {
@@ -33,7 +30,10 @@ namespace mu2e {
       fhicl::Atom<std::string> module_type { fhicl::Name("module_type") };
       fhicl::Atom<int64_t> maxSubRuns { fhicl::Name("maxSubRuns"), -1 };
       fhicl::Atom<int64_t> maxEvents { fhicl::Name("maxEvents"), -1 };
-      fhicl::Atom<double> waiting_time { fhicl::Name("waiting_time"), fhicl::Comment("Units are in seconds for below parameter."), 86400. };
+      fhicl::Atom<double> waiting_time { fhicl::Name("waiting_time"),
+          fhicl::Comment("The next parameter is the allowed wait time (in seconds) for fetching\n"
+                         "an artdaq event off of the queue. If the wait time is reached, then the\n"
+                         "behavior is dictated by the value of the 'resume_after_timeout' parameter."), 86400. };
       fhicl::Atom<bool> resume_after_timeout { fhicl::Name("resume_after_timeout"), true };
       struct KeysToIgnore {
         std::set<std::string> operator()() { return {"module_label"}; }
@@ -42,15 +42,9 @@ namespace mu2e {
 
     using Parameters = art::ConfigTable<Config, Config::KeysToIgnore>;
 
-    OfflineFragmentReader(Parameters const& ps,
-                          art::ProductRegistryHelper& help,
-                          art::SourceHelper const& pm);
-
-    OfflineFragmentReader(fhicl::ParameterSet const& ps,
-                          art::ProductRegistryHelper& help,
-                          art::SourceHelper const& pm) :
-      OfflineFragmentReader{Parameters{ps}, help, pm}
-    {};
+    explicit OfflineFragmentReader(Parameters const& ps,
+                                   art::ProductRegistryHelper& help,
+                                   art::SourceHelper const& pm);
 
     void closeCurrentFile() {}
     void readFile(std::string const& name, art::FileBlock*& fb);
