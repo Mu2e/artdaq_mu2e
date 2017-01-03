@@ -240,7 +240,11 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 
 extern "C" {
   PROVIDE_FILE_PATH()
+#if (ART_MAJOR_VERSION == 2 && ART_MINOR_VERSION == 6)
+  PROVIDE_ALLOWED_CONFIGURATION(mu2e::OfflineFragmentReader)
+#else
   PROVIDE_DESCRIPTION(mu2e::OfflineFragmentReader)
+#endif
   std::unique_ptr<art::InputSource>
   make(fhicl::ParameterSet const& ps, art::InputSourceDescription& desc)
   {
