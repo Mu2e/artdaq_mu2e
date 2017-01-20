@@ -196,7 +196,7 @@ class CommandLineParser
     @options.summary = false
     @options.runNumber = "0101"
     @options.serialize = false
-	@options.transferType = "Autodetect"
+	@options.transferType = "MPI"
 	@options.transferBasePort = 5300
     @options.runOnmon = 0
     @options.onmonFile = nil
@@ -391,7 +391,7 @@ end
       end
 
 	  opts.on("--transfer-type [type] [base_port]", Array,
-	  "Use the specified transferPluginType for data transport. Default: \"Autodetect\"",
+	  "Use the specified transferPluginType for data transport. Default: \"MPI\"",
 	  "Supported types: \"MPI\" \"TCPSocket\" \"Autodetect\"",
 	  "If TCPSocket or Autodetect are used, specify base_port (default 5300)"
 	  ) do |type|
@@ -556,14 +556,14 @@ class SystemControl
 	host_map = "["
 	# BoardReaders are EventBuilder sources
     (@options.mu2es + @options.dtcs).each { |boardreaderOptions|
-		eb_sources_fhicl += ("s%s: { transferPluginType: %s source_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		eb_sources_fhicl += ("s%s: { transferPluginType: SingleNode source_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank,current_rank, fullEventBuffSizeWords])
 		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, boardreaderOptions.host,(current_rank * 10) + @options.transferBasePort ] )
 		current_rank += 1
 	}
 
 	# Event Builders are BoardReader destinations and Aggregator sources
     @options.eventBuilders.each { |ebOptions|
-		br_destinations_fhicl += ("d%s: { transferPluginType: %s destination_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		br_destinations_fhicl += ("d%s: { transferPluginType: SingleNode destination_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, current_rank, fullEventBuffSizeWords])
 		ag_sources_fhicl += ("s%s: { transferPluginType: %s source_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
 		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, ebOptions.host,(current_rank * 10) + @options.transferBasePort ] )
 	  current_rank += 1
