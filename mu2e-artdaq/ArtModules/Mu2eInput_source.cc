@@ -1,5 +1,5 @@
 #include "art/Framework/IO/Sources/Source.h"
-#include "mu2e_artdaq/ArtModules/detail/RawEventQueueReader.hh"
+#include "mu2e-artdaq/ArtModules/detail/RawEventQueueReader.hh"
 #include "art/Framework/Core/InputSourceMacros.h"
 
 #include <string>

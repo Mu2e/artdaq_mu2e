@@ -29,7 +29,7 @@ namespace mu2e {
 // source.fileNames and don't want the files services to be used.
 namespace art {
   template <>
-  struct Source_generator<demo::detail::RawEventQueueReader> {
+  struct Source_generator<mu2e::detail::RawEventQueueReader> {
     static constexpr bool value = true;
   };
 }

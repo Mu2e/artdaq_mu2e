@@ -39,11 +39,6 @@ outputs: {
 }
 physics: {
   analyzers: {
-   checkintegrity: {
-     module_type: CheckIntegrity
-     raw_data_label: daq
-     frag_type: TOY1
-   }
 
   }
 
@@ -51,8 +46,8 @@ physics: {
 
      BuildInfo:
      {
-       module_type: ArtdaqDemoBuildInfo
-       instance_name: ArtdaqDemo
+       module_type: Mu2eArtdaqBuildInfo
+       instance_name: Mu2eArtdaq
      }
    }
 

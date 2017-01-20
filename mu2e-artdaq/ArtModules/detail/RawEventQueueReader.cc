@@ -1,5 +1,5 @@
-#include "mu2e_artdaq/ArtModules/detail/RawEventQueueReader.hh"
-#include "artdaq-core-demo/Overlays/FragmentType.hh"
+#include "mu2e-artdaq/ArtModules/detail/RawEventQueueReader.hh"
+#include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 
 #include <messagefacility/MessageLogger/MessageLogger.h>
 

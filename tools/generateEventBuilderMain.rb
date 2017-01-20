@@ -42,7 +42,7 @@ outputs: {
 
 physics: {
   analyzers: {
-%{phys_anal_ddv_cfg}
+#%{phys_anal_ddv_cfg}
   }
 
   producers: {
@@ -52,7 +52,7 @@ physics: {
   %{phys_filt_rdf_cfg}
   }
     
-	a2: [ ddv ]
+#	a2: [ ddv ]
 	delay: [ randomDelay ] 
 
   %{rootmpi_output}my_output_modules: [ rootMPIOutput ]
@@ -89,7 +89,7 @@ else
   end
 end
 
-ebConfig.gsub!(/\%\{phys_anal_ddv_cfg\}/, fclDDV)
+#ebConfig.gsub!(/\%\{phys_anal_ddv_cfg\}/, fclDDV)
 ebConfig.gsub!(/\%\{phys_filt_rdf_cfg\}/, String("") + read_fcl("Mu2eFilterSim.fcl"))
 
 

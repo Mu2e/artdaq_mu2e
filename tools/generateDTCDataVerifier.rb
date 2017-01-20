@@ -21,7 +21,7 @@ def generateDTCDataVerifier(fragmentIDList, fragmentTypeList)
     end
 
     fragmentIDList.sort.each { |id| fragmentIDListString += " %d," % [ id ] }
-    fragmentIDList.sort.each { |id| fragmentTypeListString += "%s," % [ typemap[ id ] ] }
+    fragmentIDList.sort.each { |id| fragmentTypeListString += "\"%s\"," % [ typemap[ id ] ] }
 
     fragmentIDListString[-1], fragmentTypeListString[-1] = "]", "]" 
 

@@ -4,7 +4,7 @@ def generateEventBuilder( totalFragments, verbose, sources_fhicl, sendRequests =
 ebConfig = String.new( "\
 daq: {
   event_builder: {
-    expected_fragments_per_event: %{total_fragments}
+    expected_fragments_per_event: 1
     use_art: true
     print_event_store_stats: true
     verbose: %{verbose}
@@ -17,7 +17,7 @@ daq: {
   metrics: {
      ganglia: {
        metricPluginType: \"ganglia\"
-       level: %{ganglia_level}
+       level: 3
        reporting_interval: 15.0
      
        configFile: \"/home/mu2edaq/daqlogs/gmond.conf\"

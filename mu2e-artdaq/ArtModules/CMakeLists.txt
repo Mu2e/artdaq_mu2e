@@ -1,7 +1,29 @@
 art_make(NO_PLUGINS # WAnt different link lists for modues
   BASENAME_ONLY
   LIBRARY_NAME mu2e-artdaq_ArtModules
-  LIB_LIBRARIES mu2e-artdaq-core_Overlays
+ SUBDIRS detail
+ EXCLUDE  detail/CurrentFragment.cc
+  NO_PLUGINS
+  DICT_DICTIONARIES
+  ${ART_PERSISTENCY_PROVENANCE}
+  ${CANVAS_PERSISTENCY_PROVENANCE}
+ LIB_LIBRARIES 
+  mu2e-artdaq-core_Overlays
+ artdaq_ArtModules
+  art_Framework_Core
+  art_Framework_IO_Sources
+  art_Framework_Principal
+  canvas_Persistency_Common
+  art_Persistency_Provenance
+  canvas_Persistency_Provenance
+ canvas_Utilities
+  MF_MessageLogger
+  ${ROOT_CINTEX}
+  ${ROOT_RIO}
+  ${ROOT_CORE}
+  ${ROOT_NET}
+  ${ROOT_REFLEX}
+  cetlib
 )
 
 simple_plugin(Mu2eProducer "module"
@@ -68,6 +90,17 @@ simple_plugin(OfflineFragmentReader "source"
   MF_MessageLogger
   mu2e_artdaq_ArtModules_detail
   )
+
+simple_plugin(Mu2eInput "source"
+  artdaq_ArtModules
+  mu2e-artdaq_ArtModules
+  art_Framework_Core
+  art_Framework_IO_Sources
+  art_Framework_Principal
+  art_Persistency_Provenance
+  art_Utilities
+  MF_MessageLogger
+)
 
 # Subdirectories.
 add_subdirectory(fcl)

@@ -10,7 +10,7 @@ namespace mu2e {
 
     virtual int receiveFragment(artdaq::Fragment& fragment,
 				size_t receiveTimeout) 
-    { if(!theTransfer_) return destination_rank();
+    { if(!theTransfer_) return -1;
     return theTransfer_->receiveFragment(fragment, receiveTimeout); }
 
     virtual artdaq::TransferInterface::CopyStatus copyFragment(artdaq::Fragment& fragment,
