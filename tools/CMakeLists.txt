@@ -11,7 +11,9 @@ art_make_exec(driver
   LIBRARIES
   artdaq_Application
   artdaq_DAQrate
+  artdaq_DAQdata
   artdaq-core_Utilities
+  artdaq-utilities_Plugins
   artdaq-core_Core
   ${ART_FRAMEWORK_ART}
   ${FHICLCPP}

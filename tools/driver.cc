@@ -108,7 +108,8 @@ int main(int argc, char* argv[]) try
 
 	// So that generators which try to send metrics don't complain...
 	artdaq::MetricManager metricMan_;
-	gen->SetMetricManager(&metricMan_);
+	metricMan = &metricMan_;
+
 	// The instance of the artdaq::EventStore object can either pass
 	// events to a thread running Art, or to a small executable called
 	// "SimpleQueueReader"
@@ -135,7 +136,6 @@ int main(int argc, char* argv[]) try
 
 	artdaq::EventStore store(event_builder_pset, event_builder_pset.get<size_t>("expected_fragments_per_event"),
 	                         complete_pset.get<artdaq::EventStore::run_id_t>("run_number"),
-	                         1,
 	                         es_argc,
 	                         es_argv,
 	                         es_fcn);

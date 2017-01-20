@@ -5,10 +5,8 @@
 require File.join( File.dirname(__FILE__), 'generateEventBuilder' )
 
 
-def generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs, 
-                         dataDir, onmonEnable,
-                         diskWritingEnable, fragSizeWords, totalFragments,
-                         fclWFViewer, fclDDV )
+def generateEventBuilderMain(ebIndex, totalAGs, dataDir, onmonEnable, diskWritingEnable, totalFragments,
+                         fclDDV, sources_fhicl, destinations_fhicl, sendRequests, withGanglia, withMsgFacility, withGraphite )
   # Do the substitutions in the event builder configuration given the options
   # that were passed in from the command line.  
 
@@ -21,56 +19,49 @@ services: {
   }
   NetMonTransportServiceInterface: {
     service_provider: NetMonTransportService
-    first_data_receiver_rank: %{ag_rank}
-    mpi_buffer_count: %{netmonout_buffer_count}
-    max_fragment_size_words: %{size_words}
-    data_receiver_count: 1 # %{ag_count}
     #broadcast_sends: true
+	destinations: {	
+	  %{destinations_fhicl}
+    }
   }
-  TimeTracker: { }
+
   #SimpleMemoryCheck: { }
 }
 
 %{event_builder_code}
 
 outputs: {
-  %{netmon_output}netMonOutput: {
-  %{netmon_output}  module_type: RootMPIOutput
-  %{netmon_output} SelectEvents: [ delay ]
-  %{netmon_output}}
+  %{rootmpi_output}rootMPIOutput: {
+  %{rootmpi_output}  module_type: RootMPIOutput
+  %{rootmpi_output}}
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput
   %{root_output}  fileName: \"%{output_file}\"
-  %{root_output}  compressionLevel: 0
-  %{root_output} SelectEvents: [ delay ]
   %{root_output}}
 }
 
 physics: {
   analyzers: {
-%{phys_anal_onmon_cfg}
 %{phys_anal_ddv_cfg}
   }
 
   producers: {
   }
-  
+
   filters: {
-%{phys_filt_rdf_cfg}
+  %{phys_filt_rdf_cfg}
   }
+    
+	a2: [ ddv ]
+	delay: [ randomDelay ] 
 
-  %{enable_onmon}a1: [ app, wf ]
-  a2: [ ddv ]
-  delay: [ randomDelay ]
-
-  %{netmon_output}my_output_modules: [ netMonOutput ]
+  %{rootmpi_output}my_output_modules: [ rootMPIOutput ]
   %{root_output}my_output_modules: [ normalOutput ]
 }
 source: {
-  module_type: RawInput
-  waiting_time: 900
+  module_type: Mu2eInput
+  waiting_time: 2500000
   resume_after_timeout: true
-  fragment_type_map: [[1, \"missed\"], [2, \"DTC\"], [3, \"MU2E\"], [4, \"TRK\"], [5, \"CAL\"], [6, \"CRV\"], [7, \"DBG\"\],  [231, \"EMPTY\"]]
 }
 process_name: DAQ" )
 
@@ -81,41 +72,29 @@ if Integer(totalAGs) >= 1
 end
 
 
-event_builder_code = generateEventBuilder( fragSizeWords, totalFRs, totalAGs, totalFragments, verbose)
+event_builder_code = generateEventBuilder( totalFragments, verbose, sources_fhicl, sendRequests, withGanglia, withMsgFacility, withGraphite)
 
+ebConfig.gsub!(/\%\{destinations_fhicl\}/, destinations_fhicl)
 ebConfig.gsub!(/\%\{event_builder_code\}/, event_builder_code)
 
-ebConfig.gsub!(/\%\{ag_rank\}/, String(totalFRs + totalEBs))
-ebConfig.gsub!(/\%\{ag_count\}/, String(totalAGs))
-ebConfig.gsub!(/\%\{size_words\}/, String(fragSizeWords))
-ebConfig.gsub!(/\%\{netmonout_buffer_count\}/, String(totalAGs*4))
-
 if Integer(totalAGs) >= 1
-  ebConfig.gsub!(/\%\{netmon_output\}/, "")
+  ebConfig.gsub!(/\%\{rootmpi_output\}/, "")
   ebConfig.gsub!(/\%\{root_output\}/, "#")
-  ebConfig.gsub!(/\%\{enable_onmon\}/, "#")
-  ebConfig.gsub!(/\%\{phys_anal_onmon_cfg\}/, "")
 else
-  ebConfig.gsub!(/\%\{netmon_output\}/, "#")
+  ebConfig.gsub!(/\%\{rootmpi_output\}/, "#")
   if Integer(diskWritingEnable) != 0
     ebConfig.gsub!(/\%\{root_output\}/, "")
   else
     ebConfig.gsub!(/\%\{root_output\}/, "#")
-  end
-  if Integer(onmonEnable) != 0
-    ebConfig.gsub!(/\%\{phys_anal_onmon_cfg\}/, fclWFViewer )
-    ebConfig.gsub!(/\%\{enable_onmon\}/, "")
-  else
-    ebConfig.gsub!(/\%\{phys_anal_onmon_cfg\}/, "")
-    ebConfig.gsub!(/\%\{enable_onmon\}/, "#")
   end
 end
 
 ebConfig.gsub!(/\%\{phys_anal_ddv_cfg\}/, fclDDV)
 ebConfig.gsub!(/\%\{phys_filt_rdf_cfg\}/, String("") + read_fcl("Mu2eFilterSim.fcl"))
 
+
 currentTime = Time.now
-fileName = "mu2e_eb%02d_" % ebIndex
+fileName = "mu2e_artdaq_eb%02d_" % ebIndex
 fileName += "r%06r_sr%02s_%to"
 fileName += ".root"
 outputFile = File.join(dataDir, fileName)

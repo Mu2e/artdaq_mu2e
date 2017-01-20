@@ -3,6 +3,7 @@
 #include "canvas/Utilities/Exception.h"
 
 #include "artdaq/Application/GeneratorMacros.hh"
+#include "artdaq/DAQdata/Globals.hh"
 #include "cetlib/exception.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 #include "mu2e-artdaq-core/Overlays/mu2eFragmentWriter.hh"
@@ -285,13 +286,12 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
   double hw_timestamp_rate = newfrag.hdr_block_count() / hwTime;
   double hw_data_rate = newfrag.dataEndBytes() / hwTime;
 
-  metricMan_->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, false,"",true);
-  metricMan_->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true,"",true);
-  metricMan_->sendMetric("Generator Timestamp Rate", processing_rate, "timestamps/s", 1, true,"",true);
-  metricMan_->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true,"", true);
-  metricMan_->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s",1, true,"" ,true);
-
-
+  metricMan->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, false,"",true);
+  metricMan->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true,"",true);
+  metricMan->sendMetric("Generator Timestamp Rate", processing_rate, "timestamps/s", 1, true,"",true);
+  metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true,"", true);
+  metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s",1, true,"" ,true);
+  
   TRACE(1, "Returning true");
   return true;
 }

@@ -4,11 +4,13 @@
 
 require File.join( File.dirname(__FILE__), 'generateAggregator' )
 
-def generateAggregatorMain(dataDir, runNumber, totalFRs, totalEBs, bunchSize,
-                           onmonEnable,
-                           diskWritingEnable, agIndex, totalAGs, fragSizeWords,
+def generateAggregatorMain(dataDir, bunchSize, onmonEnable,
+                           diskWritingEnable, demoPrescale, agIndex, totalAGs, fragSizeWords,
+						   sources_fhicl, logger_rank, dispatcher_rank,
                            xmlrpcClientList, fileSizeThreshold, fileDuration,
-                           fileEventCount, fclWFViewer, onmonEventPrescale)
+                           fileEventCount, onmonEventPrescale, 
+                           onmon_modules, onmonFileEnable, onmonFileName,
+                           withGanglia, withMsgFacility, withGraphite)
 
 agConfig = String.new( "\
 services: {
@@ -16,12 +18,10 @@ services: {
     fileMode: NOMERGE
     errorOnFailureToPut: false
   }
-  user: {
-    NetMonTransportServiceInterface: {
-      service_provider: NetMonTransportService
-      max_fragment_size_words: %{size_words}
-    }
+  NetMonTransportServiceInterface: {
+    service_provider: NetMonTransportService
   }
+
   #SimpleMemoryCheck: { }
 }
 
@@ -33,21 +33,35 @@ source: {
 outputs: {
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput
-  #%{root_output}  module_type: BinaryFileOutput
-  %{root_output} compressionLevel: 0
   %{root_output}  fileName: \"%{output_file}\"
   %{root_output}}
+  
 }
 physics: {
   analyzers: {
-%{phys_anal_onmon_cfg}
+   checkintegrity: {
+     module_type: CheckIntegrity
+     raw_data_label: daq
+     frag_type: TOY1
+   }
+
   }
 
   producers: {
+
+     BuildInfo:
+     {
+       module_type: ArtdaqDemoBuildInfo
+       instance_name: ArtdaqDemo
+     }
+   }
+
+  filters: {
+
   }
 
-  %{enable_onmon}a1: %{onmon_modules}
-
+  p2: [ BuildInfo ]
+  
   %{root_output}my_output_modules: [ normalOutput ]
 }
 process_name: DAQAG"
@@ -55,7 +69,7 @@ process_name: DAQAG"
 
   queueDepth, queueTimeout = -999, -999
 
-  if agIndex == 0
+  if agIndex < (totalAGs - 1)
     if totalAGs > 1
       onmonEnable = 0
     end
@@ -69,9 +83,11 @@ process_name: DAQAG"
     agType = "online_monitor"
   end
 
-  aggregator_code = generateAggregator( totalFRs, totalEBs, bunchSize, fragSizeWords,
-                                        xmlrpcClientList, fileSizeThreshold, fileDuration,
-                                        fileEventCount, queueDepth, queueTimeout, onmonEventPrescale, agType )
+  aggregator_code = generateAggregator( bunchSize, fragSizeWords, sources_fhicl,
+                                        xmlrpcClientList, fileSizeThreshold, fileDuration, 
+										fileEventCount, queueDepth, queueTimeout, onmonEventPrescale,
+										agType, logger_rank, dispatcher_rank,
+										withGanglia, withMsgFacility, withGraphite )
   agConfig.gsub!(/\%\{aggregator_code\}/, aggregator_code)
 
   puts "Initial aggregator " + String(agIndex) + " disk writing setting = " +
@@ -80,32 +96,25 @@ process_name: DAQAG"
   # that were passed in from the command line.  Assure that files written out
   # by each AG are unique by including a timestamp in the file name.
   currentTime = Time.now
-  fileName = "mu2e_"
+  fileName = "mu2e_artdaq_"
   fileName += "r%06r_sr%02s_%to"
+  if totalAGs > 2
+    fileName += "_"
+    fileName += String(agIndex)
+  end
   fileName += ".root"
   outputFile = File.join(dataDir, fileName)
 
   agConfig.gsub!(/\%\{output_file\}/, outputFile)
-  agConfig.gsub!(/\%\{total_frs\}/, String(totalFRs))
-  agConfig.gsub!(/\%\{size_words\}/, String(fragSizeWords))
-
-  agConfig.gsub!(/\%\{onmon_modules\}/, String(ONMON_MODULES))
-
+  
   puts "agIndex = %d, totalAGs = %d, onmonEnable = %d" % [agIndex, totalAGs, onmonEnable]
 
   puts "Final aggregator " + String(agIndex) + " disk writing setting = " +
   String(diskWritingEnable)
   if Integer(diskWritingEnable) != 0
-    agConfig.gsub!(/\%\{root_output\}/, "")
+      agConfig.gsub!(/\%\{root_output\}/, "")
   else
     agConfig.gsub!(/\%\{root_output\}/, "#")
-  end
-  if Integer(onmonEnable) != 0
-    agConfig.gsub!(/\%\{phys_anal_onmon_cfg\}/, fclWFViewer )
-    agConfig.gsub!(/\%\{enable_onmon\}/, "")
-  else
-    agConfig.gsub!(/\%\{phys_anal_onmon_cfg\}/, "")
-    agConfig.gsub!(/\%\{enable_onmon\}/, "#")
   end
 
   return agConfig  

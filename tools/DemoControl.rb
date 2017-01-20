@@ -4,6 +4,7 @@ require 'date'
 require "optparse"
 require "ostruct"
 require "xmlrpc/client"
+require "rexml/document"
 
 # To summarize this script in one sentence, it is designed to send
 # basic DAQ transition commands provided at the command line (init,
@@ -22,9 +23,7 @@ require File.join( File.dirname(__FILE__), 'demo_utilities' )
 # arguments, will generate FHiCL code usable by the artdaq processes
 # (BoardReaderMain, EventBuilderMain, AggregatorMain)
 
-require File.join( File.dirname(__FILE__), 'generateMu2e' )
-require File.join( File.dirname(__FILE__), 'generateDTC' )
-require File.join( File.dirname(__FILE__), 'generateWFViewer' )
+require File.join( File.dirname(__FILE__), 'generateFragmentReceiver' )
 require File.join( File.dirname(__FILE__), 'generateDTCDataVerifier' )
 
 require File.join( File.dirname(__FILE__), 'generateBoardReaderMain' )
@@ -78,17 +77,13 @@ end
 
 class ConfigGen
 
-  def generateComposite(totalEBs, totalFRs, configStringArray)
+  def generateComposite(destinations_fhicl, configStringArray)
 
 
     compositeConfig = String.new( "\
 %{prolog}
 daq: {
-  max_fragment_size_words: %{size_words}
   fragment_receiver: {
-    mpi_buffer_count: %{buffer_count}
-    first_event_builder_rank: %{total_frs}
-    event_builder_count: %{total_ebs}
     generator: CompositeDriver
     fragment_id: 999
     board_id: 999
@@ -97,20 +92,20 @@ daq: {
       # the format of this list is {daq:<paramSet},{daq:<paramSet>},...
       %{generator_list}
     ]
+
+	destinations: {
+		%{destinations_fhicl}
+	}
   }
 }" )
 
-   
-    compositeConfig.gsub!(/\%\{total_ebs\}/, String(totalEBs))
-    compositeConfig.gsub!(/\%\{total_frs\}/, String(totalFRs))
-    compositeConfig.gsub!(/\%\{buffer_count\}/, String(totalEBs*8))
+    compositeConfig.gsub!(/\%\{destinations_fhicl\}/, destinations_fhicl)
 
     # The complications here are A) determining the largest buffer size that
     # has been requested by the child configurations and using that for the
     # composite buffers size and B) moving any PROLOG declarations from the
     # individual configuration strings to the front of the full CFG string.
     prologList = []
-    fragSizeWords = 0
     configString = ""
     first = true
     configStringArray.each do |cfg|
@@ -138,19 +133,7 @@ daq: {
       end
       configString += "{" + cfg + "}"
 
-      my_match = /max_fragment_size_words\s*\:\s*(\d+)/.match(cfg)
-      if my_match
-        begin
-          sizeWords = Integer(my_match[1])
-          if sizeWords > fragSizeWords
-            fragSizeWords = sizeWords
-          end
-        rescue Exception => msg
-          puts "Warning: exception parsing size_words in composite child configuration: " + my_match[1] + " " + msg
-        end
-      end
     end
-    compositeConfig.gsub!(/\%\{size_words\}/, String(fragSizeWords))
     compositeConfig.gsub!(/\%\{generator_list\}/, configString)
 
     prologString = ""
@@ -213,40 +196,53 @@ class CommandLineParser
     @options.summary = false
     @options.runNumber = "0101"
     @options.serialize = false
+	@options.transferType = "Autodetect"
+	@options.transferBasePort = 5300
     @options.runOnmon = 0
+    @options.onmonFile = nil
+    @options.onmon_modules = nil
     @options.writeData = 1
     @options.runDurationSeconds = -1
     @options.eventsInRun = -1
     @options.fileSizeThreshold = 0
     @options.fileDurationSeconds = 0
     @options.eventsInFile = 0
+    @options.onmonFileEnabled = 0
+    @options.gangliaMetric = 0
+    @options.msgFacilityMetric = 0
+    @options.graphiteMetric = 0
 
     @optParser = OptionParser.new do |opts|
       opts.banner = "Usage: DemoControl.rb [options]"
       opts.separator ""
       opts.separator "Specific options:"
-
-      opts.on("--eb [host,port]", Array,
+	        
+      opts.on("--eb [host,port,send_requests]", Array,
               "Add an event builder that runs on the",
-              "specified host and port") do |eb|
-        if eb.length != 2
-          puts "You must specify a host and port"
+              "specified host and port and optionally",
+              "sends data requests to BoardReaders.") do |eb|
+        if eb.length < 2
+          puts "You must specifiy a host and port."
           exit
         end
         ebConfig = OpenStruct.new
         ebConfig.host = eb[0]
         ebConfig.port = Integer(eb[1])
         ebConfig.kind = "eb"
+        ebConfig.sendRequests = 0
+if eb.length > 2
+  ebConfig.sendRequests = Integer(eb[2])
+end
         ebConfig.index = @options.eventBuilders.length
         @options.eventBuilders << ebConfig
       end
 
-      opts.on("--ag [host,port,bunch_size]", Array,
+      opts.on("--ag [host,port,bunch_size,demoPrescale]", Array,
               "Add an aggregator that runs on the",
               "specified host and port.  Also specify the",
-              "number of events to pass to art per bunch,") do |ag|
-        if ag.length != 3
-          puts "You must specify a host, port, and bunch size"
+              "number of events to pass to art per bunch.") do |ag|
+        if ag.length < 3
+          puts "You must specifiy a host, port and bunch size"
           exit
         end
         agConfig = OpenStruct.new
@@ -254,6 +250,11 @@ class CommandLineParser
         agConfig.port = Integer(ag[1])
         agConfig.kind = "ag"
         agConfig.bunch_size = Integer(ag[2])
+        if ag.length > 3
+            agConfig.demoPrescale = Integer(ag[3])
+        else
+            agConfig.demoPrescale = 0
+        end
         agConfig.index = @options.aggregators.length
         @options.aggregators << agConfig
       end
@@ -263,8 +264,8 @@ class CommandLineParser
               "board ID, Sim Mode, Sim Data file reading enabled, and Sim Data File.") do |mu2e|
         if mu2e.length < 5
           puts "You must specify a host, port, board ID, sim_mode, and use_sim_file flag."
-          exit
-        end
+           exit
+         end
         mu2eConfig = OpenStruct.new
         mu2eConfig.host = mu2e[0]
         mu2eConfig.port = Integer(mu2e[1])
@@ -275,21 +276,22 @@ class CommandLineParser
             mu2eConfig.sim_file = mu2e[5]
         else
             mu2eConfig.sim_file = ""
-        end
-        mu2eConfig.kind = "MU2E"
-        mu2eConfig.index = (@options.mu2es).length
-        mu2eConfig.board_reader_index = addToBoardReaderList(mu2eConfig.host, mu2eConfig.port,
-                                                              mu2eConfig.kind, mu2eConfig.index)
-        @options.mu2es << mu2eConfig
+		end
+
+		mu2eConfig.kind = "MU2E"
+		mu2eConfig.index = (@options.mu2es + @options.dtcs).length
+		mu2eConfig.board_reader_index = addToBoardReaderList(mu2eConfig.host, mu2eConfig.port, mu2eConfig.kind, mu2eConfig.index)
+
+		@options.mu2es << mu2eConfig
       end
 
-      opts.on("--dtc [host,port,board_id,sim_mode,use_sim_file,sim_file]", Array, 
+	   opts.on("--dtc [host,port,board_id,sim_mode,use_sim_file,sim_file]", Array, 
               "Add a DTC fragment receiver that runs on the specified host, port, ",
               "board ID, Sim Mode, Sim Data file reading enabled, and Sim Data File.") do |dtc|
         if dtc.length < 5
           puts "You must specify a host, port, board ID, simMode, and use_sim_file flag."
-          exit
-        end
+           exit
+         end
         dtcConfig = OpenStruct.new
         dtcConfig.host = dtc[0]
         dtcConfig.port = Integer(dtc[1])
@@ -300,23 +302,45 @@ class CommandLineParser
           dtcConfig.sim_file = dtc[5]
         else
           dtcConfig.sim_file = ""
-        end
+         end
         dtcConfig.kind = "DTC"
         dtcConfig.index = (@options.dtcs).length
         dtcConfig.board_reader_index = addToBoardReaderList(dtcConfig.host, dtcConfig.port,
                                                               dtcConfig.kind, dtcConfig.index)
         @options.dtcs << dtcConfig
-      end
-
+       end
 
       opts.on("-d", "--data-dir [data dir]", 
               "Directory that the event builders will", "write data to.") do |dataDir|
         @options.dataDir = dataDir
       end
 
-      opts.on("-m", "--online-monitoring [enable flag (0 or 1)]", 
-              "Whether to run the online monitoring modules.") do |runOnmon|
-        @options.runOnmon = runOnmon
+      opts.on("-m", "--online-monitoring [enabled,file_enabled,file_path]", Array,
+              "Whether to run the online monitoring modules,", 
+              "also whether and whither to send file output from the online monitoring" ) do |runOnmon|
+        @options.runOnmon = Integer(runOnmon[0])
+        if runOnmon.length > 1
+          @options.onmonFileEnabled = Integer(runOnmon[1])
+          @options.onmonFile = runOnmon[2]
+        end
+      end
+
+      opts.on("--onmon-file [file_path]",
+              "File name for onmon output") do |onmonFile|
+        @options.onmonFileEnabled = 1
+        @options.onmonFile = onmonFile
+      end
+
+      opts.on("--enable-ganglia-metric [level = 3]", "Enable the Ganglia metric output plugin") do |level|
+        @options.gangliaMetric = level || 3
+      end
+
+      opts.on("--enable-message-facility-metric [level = 3]", "Enable the MessageFacility metric output plugin") do |level|
+        @options.msgFacilityMetric = level || 3
+      end
+
+      opts.on("--enable-graphite-metric [level = 3]", "Enable the Graphite metric output plugin") do |level|
+        @options.graphiteMetric = level || 3
       end
 
       opts.on("-w", "--write-data [enable flag (0 or 1)]", 
@@ -366,6 +390,21 @@ class CommandLineParser
         @options.serialize = true
       end
 
+	  opts.on("--transfer-type [type] [base_port]", Array,
+	  "Use the specified transferPluginType for data transport. Default: \"Autodetect\"",
+	  "Supported types: \"MPI\" \"TCPSocket\" \"Autodetect\"",
+	  "If TCPSocket or Autodetect are used, specify base_port (default 5300)"
+	  ) do |type|
+	    if type.legnth < 1
+	      puts "You must specify a type name with this option"
+  	      exit
+	    end
+		@options.transferType = type[0]
+		if type.length == 2
+		  @options.transferBasePort = Integer(type[1])
+		end
+      end
+
       opts.on_tail("-h", "--help", "Show this message.") do
         puts opts
         exit
@@ -388,12 +427,16 @@ class CommandLineParser
     return nil
   end
 
-  def addToBoardReaderList(host, port, kind, boardIndex)
+  def addToBoardReaderList(host, port, kind, boardIndex, configFile = nil, isPBR = nil)
     # check for an existing boardReader with the same host and port
     brIndex = 0
     @options.boardReaders.each do |br|
       if host == br.host && port == br.port
-        br.kindList << kind
+        if isPBR != nil
+          br.kindList << "pbr"
+        else
+          br.kindList << kind
+        end
         br.boardIndexList << boardIndex
         br.cfgList << ""
         br.boardCount += 1
@@ -406,14 +449,18 @@ class CommandLineParser
     br = OpenStruct.new
     br.host = host
     br.port = port
-    br.kindList = [kind]
+    br.configFile = configFile
+    if isPBR != nil
+      br.kindList = ["pbr"]
+    else
+      br.kindList = [kind]
+    end
     br.boardIndexList = [boardIndex]
     br.cfgList = [""]
     br.boardCount = 1
     br.commandHasBeenSent = false
     br.hasBeenIncludedInXMLRPCList = false
     br.kind = "multi-board"
-
     brIndex = @options.boardReaders.length
     @options.boardReaders << br
     return brIndex
@@ -425,7 +472,7 @@ class CommandLineParser
     # is running on which host.
     puts "Configuration Summary:"
     hostMap = {}
-    (@options.eventBuilders + @options.dtcs + @options.mu2es + @options.aggregators).each do |proc|
+    (@options.eventBuilders + @options.dtcs + @options.aggregators + @options.mu2es).each do |proc|
       if not hostMap.keys.include?(proc.host)
         hostMap[proc.host] = []
       end
@@ -449,13 +496,14 @@ class CommandLineParser
         when "MU2E"
           puts "    FragmentReceiver, DTC Card Fragment Bundler, port %s, rank %d, board_id %s, sim_mode %d, use_sim_file %d, sim_file %s" % 
             [item.port,
-             item.index,
+              item.index,
              item.board_id, item.sim_mode, item.use_sim_file, item.sim_file]
         when "DTC"
           puts "   FragmentReceiver, DTC PCIe Card, port %d, rank %d, board_id %d, sim_mode %d, use_sim_file %d, sim_file %s" %
             [item.port,
              item.index,
              item.board_id, item.sim_mode, item.use_sim_file, item.sim_file]
+
         end
       end
       puts ""
@@ -482,24 +530,62 @@ class SystemControl
     @configGen = configGen
   end
 
-  def init()
+  def generate(forceRegen = false)
+
     ebIndex = 0
     agIndex = 0
-    totalmu2es = @options.mu2es.length
-    totaldtcs = @options.dtcs.length
 
-    totalBoards = @options.mu2es.length + @options.dtcs.length
+    totalBoards = @options.dtcs.length + @options.mu2es.length
     totalFRs = @options.boardReaders.length
     totalEBs = @options.eventBuilders.length
     totalAGs = @options.aggregators.length
-    inputBuffSizeWords = 32024 * 2500
-
-
-    #if Integer(totalv1720s) > 0
-    #  inputBuffSizeWords = 8192 * @options.v1720s[0].gate_width
-    #end
- 
+	logger_rank = totalFRs + totalEBs
+	dispatcher_rank = logger_rank + 1
+    fullEventBuffSizeWords = 32024 * 2500
+	
     xmlrpcClients = @configGen.generateXmlRpcClientList(@options)
+
+	# Loop over all the system elements, assigning ranks (BR, EVB, AGG order)
+	# and building the host map. Also make the fhicl snippets for configuring the TransferPlugins
+
+	current_rank = 0
+	br_destinations_fhicl = ""
+	eb_sources_fhicl = ""
+	eb_destinations_fhicl = ""
+	ag_sources_fhicl = ""
+	host_map = "["
+	# BoardReaders are EventBuilder sources
+    (@options.mu2es + @options.dtcs).each { |boardreaderOptions|
+		eb_sources_fhicl += ("s%s: { transferPluginType: %s source_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, boardreaderOptions.host,(current_rank * 10) + @options.transferBasePort ] )
+		current_rank += 1
+	}
+
+	# Event Builders are BoardReader destinations and Aggregator sources
+    @options.eventBuilders.each { |ebOptions|
+		br_destinations_fhicl += ("d%s: { transferPluginType: %s destination_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		ag_sources_fhicl += ("s%s: { transferPluginType: %s source_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, ebOptions.host,(current_rank * 10) + @options.transferBasePort ] )
+	  current_rank += 1
+	}
+  	
+	# The first aggregator is the destination for the EventBuilders
+	first = true
+    @options.aggregators.each { |agOptions|
+	  if first
+		eb_destinations_fhicl += ("d%s: { transferPluginType: %s destination_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		first = false
+      end
+		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, agOptions.host,(current_rank * 10) + @options.transferBasePort ] )
+	  current_rank += 1
+    }
+
+	host_map = host_map.chomp(",")
+	host_map += "]"
+	br_destinations_fhicl.gsub!(/\{\{host_map\}\}/, host_map)
+	eb_sources_fhicl.gsub!(/\{\{host_map\}\}/, host_map)
+	eb_destinations_fhicl.gsub!(/\{\{host_map\}\}/, host_map)
+	ag_sources_fhicl.gsub!(/\{\{host_map\}\}/, host_map)
 
     # 02-Dec-2013, KAB - loop over the front-end boards and build the configurations
     # that we will send to them.  These configurations are stored in the associated
@@ -509,51 +595,149 @@ class SystemControl
 
     # John F., 1/21/14 -- added the toy fragment generators
 
-    (@options.mu2es + @options.dtcs).each { |boardreaderOptions|
+    (@options.dtcs + @options.mu2es).each { |boardreaderOptions|
       br = @options.boardReaders[boardreaderOptions.board_reader_index]
-      listIndex = 0
-      br.kindList.each do |kind|
-        if kind == boardreaderOptions.kind && br.boardIndexList[listIndex] == boardreaderOptions.index
+      fileName = "BoardReader_%s_%s_%d.fcl" % [boardreaderOptions.kind,boardreaderOptions.host, boardreaderOptions.port]
+      if forceRegen || !File.file?(fileName)
+        puts "Generating %s" % [fileName]
+        listIndex = 0
+        br.kindList.each do |kind|
+          if kind == boardreaderOptions.kind && br.boardIndexList[listIndex] == boardreaderOptions.index
+            
+              generatorCode = generateFragmentReceiver(boardreaderOptions.index, boardreaderOptions.board_id,
+                                                       kind, boardreaderOptions.configFile, boardreaderOptions.sim_mode,
+													   boardreaderOptions.use_sim_file, boardreaderOptions.sim_file)
 
-    	  if kind == "MU2E"
-            generatorCode = generateMu2e(boardreaderOptions.index,
-                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode,
-                                        boardreaderOptions.use_sim_file, boardreaderOptions.sim_file, @options.mu2es.length)
-          elsif kind == "DTC"
-            generatorCode = generateDTC(boardreaderOptions.index,
-                                        boardreaderOptions.board_id, boardreaderOptions.sim_mode,
-                                        boardreaderOptions.use_sim_file, boardreaderOptions.sim_file)
+            # 16-Feb-2016, KAB: Here in the Demo, we don't know whether the data is equally
+            # split between the BoardReaders or mainly concentrated in a single BoardReader, so
+            # we do the safest thing and make all of the BoardReader MPI buffers the maximum size.
+            cfg = generateBoardReaderMain(generatorCode, br_destinations_fhicl,
+                                          @options.gangliaMetric, @options.msgFacilityMetric, @options.graphiteMetric)
+
+            br.cfgList[listIndex] = cfg
+            break
           end
-
-          cfg = generateBoardReaderMain(totalEBs, totalFRs,
-                                        Integer(inputBuffSizeWords/8), 
-                                        generatorCode)
-
-          br.cfgList[listIndex] = cfg
-          break
+          listIndex += 1
         end
-        listIndex += 1
+
+
+      if br.boardCount > 1
+        if br.fileHasBeenGenerated
+          next
+        else
+          br.fileHasBeenGenerated = true
+          br.cfg = @configGen.generateComposite(br_destinations_fhicl, br.cfgList)
+        end
+      else
+        br.cfg = br.cfgList[0]
+      end
+
+        puts "  writing %s..." % fileName
+        handle = File.open(fileName, "w")
+        handle.write(br.cfg)
+        handle.close()
+      else
+        if br.boardCount > 1
+          if br.fileHasBeenRead
+            next
+          else
+            br.fileHasBeenRead = true
+          end
+        end
+        br.cfg = File.read(fileName)
       end
     }
 
 
+    # 27-Jun-2013, KAB - send INIT to EBs and AG last
+    @options.eventBuilders.each { |ebOptions|
+
+      fileName = "EventBuilder_%s_%d.fcl" % [ebOptions.host, ebOptions.port]
+      if forceRegen || !File.file?(fileName)
+        puts "Generating %s" % [fileName]
+
+		fclDDV = generateDTCDataVerifier( (@options.mu2es + @options.dtcs).map { |board| board.board_id},
+										  (@options.mu2es + @options.dtcs).map { |board| board.kind})
+										
+        ebOptions.cfg = generateEventBuilderMain(ebIndex, totalAGs,  @options.dataDir, @options.runOnmon,
+                                                 @options.writeData, totalBoards, fclDDV,
+                                                 eb_sources_fhicl, eb_destinations_fhicl,
+												 ebOptions.sendRequests, 
+                                                 @options.gangliaMetric, @options.msgFacilityMetric, @options.graphiteMetric
+                                                 )
+
+        puts "  writing %s..." % fileName
+        handle = File.open(fileName, "w")
+        handle.write(ebOptions.cfg)
+        handle.close()
+      ebIndex += 1
+  else
+      ebOptions.cfg = File.read(fileName)
+    end
+  }
+
+  @options.aggregators.each { |agOptions|
+    fileName = "Aggregator_%s_%d.fcl" % [agOptions.host, agOptions.port]
+    if forceRegen || !File.file?(fileName)
+      puts "Generating %s" % [fileName]
+
+      if @options.onmon_modules = "" || @options.onmon_modules = nil
+        @options.onmon_modules = ONMON_MODULES 
+      end
+      agOptions.cfg = generateAggregatorMain(@options.dataDir, agOptions.bunch_size,
+                                             @options.runOnmon, @options.writeData, agOptions.demoPrescale,
+                                             agIndex, totalAGs, fullEventBuffSizeWords,
+											 ag_sources_fhicl, logger_rank, dispatcher_rank,
+                                             xmlrpcClients, @options.fileSizeThreshold,
+                                             @options.fileDurationSeconds,
+                                             @options.eventsInFile, ONMON_EVENT_PRESCALE,
+                                             @options.onmon_modules, @options.onmonFileEnabled, @options.onmonFile,
+                                             @options.gangliaMetric, @options.msgFacilityMetric, @options.graphiteMetric)
+
+      puts "  writing %s..." % fileName
+      handle = File.open(fileName, "w")
+      handle.write(agOptions.cfg)
+      handle.close()
+      STDOUT.flush
+
+    agIndex += 1
+  else
+      agOptions.cfg = File.read(fileName)
+  end
+}
+
+    STDOUT.flush
+
+  end
+
+  def init()
+
+    ebIndex = 0
+    agIndex = 0
+    totalBoards = @options.mu2es.length + @options.dtcs.length
+    totalFRs = @options.boardReaders.length
+    totalEBs = @options.eventBuilders.length
+    totalAGs = @options.aggregators.length
 
 
+    #if files don't exist, generate
+    generate()
+	
     threads = []
 
-    (@options.mu2es + @options.dtcs).each { |proc|
+    (@options.dtcs + @options.mu2es).each { |proc|
       br = @options.boardReaders[proc.board_reader_index]
+
       if br.boardCount > 1
         if br.commandHasBeenSent
           next
         else
           br.commandHasBeenSent = true
           proc = br
-          cfg = @configGen.generateComposite(totalEBs, totalFRs, br.cfgList)
         end
-      else
-        cfg = br.cfgList[0]
       end
+
+        cfg = br.cfg
 
       currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
       puts "%s: Sending the INIT command to %s:%d." %
@@ -561,13 +745,8 @@ class SystemControl
       threads << Thread.new() do
         xmlrpcClient = XMLRPC::Client.new(proc.host, "/RPC2",
                                           proc.port)
-        if @options.serialize
-          fileName = "BoardReader_%s_%s_%d.fcl" % [proc.kind,proc.host, proc.port]
-          puts "  writing %s..." % fileName
-          handle = File.open(fileName, "w")
-          handle.write(cfg)
-          handle.close()
-        end
+ 
+        # puts "Calling daq.init with configuration %s" % [cfg]
         result = xmlrpcClient.call("daq.init", cfg)
         currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
         puts "%s: %s FragmentReceiver on %s:%d result: %s" %
@@ -582,86 +761,51 @@ class SystemControl
 
 
     # 27-Jun-2013, KAB - send INIT to EBs and AG last
+    threads = []
     @options.eventBuilders.each { |ebOptions|
       currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
       puts "%s: Sending the INIT command to %s:%d." %
         [currentTime, ebOptions.host, ebOptions.port]
+      threads << Thread.new( ebIndex ) do | ebIndexThread |
+        xmlrpcClient = XMLRPC::Client.new(ebOptions.host, "/RPC2", 
+                                          ebOptions.port)
 
-      xmlrpcClient = XMLRPC::Client.new(ebOptions.host, "/RPC2", 
-                                        ebOptions.port)
-
-
-      fclWFViewer = generateWFViewer( (@options.mu2es).map { |board| board.board_id },
-                                      (@options.mu2es).map { |board| board.kind }
-                                      )
-
-      fclDDV = generateDTCDataVerifier( (@options.mu2es).map { |board| board.board_id },
-                                      (@options.mu2es).map { |board| board.kind }
-                                      )
-
-      cfg = generateEventBuilderMain(ebIndex, totalFRs, totalEBs, totalAGs,
-                                   @options.dataDir, @options.runOnmon,
-                                   @options.writeData, inputBuffSizeWords,
-                                   totalBoards, 
-                                   fclWFViewer, fclDDV
-                                   )
-
-      if @options.serialize
-          fileName = "EventBuilder_%s_%d.fcl" % [ebOptions.host, ebOptions.port]
-          puts "  writing %s..." % fileName
-          handle = File.open(fileName, "w")
-          handle.write(cfg)
-          handle.close()
-      end
-      result = xmlrpcClient.call("daq.init", cfg)
-      currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
-      puts "%s: EventBuilder on %s:%d result: %s" %
+        cfg = ebOptions.cfg
+        # puts "Calling daq.init with configuration %s" % [cfg]
+        result = xmlrpcClient.call("daq.init", cfg)
+        currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
+        puts "%s: EventBuilder on %s:%d result: %s" %
           [currentTime, ebOptions.host, ebOptions.port, result]
-      STDOUT.flush
-
+        STDOUT.flush
+      end
       ebIndex += 1
     }
 
-    @options.aggregators.each { |agOptions|
+    
+@options.aggregators.each { |agOptions|
       currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
       puts "%s: Sending the INIT command to %s:%d" %
-      [currentTime, agOptions.host, agOptions.port, agIndex]
-
-      xmlrpcClient = XMLRPC::Client.new(agOptions.host, "/RPC2", 
+        [currentTime, agOptions.host, agOptions.port, agIndex]
+      threads << Thread.new( agIndex ) do |agIndexThread|
+        xmlrpcClient = XMLRPC::Client.new(agOptions.host, "/RPC2", 
                                           agOptions.port)
 
-
-      fclWFViewer = generateWFViewer( (@options.mu2es + @options.dtcs).map { |board| board.board_id },
-                                      (@options.mu2es + @options.dtcs).map { |board| board.kind }
-                                      )
-
-
-
-      cfg = generateAggregatorMain(@options.dataDir, @options.runNumber,
-                                 totalFRs, totalEBs, agOptions.bunch_size,
-                                 @options.runOnmon, @options.writeData,
-                                 agIndex, totalAGs, inputBuffSizeWords,
-                                 xmlrpcClients, @options.fileSizeThreshold,
-                                 @options.fileDurationSeconds,
-                                 @options.eventsInFile, fclWFViewer, ONMON_EVENT_PRESCALE)
-
-      if @options.serialize
-          fileName = "Aggregator_%s_%d.fcl" % [agOptions.host, agOptions.port]
-          puts "  writing %s..." % fileName
-          handle = File.open(fileName, "w")
-          handle.write(cfg)
-          handle.close()
-      end
-      result = xmlrpcClient.call("daq.init", cfg)
-      currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
-      puts "%s: Aggregator on %s:%d result: %s" %
+        cfg = agOptions.cfg
+        # puts "Calling daq.init with configuration %s" % [cfg]
+        result = xmlrpcClient.call("daq.init", cfg)
+        currentTime = DateTime.now.strftime("%Y/%m/%d %H:%M:%S")
+        puts "%s: Aggregator on %s:%d result: %s" %
           [currentTime, agOptions.host, agOptions.port, result]
-      STDOUT.flush
+        STDOUT.flush
+      end
 
       agIndex += 1
     }
     
     STDOUT.flush
+    threads.each { |aThread|
+      aThread.join()
+    }
   end
 
   def start(runNumber)
@@ -723,12 +867,15 @@ class SystemControl
             [currentTime, proc.host, proc.port, result]
         when "MU2E"
           puts "%s: MU2E on %s:%d result: %s" %
-            [currentTime, proc.host, proc.port, result]
+             [currentTime, proc.host, proc.port, result]
         when "DTC"
           puts "%s: DTC on %s:%d result: %s" %
-            [currentTime, proc.host, proc.port, result]
+             [currentTime, proc.host, proc.port, result]
         when "multi-board"
           puts "%s: multi-board FragmentReceiver on %s:%d result: %s" %
+            [currentTime, proc.host, proc.port, result]
+        when "pbr"
+          puts "%s: Preconfigured BoardReader on %s:%d result: %s" %
             [currentTime, proc.host, proc.port, result]
         end
         STDOUT.flush
@@ -747,8 +894,12 @@ class SystemControl
   end
 
   def pause()
-    self.sendCommandSet("pause", @options.dtcs)
-    self.sendCommandSet("pause", @options.mu2es)
+    self.sendCommandSet("shutdown", @options.dtcs)
+    self.sendCommandSet("shutdown", @options.mu2es)
+    self.sendCommandSet("pause", @options.toys)
+    self.sendCommandSet("pause", @options.asciis)
+    self.sendCommandSet("pause", @options.pbrs)
+    self.sendCommandSet("pause", @options.udps)
     self.sendCommandSet("pause", @options.eventBuilders)
     self.sendCommandSet("pause", @options.aggregators)
   end
@@ -881,7 +1032,7 @@ class SystemControl
         puts "No Aggregator in use - Unable to determine the duration of the current run."
       end
     end
-
+	
     self.sendCommandSet("stop", @options.dtcs)
     self.sendCommandSet("stop", @options.mu2es)
     self.sendCommandSet("stop", @options.eventBuilders)
@@ -895,22 +1046,22 @@ class SystemControl
   def resume()
     self.sendCommandSet("resume", @options.aggregators)
     self.sendCommandSet("resume", @options.eventBuilders)
-    self.sendCommandSet("resume", @options.mu2es)
     self.sendCommandSet("resume", @options.dtcs)
+    self.sendCommandSet("resume", @options.mu2es)
   end
 
   def checkStatus()
     self.sendCommandSet("status", @options.aggregators)
     self.sendCommandSet("status", @options.eventBuilders)
-    self.sendCommandSet("status", @options.mu2es)    
     self.sendCommandSet("status", @options.dtcs)
+    self.sendCommandSet("status", @options.mu2es)
   end
 
   def getLegalCommands()
     self.sendCommandSet("legal_commands", @options.aggregators)
     self.sendCommandSet("legal_commands", @options.eventBuilders)
-    self.sendCommandSet("legal_commands", @options.mu2es)    
     self.sendCommandSet("legal_commands", @options.dtcs)
+    self.sendCommandSet("legal_commands", @options.mu2es)
   end
 end
 
@@ -941,6 +1092,8 @@ if __FILE__ == $0
 
   if options.command == "init"
     sysCtrl.init()
+elsif options.command == "generate"
+    sysCtrl.generate()
   elsif options.command == "start"
     sysCtrl.start(options.runNumber)
   elsif options.command == "stop"
