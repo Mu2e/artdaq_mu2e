@@ -70,7 +70,6 @@ simple_plugin(OfflineFragmentReader "source"
   )
 
 # Subdirectories.
-add_subdirectory(DQM)
 add_subdirectory(fcl)
 
 install_headers()
