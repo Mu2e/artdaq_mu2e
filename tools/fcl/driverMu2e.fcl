@@ -92,6 +92,7 @@ outputs:
 
 source:
 {
+#module_type: OfflineFragmentReader
 module_type: RawInput
 waiting_time: 900
 resume_after_timeout: true

@@ -52,8 +52,9 @@ function launch() {
     # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[40]} \
     # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[45]} \
 
-
-  wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=PS $1 $2&host_regex=mu2edaq"
+summary="PS $1"
+if [[ "$1" == "start" ]]; then summary="PS $1 $2"; fi
+  wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=${summary}&host_regex=mu2edaq"
   DemoControl.rb ${enableSerial} -s -c $1 \
     --mu2e mu2edaq05-data,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
     --mu2e mu2edaq06-data,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \

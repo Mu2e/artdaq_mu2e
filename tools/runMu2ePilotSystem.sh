@@ -68,11 +68,11 @@ export RGANG_RSH=/usr/bin/rsh
 # mu2edaq04 removed for now
 rgang --do-local "mu2edaq0{1,5-8}-data" "/home/mu2edaq/setup_trace.sh"
 cd /home/mu2edaq
-if [ -z "$MU2E_ARTDAQ_DIR" ]; then
+if [ -z "${MU2E_ARTDAQ_DIR:-}" ]; then
   source /mu2e/ups/setup
   setup mu2e_artdaq -qe10:prof:s35:eth # Use current.chain
 fi
-if [ ! -z "$MRB_BUILDDIR" ]; then
+if [ ! -z "${MRB_BUILDDIR:-}" ]; then
   export FHICL_FILE_PATH=$FHICL_FILE_PATH:$MRB_BUILDDIR/mu2e_artdaq/fcl
 fi
 

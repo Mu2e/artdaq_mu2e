@@ -43,6 +43,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
     mode_ = theInterface_->ReadSimMode();
     theInterface_->ClearDetectorEmulatorInUse(); // Needed if we're doing ROC Emulator...make sure Detector Emulation is disabled
 
+    mf::LogInfo("Mu2eReceiver") << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion();
+
     int ringRocs[] = {
       ps.get<int>("ring_0_roc_count", -1),
       ps.get<int>("ring_1_roc_count", -1),
