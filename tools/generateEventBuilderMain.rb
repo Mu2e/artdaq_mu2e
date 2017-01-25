@@ -33,10 +33,13 @@ services: {
 outputs: {
   %{rootmpi_output}rootMPIOutput: {
   %{rootmpi_output}  module_type: RootMPIOutput
+  %{rootmpi_output}  SelectEvents: [ delay ]
   %{rootmpi_output}}
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput
   %{root_output}  fileName: \"%{output_file}\"
+  %{root_output}  SelectEvents: { SelectEvents: [ delay ] }
+  %{root_output}  fileProperties: {maxRuns:1 maxSubRuns:1}
   %{root_output}}
 }
 

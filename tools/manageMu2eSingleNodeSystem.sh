@@ -30,7 +30,7 @@ function launch() {
 
 summary="SN $1"
 if [[ "$1" == "start" ]]; then summary="SN $1 $2"; fi
-  wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=${summary}&host_regex=mu2edaq"
+  wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=${summary}&host_regex=`hostname`"
   DemoControl.rb ${enableSerial} -s -c $1 \
     --mu2e `hostname`,${MU2EARTDAQ_BR_PORT[0]},0,${15},${13},${14} \
     --eb `hostname`,${MU2EARTDAQ_EB_PORT[0]} \
@@ -117,7 +117,7 @@ fileEventCount=0
 fileDuration=0
 verbose=0
 useSimFile=0
-simFilePath=""
+simFilePath="/dev/null"
 simMode=1
 OPTIND=1
 while getopts "hc:N:o:t:m:Dn:d:f:M:s:w:v-:" opt; do
@@ -196,6 +196,7 @@ shift
 # verify that the command is one that we expect
 if [[ "$command" != "start-system" ]] && \
    [[ "$command" != "init" ]] && \
+   [[ "$command" != "generate" ]] && \
    [[ "$command" != "start" ]] && \
    [[ "$command" != "pause" ]] && \
    [[ "$command" != "resume" ]] && \
