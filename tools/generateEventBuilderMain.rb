@@ -33,12 +33,12 @@ services: {
 outputs: {
   %{rootmpi_output}rootMPIOutput: {
   %{rootmpi_output}  module_type: RootMPIOutput
-  %{rootmpi_output}  SelectEvents: [ delay ]
+  %{rootmpi_output}  #SelectEvents: [ delay ]
   %{rootmpi_output}}
   %{root_output}normalOutput: {
   %{root_output}  module_type: RootOutput
   %{root_output}  fileName: \"%{output_file}\"
-  %{root_output}  SelectEvents: { SelectEvents: [ delay ] }
+  %{root_output}  #SelectEvents: { SelectEvents: [ delay ] }
   %{root_output}  fileProperties: {maxRuns:1 maxSubRuns:1}
   %{root_output}}
 }
@@ -49,20 +49,26 @@ physics: {
   }
 
   producers: {
+    mu2eprod:
+    {
+      module_type: Mu2eProducer
+      debug: true
+    }
   }
 
-  filters: {
-  %{phys_filt_rdf_cfg}
-  }
+  p1: [mu2eprod]
+
+  %{phys_filt_cfg}
     
 #	a2: [ ddv ]
-	delay: [ randomDelay ] 
 
   %{rootmpi_output}my_output_modules: [ rootMPIOutput ]
   %{root_output}my_output_modules: [ normalOutput ]
+
+  end_paths: [p1, my_output_modules]
 }
 source: {
-  module_type: Mu2eInput
+  module_type: OfflineFragmentReader
   waiting_time: 2500000
   resume_after_timeout: true
 }
@@ -93,7 +99,7 @@ else
 end
 
 #ebConfig.gsub!(/\%\{phys_anal_ddv_cfg\}/, fclDDV)
-ebConfig.gsub!(/\%\{phys_filt_rdf_cfg\}/, String("") + read_fcl("Mu2eFilterSim.fcl"))
+ebConfig.gsub!(/\%\{phys_filt_cfg\}/, String("") + read_fcl("Mu2eFilterSim.fcl"))
 
 
 currentTime = Time.now

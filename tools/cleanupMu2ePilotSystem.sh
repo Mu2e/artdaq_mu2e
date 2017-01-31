@@ -22,10 +22,11 @@ killall AggregatorMain
 
 export RGANG_RSH=/usr/bin/rsh
 
-rgang "mu2edaq0{4-8}-data" killall BoardReaderMain
-rgang "mu2edaq0{4-8}-data" killall EventBuilderMain
+rgang "mu2edaq0{4-8}-data" killall ruby >/dev/null 2>&1
+rgang "mu2edaq0{4-8}-data" killall BoardReaderMain >/dev/null 2>&1
+rgang "mu2edaq0{4-8}-data" killall EventBuilderMain >/dev/null 2>&1
 
 mkdir -p /home/mu2edaq/daqlogs/traceBuffers/$startTime
 
-rgang --do-local "mu2edaq0{1,4-8}-data" 'mv /tmp/trace_buffer_$USER /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.trace'
-rgang --do-local "mu2edaq0{1,4-8}-data" 'cp /proc/trace/buffer /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.kernel.trace'
+rgang --do-local "mu2edaq0{1,4-8}-data" 'if [ -e /tmp/trace_buffer_$USER ];then mv /tmp/trace_buffer_$USER /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.trace; fi'
+rgang --do-local "mu2edaq0{1,4-8}-data" 'if [ -e /proc/trace/buffer ];then cp /proc/trace/buffer /home/mu2edaq/daqlogs/traceBuffers/'"$startTime"'/`hostname`.kernel.trace; fi'

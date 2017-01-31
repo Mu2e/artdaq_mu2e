@@ -42,12 +42,14 @@ mu2e::SingleNodeTransfer::SingleNodeTransfer(const fhicl::ParameterSet& pset, ar
 		  destHost = ps.get<std::string>("host", "localhost");
 		}
 	}
-	mf::LogDebug(uniqueLabel()) << "ADT: srcHost=" << srcHost << ", destHost=" << destHost;
+	mf::LogDebug(uniqueLabel()) << "SNT: srcHost=" << srcHost << ", destHost=" << destHost;
 	if(srcHost == destHost) {
-	  mf::LogDebug(uniqueLabel()) << "ADT: Constructing ShmemTransfer";
+	  mf::LogDebug(uniqueLabel()) << "SNT: Constructing ShmemTransfer";
 	  theTransfer_.reset(new artdaq::ShmemTransfer(pset, role));
 	} else {
+	mf::LogDebug(uniqueLabel()) << "SNT: Aborting!";
 	  theTransfer_.reset(nullptr);
+throw new cet::exception("Not the same host");
 	}
 }
 

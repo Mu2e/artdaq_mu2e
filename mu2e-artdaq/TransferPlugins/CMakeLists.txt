@@ -5,7 +5,6 @@ simple_plugin(SingleNode "transfer"
   fhiclcpp
   cetlib
   MF_MessageLogger
-  ${TRACE}
 )
 
 install_headers()

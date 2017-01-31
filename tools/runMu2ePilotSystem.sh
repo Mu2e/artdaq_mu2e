@@ -79,7 +79,7 @@ fi
 export DTCLIB_SIM_PATH=/home/mu2edaq/data/simData
 echo "!!!!STARTING SYSTEM!!!!"
 startMu2ePilotSystem.sh & #>/dev/null 2>&1 & # The "system" log goes to /daqlogs/pmt
-sleep 10
+sleep 30
 
 # No Data File
 echo "!!!!!INITIALIZING SYSTEM!!!!!!"
