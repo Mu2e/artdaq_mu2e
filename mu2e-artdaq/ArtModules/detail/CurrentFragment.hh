@@ -34,7 +34,7 @@ namespace mu2e {
         return block_count_ >= reader_->hdr_block_count();
       }
 
-      std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::Subsystem);
+      std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::DTC_Subsystem);
 
     private:
       std::unique_ptr<artdaq::Fragment const> fragment_ {nullptr};

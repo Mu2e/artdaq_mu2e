@@ -13,7 +13,7 @@ namespace mu2e {
     {}
 
     std::unique_ptr<artdaq::Fragments>
-    CurrentFragment::extractFragmentsFromBlock(DTCLib::Subsystem const subsystem)
+    CurrentFragment::extractFragmentsFromBlock(DTCLib::DTC_Subsystem const subsystem)
     {
       auto result = std::make_unique<artdaq::Fragments>();
 
@@ -39,7 +39,7 @@ namespace mu2e {
 
         if (headerPacket.GetSubsystem() == subsystem) {
           result->push_back(artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
-                                                       headerPacket.GetData(), // Returns evbMode (see mu2e-docdb 4914)
+                                                       headerPacket.GetEVBMode(), // Returns evbMode (see mu2e-docdb 4914)
                                                        reinterpret_cast<artdaq::RawDataType const*>(data),
                                                        packetSize,
                                                        fragment_->timestamp()));

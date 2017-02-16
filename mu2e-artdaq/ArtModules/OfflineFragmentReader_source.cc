@@ -215,11 +215,11 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
   //
   //    auto fragmentsColls = currentFragment_.extractFragmentsFromBlock(Tracker, Calorimeter);
   //    auto const& trkFragments = fragmentsColls[Tracker]; // etc.
-  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::Subsystem::Tracker),
+  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker),
                            *outE,
                            daq_module_label,
                            trk_instance_name());
-  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::Subsystem::Calorimeter),
+  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter),
                            *outE,
                            daq_module_label,
                            calo_instance_name());
