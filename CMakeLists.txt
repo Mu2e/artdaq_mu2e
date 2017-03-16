@@ -30,7 +30,7 @@ cet_cmake_env()
 cet_set_compiler_flags(DIAGS VIGILANT
  WERROR
  NO_UNDEFINED
- EXTRA_FLAGS -pedantic
+ EXTRA_FLAGS -pedantic -pthread
  EXTRA_CXX_FLAGS -D_GLIBCXX_USE_NANOSLEEP
  )
 string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
