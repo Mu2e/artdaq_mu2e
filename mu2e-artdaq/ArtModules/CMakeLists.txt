@@ -21,7 +21,8 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
   ${ROOT_CORE}
   ${ROOT_NET}
   ${ROOT_REFLEX}
-  cetlib
+  ${CETLIB}
+  ${CETLIB_EXCEPT}
 )
 
 simple_plugin(Mu2eProducer "module"
