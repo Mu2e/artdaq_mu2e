@@ -10,6 +10,7 @@ fragment_receiver: {
    # Parameters defining and configuring the fragment generator to be used
    		    
    generator: DTCReceiver 
+   sim_mode: 1
    ring_0_roc_count: 1
    ring_0_timing_enabled: false
    debug_print: true
