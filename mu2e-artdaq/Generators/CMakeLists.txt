@@ -5,6 +5,7 @@ simple_plugin(DTCReceiver "generator"
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}
   ${CETLIB}
+  ${CETLIB_EXCEPT}
   MF_MessageLogger
   DTCInterface
   )
@@ -20,6 +21,7 @@ simple_plugin(Mu2eReceiver "generator"
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}
   ${CETLIB}
+  ${CETLIB_EXCEPT}
   MF_MessageLogger
   DTCInterface
   )
@@ -31,6 +33,7 @@ simple_plugin(OverlayTest "generator"
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}
   ${CETLIB}
+  ${CETLIB_EXCEPT}
   MF_MessageLogger
   DTCInterface
   )

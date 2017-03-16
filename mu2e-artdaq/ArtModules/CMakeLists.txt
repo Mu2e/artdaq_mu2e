@@ -30,12 +30,15 @@ simple_plugin(Mu2eProducer "module"
   DTCInterface
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
+  ${CETLIB}
+  ${CETLIB_EXCEPT}
 )
 
 simple_plugin(DTCDataVerifier "module"
   mu2e-artdaq-core_Overlays
   DTCInterface
   ${MF_MESSAGELOGGER}
+  ${CETLIB_EXCEPT}
 )
 
 simple_plugin(Mu2eDump "module"
@@ -43,10 +46,12 @@ simple_plugin(Mu2eDump "module"
   DTCInterface
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
+  ${CETLIB_EXCEPT}
 )
 
 simple_plugin(OfflineFragmentsDumper "module"
   mu2e-artdaq-core_Overlays
+  ${CETLIB_EXCEPT}
 )
 
 simple_plugin(DTCDump "module"
@@ -54,6 +59,7 @@ simple_plugin(DTCDump "module"
   DTCInterface
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
+  ${CETLIB_EXCEPT}
 )
 
 simple_plugin(DetectorDump "module"
@@ -61,6 +67,7 @@ simple_plugin(DetectorDump "module"
   DTCInterface
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
+  ${CETLIB_EXCEPT}
 )
 
 simple_plugin(Mu2eArtdaqBuildInfo "module"
