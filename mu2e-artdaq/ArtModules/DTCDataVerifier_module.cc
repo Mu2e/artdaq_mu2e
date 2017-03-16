@@ -5,11 +5,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#ifdef CANVAS
 #include "canvas/Utilities/InputTag.h"
-#else
-#include "art/Utilities/InputTag.h"
-#endif
 
 #include "artdaq-core/Data/Fragments.hh"
 

@@ -17,11 +17,11 @@ bindir      fq_dir      bin
 
 #
 product		version		optional
-artdaq		v2_00_00
+artdaq		v2_02_01
 mu2e_artdaq_core v1_01_00
 pcie_linux_kernel_module v1_08_00
-mongodb         v3_2_7c
-cetbuildtools	v5_06_03	-	only_for_build
+mongodb         v3_2_7d
+cetbuildtools	v5_06_06	-	only_for_build
 end_product_list
 
 # e6  - with gcc 4.9.1 and -std=c++1y
@@ -31,12 +31,16 @@ end_product_list
 # a "-" means the dependent product is not required by the parent and will not be setup
 
 qualifier           artdaq          mu2e_artdaq_core	pcie_linux_kernel_module   mongodb    notes
-e10:s44:debug       e10:eth:s44:debug   e10:s44:debug	e10:debug                  e10:s44:debug   --std=c++1z
-e10:s44:prof        e10:eth:s44:prof    e10:s44:prof	e10:prof                   e10:s44:prof    --std=c++1z
-e10:s43:debug       e10:eth:s43:debug   e10:s43:debug	e10:debug                  e10:s43:debug   --std=c++1z
-e10:s43:prof        e10:eth:s43:prof    e10:s43:prof	e10:prof                   e10:s43:prof    --std=c++1z
-e10:s41:debug       e10:eth:s41:debug   e10:s41:debug	e10:debug                  e10:s41:debug   --std=c++1z
-e10:s41:prof        e10:eth:s41:prof    e10:s41:prof	e10:prof                   e10:s41:prof    --std=c++1z
+e14:s46:debug       e14:eth:s46:debug   e14:s46:debug	e14:debug                  e14:s46:debug   --std=c++14
+e14:s46:prof        e14:eth:s46:prof    e14:s46:prof	e14:prof                   e14:s46:prof    --std=c++14
+e10:s46:debug       e10:eth:s46:debug   e10:s46:debug	e10:debug                  e10:s46:debug   --std=c++14
+e10:s46:prof        e10:eth:s46:prof    e10:s46:prof	e10:prof                   e10:s46:prof    --std=c++14
+e10:s44:debug       e10:eth:s44:debug   e10:s44:debug	e10:debug                  e10:s44:debug   --std=c++14
+e10:s44:prof        e10:eth:s44:prof    e10:s44:prof	e10:prof                   e10:s44:prof    --std=c++14
+e10:s43:debug       e10:eth:s43:debug   e10:s43:debug	e10:debug                  e10:s43:debug   --std=c++14
+e10:s43:prof        e10:eth:s43:prof    e10:s43:prof	e10:prof                   e10:s43:prof    --std=c++14
+e10:s41:debug       e10:eth:s41:debug   e10:s41:debug	e10:debug                  e10:s41:debug   --std=c++14
+e10:s41:prof        e10:eth:s41:prof    e10:s41:prof	e10:prof                   e10:s41:prof    --std=c++14
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:

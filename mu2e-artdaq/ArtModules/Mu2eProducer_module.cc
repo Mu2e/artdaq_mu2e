@@ -12,11 +12,7 @@
 
 #include "art/Framework/Principal/Handle.h"
 
-#ifdef CANVAS
 #include "canvas/Utilities/Exception.h"
-#else
-#include "art/Utilities/Exception.h"
-#endif
 
 //#include "mu2e-artdaq-core/Overlays/mu2eFragmentReader.hh"
 

@@ -8,7 +8,6 @@
 #include "art/Framework/Principal/EventPrincipal.h"
 #include "art/Framework/Principal/RunPrincipal.h"
 #include "art/Framework/Principal/SubRunPrincipal.h"
-#include "art/Utilities/ConfigTable.h"
 #include "artdaq-core/Core/GlobalQueue.hh"
 #include "fhiclcpp/types/Atom.h"
 #include "mu2e-artdaq/ArtModules/detail/CurrentFragment.hh"
@@ -25,7 +24,7 @@ namespace mu2e {
 
     OfflineFragmentReader(OfflineFragmentReader const&) = delete;
     OfflineFragmentReader& operator=(OfflineFragmentReader const&) = delete;
-
+#if 0
     struct Config {
       fhicl::Atom<std::string> module_type { fhicl::Name("module_type") };
       fhicl::Atom<int64_t> maxSubRuns { fhicl::Name("maxSubRuns"), -1 };
@@ -41,8 +40,8 @@ namespace mu2e {
     };
 
     using Parameters = art::ConfigTable<Config, Config::KeysToIgnore>;
-
-    explicit OfflineFragmentReader(Parameters const& ps,
+#endif
+explicit OfflineFragmentReader(fhicl::ParameterSet const& ps,
                                    art::ProductRegistryHelper& help,
                                    art::SourceHelper const& pm);
 

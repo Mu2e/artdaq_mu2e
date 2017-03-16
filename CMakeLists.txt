@@ -63,15 +63,12 @@ find_ups_boost( v1_50_0 filesystem
 # define libsigc
 cet_find_library( SIGC    NAMES sigc-2.0  PATHS ENV LIBSIGCPP_LIB NO_DEFAULT_PATH )
 
-
-
-check_ups_version(art "$ENV{ART_VERSION}" v2_00_00 PRODUCT_OLDER_VAR no_canvas)
-if (no_canvas)
-  set(CANVAS "art")
-else (no_canvas)
-  set(CANVAS "canvas")
-  add_definitions(-DCANVAS)
-endif()
+check_ups_version(canvas "$ENV{CANVAS_VERSION}" v1_06_00 PRODUCT_OLDER_VAR CANVAS_MULTILIB)
+if(CANVAS_MULTILIB)
+  set(CANVAS_LIB_LIST canvas_Utilities canvas_Persistency_Provenance)
+else()
+ set(CANVAS_LIB_LIST canvas)
+endif(CANVAS_MULTILIB)
 
 string(REGEX MATCHALL "[0-9][0-9]?[0-9]?" ART_VERSION_LIST "$ENV{ART_VERSION}")
 list(GET ART_VERSION_LIST 0 ART_MAJOR_VERSION)

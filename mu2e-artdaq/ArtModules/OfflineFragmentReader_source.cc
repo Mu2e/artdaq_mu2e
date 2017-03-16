@@ -72,12 +72,12 @@ namespace {
   std::string calo_instance_name() { return "calo"; }
 }
 
-mu2e::OfflineFragmentReader::OfflineFragmentReader(Parameters const& ps,
+mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps,
                                                    art::ProductRegistryHelper& help,
                                                    art::SourceHelper const& pm) :
   pMaker_{pm},
-  waitingTime_{ps().waiting_time()},
-  resumeAfterTimeout_{ps().resume_after_timeout()}
+  waitingTime_(ps.get<double>("waiting_time",86400.)),
+  resumeAfterTimeout_(ps.get<bool>("resume_after_timeout",true))
 {
   help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
   help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());

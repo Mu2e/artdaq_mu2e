@@ -13,10 +13,8 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
   art_Framework_Core
   art_Framework_IO_Sources
   art_Framework_Principal
-  canvas_Persistency_Common
   art_Persistency_Provenance
-  canvas_Persistency_Provenance
- canvas_Utilities
+  ${CANVAS_LIB_LIST}
   MF_MessageLogger
   ${ROOT_CINTEX}
   ${ROOT_RIO}
@@ -73,6 +71,7 @@ simple_plugin(Mu2eArtdaqBuildInfo "module"
   ${MF_MESSAGELOGGER}
   ${FHICLCPP}
   ${CETLIB}
+  ${CETLIB_EXCEPT}
 )
 
 cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
@@ -81,8 +80,9 @@ cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
   LIBRARIES
   artdaq-core_Core
   artdaq-core_Data
-  canvas_Utilities
-  cetlib
+  ${CANVAS_LIB_LIST}
+  ${CETLIB}
+  ${CETLIB_EXCEPT}
   DTCInterface
   )
 
