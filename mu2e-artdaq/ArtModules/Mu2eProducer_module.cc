@@ -18,7 +18,7 @@
 
 #include "mu2e-artdaq-core/Overlays/ArtFragmentReader.hh"
 
-#include "artdaq-core/Data/Fragments.hh"
+#include "artdaq-core/Data/Fragment.hh"
 //#include "dtcInterfaceLib/DTC_Packets.h"
 
 

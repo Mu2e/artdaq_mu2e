@@ -2,7 +2,7 @@
 #define mu2e_artdaq_ArtModules_detail_CurrentFragment_hh
 
 #include <cassert>
-#include "artdaq-core/Data/Fragments.hh"
+#include "artdaq-core/Data/Fragment.hh"
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 
