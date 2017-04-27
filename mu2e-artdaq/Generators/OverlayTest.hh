@@ -10,7 +10,7 @@
 // specified "fragment_type" (either "TRK", "CAL", or "CRV").
 
 #include "fhiclcpp/fwd.h"
-#include "artdaq-core/Data/Fragments.hh" 
+#include "artdaq-core/Data/Fragment.hh" 
 #include "artdaq/Application/CommandableFragmentGenerator.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "mu2e-artdaq-core/Overlays/DetectorFragment.hh"

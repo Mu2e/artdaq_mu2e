@@ -60,7 +60,7 @@ explicit OfflineFragmentReader(fhicl::ParameterSet const& ps,
 
     art::SourceHelper const pMaker_;
     artdaq::RawEventQueue& incomingEvents_ {artdaq::getGlobalQueue()};
-    daqrate::seconds waitingTime_;
+    artdaq::detail::seconds waitingTime_;
     bool resumeAfterTimeout_;
     bool shutdownMsgReceived_ {false};
     bool outputFileCloseNeeded_ {false};

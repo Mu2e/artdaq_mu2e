@@ -38,11 +38,11 @@ namespace mu2e {
         auto const packetSize = (byteCount%8 == 0) ? wordCount : wordCount+1;
 
         if (headerPacket.GetSubsystem() == subsystem) {
-          result->push_back(artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
+          result->push_back(*artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
                                                        headerPacket.GetEVBMode(), // Returns evbMode (see mu2e-docdb 4914)
                                                        reinterpret_cast<artdaq::RawDataType const*>(data),
                                                        packetSize,
-                                                       fragment_->timestamp()));
+                                                       fragment_->timestamp()).get());
         }
         data += byteCount;
       }
