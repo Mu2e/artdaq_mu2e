@@ -9,7 +9,7 @@ echo "Killing system from $startTime"
 cd /home/mu2edaq
 if [ -z "$MU2E_ARTDAQ_DIR" ]; then
   source /mu2e/ups/setup
-  setup mu2e_artdaq -qe10:prof:s35:eth
+  setup mu2e_artdaq -qe10:prof:s41:eth
 fi
 
 manageMu2ePilotSystem.sh stop
