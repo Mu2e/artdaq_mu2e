@@ -32,6 +32,7 @@ simple_plugin(Mu2eProducer "module"
   DTCInterface
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
+  ${MF_MESSAGELOGGER}
   ${CETLIB}
   ${CETLIB_EXCEPT}
 )
