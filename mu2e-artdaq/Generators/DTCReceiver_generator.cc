@@ -7,7 +7,7 @@
 #include "mu2e-artdaq-core/Overlays/DTCFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "fhiclcpp/ParameterSet.h"
-#include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
+#include "artdaq-core/Utilities/SimpleLookupPolicy.h"
 #include "dtcInterfaceLib/DTC_Types.h"
 
 #include <fstream>

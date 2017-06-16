@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include "artdaq-core/Data/Fragment.hh"
+#include "artdaq-core/Data/Fragments.hh"
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 

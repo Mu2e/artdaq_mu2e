@@ -13,6 +13,7 @@
 
 //#include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 #include "artdaq-core/Data/Fragment.hh"
+#include "artdaq-core/Data/Fragments.hh"
 #include "dtcInterfaceLib/DTC_Types.h"
 
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"

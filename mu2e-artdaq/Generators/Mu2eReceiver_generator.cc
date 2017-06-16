@@ -9,7 +9,7 @@
 #include "mu2e-artdaq-core/Overlays/mu2eFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "fhiclcpp/ParameterSet.h"
-#include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
+#include "artdaq-core/Utilities/SimpleLookupPolicy.h"
 
 #include <fstream>
 #include <iomanip>
