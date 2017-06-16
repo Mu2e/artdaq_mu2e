@@ -8,7 +8,6 @@
 #include "canvas/Utilities/InputTag.h"
 
 #include "artdaq-core/Data/Fragment.hh"
-#include "artdaq-core/Data/Fragments.hh"
 
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
