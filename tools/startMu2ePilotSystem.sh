@@ -3,7 +3,7 @@
 source `which setupDemoEnvironment.sh`
 
 # create the configuration file for PMT
-logroot="/home/mu2edaq/daqlogs"
+logroot="/scratch/mu2edaq/daqlogs"
 tempFile="$logroot/pmtConfig.$$"
 
 echo "Currently the Pilot System is a 5x50x2 ARTDAQ configuration"

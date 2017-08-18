@@ -21,6 +21,7 @@ ENDIF()
 set(CMAKE_MODULE_PATH
         $ENV{ART_DIR}/Modules
         $ENV{CETBUILDTOOLS_DIR}/Modules
+        $ENV{ARTDAQ_UTILITIES_DIR}/Modules
         ${CMAKE_MODULE_PATH})
 
 
@@ -111,6 +112,9 @@ add_subdirectory(tools)
 
 # ups - table and config files
 add_subdirectory(ups)
+
+# doc - documentation
+add_subdirectory(doc)
 
 # packaging utility
 include(UseCPack)

@@ -541,7 +541,8 @@ class SystemControl
     totalAGs = @options.aggregators.length
 	logger_rank = totalFRs + totalEBs
 	dispatcher_rank = logger_rank + 1
-    fullEventBuffSizeWords = 32024 * 2500
+    #fullEventBuffSizeWords = 81672710
+    fullEventBuffSizeWords = 81672710*8
 	
     xmlrpcClients = @configGen.generateXmlRpcClientList(@options)
 
@@ -556,15 +557,15 @@ class SystemControl
 	host_map = "["
 	# BoardReaders are EventBuilder sources
     (@options.mu2es + @options.dtcs).each { |boardreaderOptions|
-		eb_sources_fhicl += ("s%s: { transferPluginType: SingleNode source_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank,current_rank, fullEventBuffSizeWords])
+		eb_sources_fhicl += ("s%s: { transferPluginType: SingleNode source_rank: %s buffer_count: 4 max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank,current_rank, fullEventBuffSizeWords])
 		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, boardreaderOptions.host,(current_rank * 10) + @options.transferBasePort ] )
 		current_rank += 1
 	}
 
 	# Event Builders are BoardReader destinations and Aggregator sources
     @options.eventBuilders.each { |ebOptions|
-		br_destinations_fhicl += ("d%s: { transferPluginType: SingleNode destination_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, current_rank, fullEventBuffSizeWords])
-		ag_sources_fhicl += ("s%s: { transferPluginType: %s source_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		br_destinations_fhicl += ("d%s: { transferPluginType: SingleNode destination_rank: %s buffer_count: 4 max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, current_rank, fullEventBuffSizeWords])
+		ag_sources_fhicl += ("s%s: { transferPluginType: %s source_rank: %s buffer_count: 4 max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
 		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, ebOptions.host,(current_rank * 10) + @options.transferBasePort ] )
 	  current_rank += 1
 	}
@@ -573,7 +574,7 @@ class SystemControl
 	first = true
     @options.aggregators.each { |agOptions|
 	  if first
-		eb_destinations_fhicl += ("d%s: { transferPluginType: %s destination_rank: %s max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
+		eb_destinations_fhicl += ("d%s: { transferPluginType: %s destination_rank: %s buffer_count: 4 max_fragment_size_words: %s host_map: {{host_map}}}\n" % [current_rank, @options.transferType,current_rank, fullEventBuffSizeWords])
 		first = false
       end
 		host_map += ("{rank: %s host: \"%s\" portOffset: %s}," % [ current_rank, agOptions.host,(current_rank * 10) + @options.transferBasePort ] )

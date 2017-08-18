@@ -41,10 +41,10 @@ test -n "${do_help-}" -o $# -ge 2 && echo "$USAGE" && exit
 test $# -eq 1 && root=$1
 
 if [[ "x$USER" == "xmu2edaq" ]]; then
-  mkdir -p /home/mu2edaq/daqlogs/cron
+  mkdir -p /scratch/mu2edaq/daqlogs/cron
   #exec 2>&1
   #exec > >(tee /home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log)
-  exec 2>&1 >/home/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
+  exec 2>&1 >/scratch/mu2edaq/daqlogs/cron/runMu2ePilotSystem_${startTime}.log
 fi
 
 /home/mu2edaq/cleanupMu2ePilotSystem.sh
@@ -70,7 +70,7 @@ rgang --do-local "mu2edaq0{1,5-8}-data" "/home/mu2edaq/setup_trace.sh"
 cd /home/mu2edaq
 if [ -z "${MU2E_ARTDAQ_DIR:-}" ]; then
   source /mu2e/ups/setup
-  setup mu2e_artdaq -qe10:prof:s35:eth # Use current.chain
+  setup mu2e_artdaq -qe10:prof:s41:eth # Use current.chain
 fi
 if [ ! -z "${MRB_BUILDDIR:-}" ]; then
   export FHICL_FILE_PATH=$FHICL_FILE_PATH:$MRB_BUILDDIR/mu2e_artdaq/fcl
@@ -83,7 +83,7 @@ sleep 30
 
 # No Data File
 echo "!!!!!INITIALIZING SYSTEM!!!!!!"
-cd /home/mu2edaq/daqlogs/cron
+cd /scratch/mu2edaq/daqlogs/cron
 #manageMu2ePilotSystem.sh -v -o /mnt/ram/mu2edaq $hardwareArg init
 manageMu2ePilotSystem.sh -v $diskWritingArg $hardwareArg init
 #manageMu2ePilotSystem.sh -v -D $hardwareArg init

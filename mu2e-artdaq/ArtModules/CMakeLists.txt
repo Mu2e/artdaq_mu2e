@@ -26,10 +26,13 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
 )
 
 simple_plugin(Mu2eProducer "module"
+
+  artdaq_DAQdata
   mu2e-artdaq-core_Overlays
   DTCInterface
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
+  ${MF_MESSAGELOGGER}
   ${CETLIB}
   ${CETLIB_EXCEPT}
 )

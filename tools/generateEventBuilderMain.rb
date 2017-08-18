@@ -21,7 +21,7 @@ services: {
     service_provider: NetMonTransportService
     #broadcast_sends: true
 	destinations: {	
-	  %{destinations_fhicl}
+#	  %{destinations_fhicl}
     }
   }
 
@@ -53,6 +53,7 @@ physics: {
     {
       module_type: Mu2eProducer
       debug: true
+      output_directory: \"/home/mu2edaq/data\"
     }
   }
 
@@ -69,7 +70,8 @@ physics: {
 }
 source: {
   module_type: OfflineFragmentReader
-  waiting_time: 2500000
+  #waiting_time: 2500000
+  waiting_time: 1000
   resume_after_timeout: true
 }
 process_name: DAQ" )
@@ -83,7 +85,7 @@ end
 
 event_builder_code = generateEventBuilder( totalFragments, verbose, sources_fhicl, sendRequests, withGanglia, withMsgFacility, withGraphite)
 
-ebConfig.gsub!(/\%\{destinations_fhicl\}/, destinations_fhicl)
+#ebConfig.gsub!(/\%\{destinations_fhicl\}/, destinations_fhicl)
 ebConfig.gsub!(/\%\{event_builder_code\}/, event_builder_code)
 
 if Integer(totalAGs) >= 1
