@@ -39,71 +39,91 @@ function launch() {
     USEFILE=0
   fi
 
-# mu2edaq04 removed for now
-    # --mu2e mu2edaq04-data,${MU2EARTDAQ_BR_PORT[0]},0,${TRK},1,$DTCLIB_SIM_PATH/mediumPackets.bin \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[0]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[5]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[10]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[15]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[20]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[25]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[30]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[35]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[40]} \
-    # --eb mu2edaq04-data,${MU2EARTDAQ_EB_PORT[45]} \
-
 summary="PS $1"
 if [[ "$1" == "start" ]]; then summary="PS $1 $2"; fi
   wget -O /dev/null -q "http://mu2edaq01.fnal.gov/ganglia/api/events.php?action=add&start_time=now&summary=${summary}&host_regex=mu2edaq"
   DemoControl.rb ${enableSerial} -s -c $1 \
-    --mu2e mu2edaq05-data,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
-    --mu2e mu2edaq06-data,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
-    --mu2e mu2edaq07-data,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
-    --mu2e mu2edaq08-data,${MU2EARTDAQ_BR_PORT[4]},4,${CAL},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[1]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[2]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[3]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[4]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[6]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[7]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[8]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[9]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[11]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[12]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[13]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[14]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[16]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[17]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[18]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[19]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[21]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[22]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[23]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[24]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[26]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[27]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[28]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[29]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[31]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[32]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[33]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[34]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[36]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[37]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[38]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[39]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[41]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[42]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[43]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[44]} \
-    --eb mu2edaq05-data,${MU2EARTDAQ_EB_PORT[46]} \
-    --eb mu2edaq06-data,${MU2EARTDAQ_EB_PORT[47]} \
-    --eb mu2edaq07-data,${MU2EARTDAQ_EB_PORT[48]} \
-    --eb mu2edaq08-data,${MU2EARTDAQ_EB_PORT[49]} \
-    --ag mu2edaq01-data,${MU2EARTDAQ_AG_PORT[0]},1 \
-    --ag mu2edaq01-data,${MU2EARTDAQ_AG_PORT[1]},1 \
-    --data-dir ${4} --online-monitoring $3 \
-    --write-data ${6} --run-event-count ${7} \
+    --mu2e mu2edaq04,${MU2EARTDAQ_BR_PORT[0]},0,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq05,${MU2EARTDAQ_BR_PORT[1]},1,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq06,${MU2EARTDAQ_BR_PORT[2]},2,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq07,${MU2EARTDAQ_BR_PORT[3]},3,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq08,${MU2EARTDAQ_BR_PORT[4]},4,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq10,${MU2EARTDAQ_BR_PORT[5]},5,${TRK},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --mu2e mu2edaq11,${MU2EARTDAQ_BR_PORT[6]},6,${CAL},${USEFILE},$DTCLIB_SIM_PATH/packets.bin \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[0]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[1]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[2]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[3]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[4]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[5]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[6]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[7]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[8]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[9]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[10]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[11]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[12]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[13]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[14]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[15]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[16]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[17]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[18]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[19]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[20]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[21]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[22]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[23]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[24]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[25]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[26]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[27]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[28]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[29]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[30]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[31]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[32]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[33]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[34]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[35]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[36]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[37]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[38]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[39]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[40]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[41]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[42]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[43]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[44]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[45]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[46]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[47]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[48]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[49]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[50]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[51]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[52]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[53]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[54]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[55]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[56]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[57]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[58]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[59]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[60]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[61]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[62]} \
+    --eb mu2edaq04,${MU2EARTDAQ_EB_PORT[63]} \
+    --eb mu2edaq05,${MU2EARTDAQ_EB_PORT[64]} \
+    --eb mu2edaq06,${MU2EARTDAQ_EB_PORT[65]} \
+    --eb mu2edaq07,${MU2EARTDAQ_EB_PORT[66]} \
+    --eb mu2edaq08,${MU2EARTDAQ_EB_PORT[67]} \
+    --eb mu2edaq10,${MU2EARTDAQ_EB_PORT[68]} \
+    --eb mu2edaq11,${MU2EARTDAQ_EB_PORT[69]} \
+    --ag mu2edaq01,${MU2EARTDAQ_AG_PORT[0]},1 \
+    --ag mu2edaq01,${MU2EARTDAQ_AG_PORT[1]},1 \
+    --dir ${4} --online-monitoring $3 \
+    --write ${6} --run-event-count ${7} \
     --run-duration ${8} --file-size ${9} \
     --file-event-count ${10} --file-duration ${11} \
     --run-number $2  2>&1 | tee -a ${5}
@@ -171,7 +191,7 @@ Examples: ${scriptName} -p 32768 init
 originalCommand="$0 $*"
 onmonEnable=off
 diskWriting=1
-dataDir="/scratch/mu2edaq/data"
+dataDir="/scratch-mu2edaq01/mu2edaq/data"
 runNumber=""
 runEventCount=0
 runDuration=0
@@ -309,7 +329,7 @@ fi
 
 # build the logfile name
 TIMESTAMP=`date '+%Y%m%d%H%M%S'`
-logFile="/scratch/mu2edaq/daqlogs/masterControl/dsMC-${TIMESTAMP}-${command}.log"
+logFile="/scratch-mu2edaq01/mu2edaq/daqlogs/masterControl/dsMC-${TIMESTAMP}-${command}.log"
 echo "${originalCommand}" > $logFile
 echo ">>> ${originalCommand} (Disk writing is ${diskWriting})"
 
