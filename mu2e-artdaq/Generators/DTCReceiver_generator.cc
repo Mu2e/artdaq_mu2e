@@ -30,7 +30,8 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 	  , print_packets_(ps.get<bool>("debug_print", false))
 {
 	// mode_ can still be overridden by environment!
-	theInterface_ = new DTCLib::DTC(mode_);
+	auto version = ps.get<std::string>("dtc_firmware_version", "");
+	theInterface_ = new DTCLib::DTC(version, mode_);
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 

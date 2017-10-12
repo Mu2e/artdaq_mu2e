@@ -38,7 +38,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
   {
     TRACE(1, "Mu2eReceiver_generator CONSTRUCTOR");
     // mode_ can still be overridden by environment!
-    theInterface_ = new DTCLib::DTC(mode_);	
+	auto version = ps.get<std::string>("dtc_firmware_version", "");
+	theInterface_ = new DTCLib::DTC(version, mode_);
     theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
     mode_ = theInterface_->ReadSimMode();
     theInterface_->ClearDetectorEmulatorInUse(); // Needed if we're doing ROC Emulator...make sure Detector Emulation is disabled
