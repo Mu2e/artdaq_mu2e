@@ -205,7 +205,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			break;
 		}
 
-		TRACE(3, "Getting DTC Data for block %lu, sz=%llu", newfrag.hdr_block_count(), totalSize);
+		TRACE(3, "Getting DTC Data for block %lu/%lu, sz=%llu", newfrag.hdr_block_count(), mu2e::BLOCK_COUNT_MAX, totalSize);
 		std::vector<DTCLib::DTC_DataBlock> data;
 		int retryCount = 5;
 		while (data.size() == 0 && retryCount >= 0)
