@@ -42,7 +42,15 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	theInterface_ = new DTCLib::DTC(version, mode_);
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
-	theInterface_->ClearDetectorEmulatorInUse(); // Needed if we're doing ROC Emulator...make sure Detector Emulation is disabled
+
+	if (!ps.get<bool>("use_detector_emulator", false))
+	{
+		theInterface_->ClearDetectorEmulatorInUse(); // Needed if we're doing ROC Emulator...make sure Detector Emulation is disabled
+	}
+	else
+	{
+		theInterface_->SetDetectorEmulatorInUse();
+	}
 
 	mf::LogInfo("Mu2eReceiver") << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion();
 
@@ -101,15 +109,18 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 		}
 	}
 
-	char* file_c = getenv("DTCLIB_SIM_FILE");
-
-	auto sim_file = ps.get<std::string>("sim_file", "");
-	if (file_c != nullptr) { sim_file = std::string(file_c); }
-	if (sim_file.size() > 0)
+	if (ps.get<bool>("load_sim_file", false))
 	{
-		simFileRead_ = false;
-		std::thread reader(&mu2e::Mu2eReceiver::readSimFile_, this, sim_file);
-		reader.detach();
+		char* file_c = getenv("DTCLIB_SIM_FILE");
+
+		auto sim_file = ps.get<std::string>("sim_file", "");
+		if (file_c != nullptr) { sim_file = std::string(file_c); }
+		if (sim_file.size() > 0)
+		{
+			simFileRead_ = false;
+			std::thread reader(&mu2e::Mu2eReceiver::readSimFile_, this, sim_file);
+			reader.detach();
+		}
 	}
 	else
 	{
