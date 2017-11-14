@@ -2,7 +2,7 @@
 #This script sets up TRACE logging for the Mu2e Pilot System.
 
 source /mu2e/ups/setup
-setup TRACE v3_07_02
+setup TRACE v3_08_01
 
 export TRACE_FILE=/tmp/trace_buffer_$USER
 #export TRACE_FILE=/proc/trace/buffer

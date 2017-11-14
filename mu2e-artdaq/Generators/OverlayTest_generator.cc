@@ -85,6 +85,8 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const& ps) :
 		throw cet::exception("Error in OverlayTest: unexpected fragment type supplied to constructor");
 	}
 
+	auto version = ps.get<std::string>("dtc_firmware_version", "");
+
 	std::cout << "OVERLAYTEST" << std::endl;
 
 	std::cout << "DTC FRAGMENT TYPE: ";
@@ -110,16 +112,16 @@ mu2e::OverlayTest::OverlayTest(fhicl::ParameterSet const& ps) :
 	switch (fragment_type_)
 	{
 	case mu2e::FragmentType::TRK:
-		theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_Tracker);
+		theInterface = new DTCLib::DTC(version, DTCLib::DTC_SimMode_Tracker);
 		break;
 	case mu2e::FragmentType::CAL:
-		theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_Calorimeter);
+		theInterface = new DTCLib::DTC(version, DTCLib::DTC_SimMode_Calorimeter);
 		break;
 	case mu2e::FragmentType::CRV:
-		theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_CosmicVeto);
+		theInterface = new DTCLib::DTC(version, DTCLib::DTC_SimMode_CosmicVeto);
 		break;
 	case mu2e::FragmentType::DBG:
-		theInterface = new DTCLib::DTC(DTCLib::DTC_SimMode_Performance);
+		theInterface = new DTCLib::DTC(version, DTCLib::DTC_SimMode_Performance);
 		break;
 	default:
 		std::cout << "WARNING: Default packet type" << std::endl;
