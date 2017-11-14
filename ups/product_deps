@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent mu2e_artdaq	v1_02_00
+parent mu2e_artdaq	v1_02_01
 defaultqual	e14:s50
 
 # These optional lines define the installed directories where
@@ -19,7 +19,7 @@ bindir      fq_dir      bin
 product		version		optional
 artdaq		v2_03_02
 mu2e_artdaq_core v1_02_00
-pcie_linux_kernel_module v1_09_00
+pcie_linux_kernel_module v1_10_00
 mongodb         v3_4_6
 offline         trig_0_1_2
 BTrk            v1_02_02
