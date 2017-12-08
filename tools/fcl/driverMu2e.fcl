@@ -20,6 +20,9 @@ raw_output_file: "mu2eReceiver.bin"
    # Parameters configuring the fragment generator's parent class
    # artdaq::CommandableFragmentGenerator
 
+   load_sim_file: true
+   use_detector_emulator: true
+
    fragment_id: 0
    board_id: 0
 }  		  
@@ -46,8 +49,6 @@ physics:
     {
       module_type: Mu2eProducer
       debug: false
-      mode: CAL
-      #mode: TRK
     }
   }
 
@@ -93,7 +94,7 @@ outputs:
 source:
 {
 #module_type: OfflineFragmentReader
-module_type: RawInput
+module_type: Mu2eInput
 waiting_time: 900
 resume_after_timeout: true
 fragment_type_map: [[2, "DTC"], [3, "MU2E"] ]
