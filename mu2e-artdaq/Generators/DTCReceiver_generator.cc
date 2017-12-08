@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include "trace.h"
 
-#define TRACE_NAME "MU2EDEV"
-
 mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 	: CommandableFragmentGenerator(ps)
 	  , fragment_type_(toFragmentType("DTC"))
@@ -35,7 +33,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 
-	mf::LogDebug("DTCReceiver") << "DTCReceiver Initialized with mode " << mode_;
+	TLOG_DEBUG("DTCReceiver") << "DTCReceiver Initialized with mode " << mode_ << TLOG_ENDL;
 
 	int ringRocs[] = {
 		ps.get<int>("ring_0_roc_count", -1),
@@ -100,10 +98,10 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 
 void mu2e::DTCReceiver::readSimFile_(std::string sim_file)
 {
-	mf::LogInfo("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << " Please wait to start the run until finished.";
+	TLOG_INFO("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << " Please wait to start the run until finished." << TLOG_ENDL;
 	theInterface_->WriteSimFileToDTC(sim_file, true);
 	simFileRead_ = true;
-	mf::LogInfo("DTCReceiver") << "Done reading simulation file into DTC memory.";
+	TLOG_INFO("DTCReceiver") << "Done reading simulation file into DTC memory." << TLOG_ENDL;
 }
 
 mu2e::DTCReceiver::~DTCReceiver()

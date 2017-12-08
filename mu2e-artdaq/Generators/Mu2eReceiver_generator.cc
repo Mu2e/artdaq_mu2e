@@ -15,12 +15,8 @@
 #include <iomanip>
 #include <iterator>
 
-#ifndef _WIN32
 #include <unistd.h>
 #include "trace.h"
-#endif
-
-#define TRACE_NAME "MU2EDEV"
 
 mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	: CommandableFragmentGenerator(ps)
@@ -52,7 +48,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 		theInterface_->SetDetectorEmulatorInUse();
 	}
 
-	mf::LogInfo("Mu2eReceiver") << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion();
+	TLOG_INFO("Mu2eReceiver") << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion() << TLOG_ENDL;
 
 	int ringRocs[] = {
 	  ps.get<int>("ring_0_roc_count", -1),
@@ -132,10 +128,10 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 
 void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 {
-	mf::LogInfo("Mu2eReceiver") << "Starting read of simulation file " << sim_file << "." << " Please wait to start the run until finished.";
+	TLOG_INFO("Mu2eReceiver") << "Starting read of simulation file " << sim_file << "." << " Please wait to start the run until finished." << TLOG_ENDL;
 	theInterface_->WriteSimFileToDTC(sim_file, true);
 	simFileRead_ = true;
-	mf::LogInfo("Mu2eReceiver") << "Done reading simulation file into DTC memory.";
+	TLOG_INFO("Mu2eReceiver") << "Done reading simulation file into DTC memory." << TLOG_ENDL;
 }
 
 mu2e::Mu2eReceiver::~Mu2eReceiver()
@@ -168,11 +164,11 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		int mod = ev_counter() % nSkip_;
 		if (mod == board_id_ || (mod == 0 && board_id_ == nSkip_))
 		{
-			//mf::LogDebug("Mu2eReceiver") << "Sending Data  Fragment for sequence id " << ev_counter() << " (board_id " << std::to_string(board_id_) << ")";
+			//TLOG_DEBUG("Mu2eReceiver") << "Sending Data  Fragment for sequence id " << ev_counter() << " (board_id " << std::to_string(board_id_) << ")" << TLOG_ENDL;
 		}
 		else
 		{
-			//mf::LogDebug("Mu2eReceiver") << "Sending Empty Fragment for sequence id " << ev_counter() << " (board_id " << std::to_string(board_id_) << ")";
+			//TLOG_DEBUG("Mu2eReceiver") << "Sending Empty Fragment for sequence id " << ev_counter() << " (board_id " << std::to_string(board_id_) << ")" << TLOG_ENDL;
 			return sendEmpty_(frags);
 		}
 	}
@@ -205,7 +201,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	TRACE(1, "mu2eReceiver::getNext: Reserving space for 16 * 201 * BLOCK_COUNT_MAX bytes");
 	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 16 * 201);
 
-	//Get data from DTCReceiver
+	//Get data from Mu2eReceiver
 	TRACE(1, "mu2eReceiver::getNext: Starting DTCFragment Loop");
 	theInterface_->GetDevice()->ResetDeviceTime();
 	size_t totalSize = 0;
@@ -229,7 +225,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			}
 			catch (std::exception ex)
 			{
-				mf::LogError("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what();
+				TLOG_ERROR("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what() << TLOG_ENDL;
 			}
 			retryCount--;
 			//if (data.size() == 0){usleep(10000);}
@@ -237,7 +233,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		if (retryCount < 0 && data.size() == 0)
 		{
 			TRACE(1, "Retry count exceeded. Something is very wrong indeed");
-			mf::LogError("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter();
+			TLOG_ERROR("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event " << ev_counter() << TLOG_ENDL;
 			if (newfrag.hdr_block_count() == 0)
 			{
 				throw cet::exception("DTC Retry count exceeded in first block of Event. Probably something is very wrong, aborting");
@@ -273,7 +269,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			{
 				auto dp = DTCLib::DTC_DataPacket(data[i].blockPointer);
 				auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
-				mf::LogInfo("DTCReceiver") << "Placing DataBlock with timestamp " << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment";
+				TLOG_TRACE("Mu2eReceiver") << "Placing DataBlock with timestamp " << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment" << TLOG_ENDL;
 			}
 
 			auto begin = data[i].blockPointer;

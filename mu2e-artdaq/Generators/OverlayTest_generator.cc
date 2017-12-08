@@ -248,27 +248,27 @@ bool mu2e::OverlayTest::getNext_(artdaq::FragmentPtrs& frags)
 	mode_ = theInterface->ReadSimMode();
 	if (mode_ != DTCLib::DTC_SimMode_Disabled && mode_ != DTCLib::DTC_SimMode_Loopback && mode_ != DTCLib::DTC_SimMode_NoCFO && mode_ != DTCLib::DTC_SimMode_ROCEmulator)
 	{
-		mf::LogInfo("DTCOverlayTest") << "Using Simulated DTC in " << DTCLib::DTC_SimModeConverter(mode_).toString() << " mode";
+		TLOG_INFO("DTCOverlayTest") << "Using Simulated DTC in " << DTCLib::DTC_SimModeConverter(mode_).toString() << " mode" << TLOG_ENDL;
 	}
 	else if (mode_ == DTCLib::DTC_SimMode_Loopback)
 	{
-		mf::LogInfo("DTCOverlayTset") << "Using Real DTC in SERDES Loopback Mode";
+		TLOG_INFO("DTCOverlayTset") << "Using Real DTC in SERDES Loopback Mode" << TLOG_ENDL;
 	}
 	else if (mode_ == DTCLib::DTC_SimMode_ROCEmulator)
 	{
-		mf::LogInfo("DTCOverlayTest") << "Using Real DTC in ROC Emulator Mode";
+		TLOG_INFO("DTCOverlayTest") << "Using Real DTC in ROC Emulator Mode" << TLOG_ENDL;
 	}
 	else if (mode_ == DTCLib::DTC_SimMode_NoCFO)
 	{
-		mf::LogInfo("DTCOverlayTest") << "Using Real DTC in Internal Timing Mode";
+		TLOG_INFO("DTCOverlayTest") << "Using Real DTC in Internal Timing Mode" << TLOG_ENDL;
 	}
 	else if (mode_ == DTCLib::DTC_SimMode_Performance)
 	{
-		mf::LogInfo("DTCOverlayTest") << "Using Simulated DTC in Debug Mode";
+		TLOG_INFO("DTCOverlayTest") << "Using Simulated DTC in Debug Mode" << TLOG_ENDL;
 	}
 	else
 	{
-		mf::LogInfo("DTCOverlayTest") << "Using Real DTC";
+		TLOG_INFO("DTCOverlayTest") << "Using Real DTC" << TLOG_ENDL;
 	}
 
 	if (mode_ != 0)

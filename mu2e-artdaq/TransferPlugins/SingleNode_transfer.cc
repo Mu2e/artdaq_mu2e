@@ -30,7 +30,7 @@ namespace mu2e {
 mu2e::SingleNodeTransfer::SingleNodeTransfer(const fhicl::ParameterSet& pset, artdaq::TransferInterface::Role role)
   : artdaq::TransferInterface(pset, role)
 {
-  mf::LogDebug(uniqueLabel()) << "Begin SingleNodeTransfer constructor";
+  TLOG_DEBUG(uniqueLabel()) << "Begin SingleNodeTransfer constructor" << TLOG_ENDL;
   std::string srcHost, destHost;
  	auto hosts = pset.get<std::vector<fhicl::ParameterSet>>("host_map");
 	for (auto& ps : hosts) {
@@ -42,12 +42,12 @@ mu2e::SingleNodeTransfer::SingleNodeTransfer(const fhicl::ParameterSet& pset, ar
 		  destHost = ps.get<std::string>("host", "localhost");
 		}
 	}
-	mf::LogDebug(uniqueLabel()) << "SNT: srcHost=" << srcHost << ", destHost=" << destHost;
+	TLOG_DEBUG(uniqueLabel()) << "SNT: srcHost=" << srcHost << ", destHost=" << destHost << TLOG_ENDL;
 	if(srcHost == destHost) {
-	  mf::LogDebug(uniqueLabel()) << "SNT: Constructing ShmemTransfer";
+	  TLOG_DEBUG(uniqueLabel()) << "SNT: Constructing ShmemTransfer" << TLOG_ENDL;
 	  theTransfer_.reset(new artdaq::ShmemTransfer(pset, role));
 	} else {
-	mf::LogDebug(uniqueLabel()) << "SNT: Aborting!";
+	TLOG_DEBUG(uniqueLabel()) << "SNT: Aborting!" << TLOG_ENDL;
 	  theTransfer_.reset(nullptr);
 throw new cet::exception("Not the same host");
 	}

@@ -5,6 +5,8 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "artdaq/DAQdata/Globals.hh"
+
 #include "canvas/Utilities/InputTag.h"
 
 #include "artdaq-core/Data/Fragment.hh"
@@ -84,7 +86,7 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 
       if (expected_sequence_id != frag.sequenceID())
 	{
-	  mf::LogWarning("DTCDataVerifier") << "Expected fragment with sequence ID " << expected_sequence_id << ", received one with sequence ID " << frag.sequenceID();
+	  TLOG_WARNING("DTCDataVerifier") << "Expected fragment with sequence ID " << expected_sequence_id << ", received one with sequence ID " << frag.sequenceID() << TLOG_ENDL;
 	}
 
       FragmentType fragtype = static_cast<FragmentType>(frag.type());
@@ -97,7 +99,7 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 	    if(ts != next_timestamp_) {
 	      std::ostringstream str;
 	      str << "Timestamp does not match expected: ts=" << static_cast<double>(ts) << ", expected=" << static_cast<double>(next_timestamp_);
-	      mf::LogWarning("DTCDataVerifier") << str.str();
+	      TLOG_WARNING("DTCDataVerifier") << str.str() << TLOG_ENDL;
 	    }
 	    next_timestamp_ = ts + 1;
 	  }
@@ -116,18 +118,18 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 		if(ts != next_timestamp_ && ts != next_timestamp_ - BLOCK_COUNT_MAX) {
 		  std::ostringstream str;
 		  str << "Block " << static_cast<double>(ii) << ": Timestamp does not match expected: ts=" << static_cast<double>(ts) << ", expected=" << static_cast<double>(next_timestamp_);
-		  mf::LogWarning("DTCDataVerifier") << str.str();
+		  TLOG_WARNING("DTCDataVerifier") << str.str() << TLOG_ENDL;
 		}
 		next_timestamp_ = ts + 1;
 
 	      }
 	    if(mfrag.hdr_block_count() != BLOCK_COUNT_MAX) {
-	      mf::LogWarning("DTCDataVerifier") << "There were " << mfrag.hdr_block_count() << " DataBlocks, mu2eFragment capacity is " << BLOCK_COUNT_MAX;
+	      TLOG_WARNING("DTCDataVerifier") << "There were " << mfrag.hdr_block_count() << " DataBlocks, mu2eFragment capacity is " << BLOCK_COUNT_MAX << TLOG_ENDL;
 	    }
 	  }
 	  break;
 	case FragmentType::EMPTY:
-	mf::LogInfo("DTCDataVerifier") << "Not processing Empty Fragment";
+	TLOG_INFO("DTCDataVerifier") << "Not processing Empty Fragment" << TLOG_ENDL;
 break;
 	default:
 	{
