@@ -42,17 +42,7 @@ physics:
 
   producers:
   {
-    mu2eprod:
-    {
-      module_type: Mu2eProducer
-      debug: false
-      mode: CAL
-      #mode: TRK
-    }
   }
-
-  t1: [ mu2eprod ] # Trigger path with producers and filters
-  trigger_paths: [ t1 ]
 
 
   analyzers:
