@@ -21,10 +21,7 @@ artdaq		v2_03_02
 mu2e_artdaq_core v1_02_00
 pcie_linux_kernel_module v1_10_00
 mongodb         v3_4_6
-offline         trig_0_1_2
-BTrk            v1_02_02
-heppdt          v3_04_01f
-xerces_c        v3_1_4a
+offline         trig_0_1_2      -
 cetbuildtools	v5_08_01	-	only_for_build
 end_product_list
 
