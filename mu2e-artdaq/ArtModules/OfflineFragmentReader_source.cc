@@ -242,22 +242,4 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 }
 
 
-//======================================================================
-// The below code is identical to what is injected by calling
-//    DEFINE_ART_INPUT_SOURCE(art::Source<mu2e::OfflineFragmentReader>)
-// except the argument provided to the PROVIDE_DESCRIPTION macro is
-// the detail source class, and not the fully wrapped type
-// 'art::Source<mu2e::OfflineFragmentReader>'.  Calling the macro
-// above would insert the incorrect type to the PROVIDE_DESCRIPTION
-// macro--this should be fixed in art so developers of source detail
-// classes should not have to go through these gymnastics. -KJK
-
-extern "C" {
-	PROVIDE_FILE_PATH()
-		PROVIDE_ALLOWED_CONFIGURATION(mu2e::OfflineFragmentReader)
-		std::unique_ptr<art::InputSource>
-		make(fhicl::ParameterSet const& ps, art::InputSourceDescription& desc)
-	{
-		return std::make_unique<art::Source<mu2e::OfflineFragmentReader>>(ps, desc);
-	}
-}
+DEFINE_ART_INPUT_SOURCE(art::Source<mu2e::OfflineFragmentReader>)

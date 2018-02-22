@@ -6,6 +6,7 @@ simple_plugin(SingleNode "transfer"
 ${CETLIB}
 ${CETLIB_EXCEPT}
   MF_MessageLogger
+  ${Boost_SYSTEM_LIBRARY}
 )
 
 install_headers()

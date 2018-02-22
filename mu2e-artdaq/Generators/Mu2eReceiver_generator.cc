@@ -302,11 +302,11 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	double hw_timestamp_rate = newfrag.hdr_block_count() / hwTime;
 	double hw_data_rate = newfrag.dataEndBytes() / hwTime;
 
-	metricMan->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, false, "", true);
-	metricMan->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, true, "", true);
-	metricMan->sendMetric("Generator Timestamp Rate", processing_rate, "timestamps/s", 1, true, "", true);
-	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, true, "", true);
-	metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, true, "", true);
+	metricMan->sendMetric("Timestamp Count", timestamps_read_, "timestamps", 1, artdaq::MetricMode::LastPoint);
+	metricMan->sendMetric("Timestamp Rate", timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
+	metricMan->sendMetric("Generator Timestamp Rate", processing_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
+	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
+	metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, artdaq::MetricMode::Average);
 
 	TRACE(1, "Returning true");
 	return true;

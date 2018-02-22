@@ -21,6 +21,18 @@ namespace mu2e {
 				    size_t send_timeout_usec = std::numeric_limits<size_t>::max())
     { if(!theTransfer_) return artdaq::TransferInterface::CopyStatus::kSuccess;
 	  return theTransfer_->moveFragment(std::move(fragment), send_timeout_usec); }
+
+    virtual int receiveFragmentHeader(artdaq::detail::RawFragmentHeader& hdr, size_t tmo)
+    {
+      if(!theTransfer_) return -1;
+      return theTransfer_->receiveFragmentHeader(hdr,tmo);
+    }
+
+    virtual int receiveFragmentData(artdaq::RawDataType* loc, size_t sz)
+    {
+      if(!theTransfer_) return -1;
+      return theTransfer_->receiveFragmentData(loc, sz);
+    }
   private:
     std::unique_ptr<artdaq::TransferInterface> theTransfer_;
   };

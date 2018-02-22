@@ -8,6 +8,7 @@ simple_plugin(DTCReceiver "generator"
   ${CETLIB_EXCEPT}
   MF_MessageLogger
   DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
   )
 
 simple_plugin(Mu2eReceiver "generator"
@@ -24,6 +25,7 @@ simple_plugin(Mu2eReceiver "generator"
   ${CETLIB_EXCEPT}
   MF_MessageLogger
   DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
   )
 
 simple_plugin(OverlayTest "generator"
@@ -36,6 +38,7 @@ simple_plugin(OverlayTest "generator"
   ${CETLIB_EXCEPT}
   MF_MessageLogger
   DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
   )
 
 #get_cmake_property(_variableNames VARIABLES)

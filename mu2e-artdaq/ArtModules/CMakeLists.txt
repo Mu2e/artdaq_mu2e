@@ -9,7 +9,7 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
   ${CANVAS_PERSISTENCY_PROVENANCE}
  LIB_LIBRARIES 
   mu2e-artdaq-core_Overlays
- artdaq_ArtModules
+  artdaq_ArtModules
   art_Framework_Core
   art_Framework_IO_Sources
   art_Framework_Principal
@@ -91,8 +91,11 @@ simple_plugin(OfflineFragmentReader "source"
   )
 
 simple_plugin(Mu2eInput "source"
+  mu2e-artdaq-core_Overlays
   artdaq_ArtModules
-  mu2e-artdaq_ArtModules
+  artdaq_DAQdata
+  artdaq-utilities_Plugins
+  artdaq-core_Core
   art_Framework_Core
   art_Framework_IO_Sources
   art_Framework_Principal
