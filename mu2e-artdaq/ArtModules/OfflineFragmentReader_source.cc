@@ -175,11 +175,9 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 		}
 
 
-		size_t qsize = incoming_events->ReadReadyCount(); // save the qsize at this point
-
-														  // Check the number of fragments in the RawEvent.  If we have a single
-														  // fragment and that fragment is marked as EndRun or EndSubrun we'll create
-														  // the special principals for that.
+		// Check the number of fragments in the RawEvent.  If we have a single
+		// fragment and that fragment is marked as EndRun or EndSubrun we'll create
+		// the special principals for that.
 		art::Timestamp currentTime = time(0);
 
 		// make new run if inR is 0 or if the run has changed

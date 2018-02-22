@@ -62,12 +62,12 @@ explicit OfflineFragmentReader(fhicl::ParameterSet const& ps,
 
 	art::SourceHelper const& pMaker_;
 	double waitingTime_;
-	std::unique_ptr<SharedMemoryEventReceiver> incoming_events; ///< The events from the EventStore
+    std::unique_ptr<artdaq::SharedMemoryEventReceiver> incoming_events; ///< The events from the EventStore
 	bool resumeAfterTimeout_;
 	bool shutdownMsgReceived_ {false};
 	bool outputFileCloseNeeded_ {false};
 	detail::EventIDHandler idHandler_ {};
-	std::unique_ptr<artdaq::RawEventHeader> evtHeader;
+    std::unique_ptr<artdaq::detail::RawEventHeader> evtHeader;
 	detail::CurrentFragment currentFragment_ {};
   };
 
