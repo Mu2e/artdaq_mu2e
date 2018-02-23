@@ -83,6 +83,8 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 	waitingTime_(ps.get<double>("waiting_time", 86400.)),
 	resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true))
 {
+  incoming_events.reset(new artdaq::SharedMemoryEventReceiver(ps.get<uint32_t>("shared_memory_key", 0xBEE70000 + getppid()), ps.get<uint32_t>("broadcast_shared_memory_key", 0xCEE70000 + getppid())));
+
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
 }
