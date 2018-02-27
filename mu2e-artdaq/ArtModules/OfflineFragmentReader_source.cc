@@ -94,6 +94,11 @@ void mu2e::OfflineFragmentReader::readFile(std::string const&, art::FileBlock*& 
 	fb = new art::FileBlock{ art::FileFormatVersion{1, "RawEvent2011"}, "nothing" };
 }
 
+mu2e::OfflineFragmentReader::~OfflineFragmentReader()
+{
+  if(incoming_events) incoming_events.reset(nullptr);
+}
+
 bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 	art::SubRunPrincipal* const& inSR,
 	art::RunPrincipal*& outR,
@@ -151,7 +156,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 		TLOG_DEBUG("OfflineFragmentReader") << "Got Event!" << TLOG_ENDL;
 
 		auto errflag = false;
-		evtHeader.reset(incoming_events->ReadHeader(errflag));
+		evtHeader = incoming_events->ReadHeader(errflag);
 		if (errflag) goto start; // Buffer was changed out from under reader!
 		auto fragmentTypes = incoming_events->GetFragmentTypes(errflag);
 		if (errflag) goto start; // Buffer was changed out from under reader!
@@ -159,6 +164,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 		{
 			TLOG_ERROR("OfflineFragmentReader") << "Event has no Fragments! Aborting!" << TLOG_ENDL;
 			incoming_events->ReleaseBuffer();
+			evtHeader = nullptr;
 			return false;
 		}
 		auto firstFragmentType = *fragmentTypes.begin();
@@ -173,6 +179,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			TLOG_DEBUG("SharedMemoryReader") << "Received shutdown message, returning false" << TLOG_ENDL;
 			shutdownMsgReceived_ = true;
 			incoming_events->ReleaseBuffer();
+			evtHeader = nullptr;
 			return false;
 		}
 
@@ -195,6 +202,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
 			outE = pMaker_.makeEventPrincipal(evid, currentTime);
 			incoming_events->ReleaseBuffer();
+			evtHeader = nullptr;
 			return true;
 		}
 		else if (firstFragmentType == artdaq::Fragment::EndOfSubrunFragmentType)
@@ -237,8 +245,10 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			}
 			//outputFileCloseNeeded = true;
 			incoming_events->ReleaseBuffer();
+			evtHeader = nullptr;
 			return true;
 		}
+		if(!evtHeader) return false;
 
 		// make new subrun if inSR is 0 or if the subrun has changed
 		art::SubRunID subrun_check(evtHeader->run_id, evtHeader->subrun_id);

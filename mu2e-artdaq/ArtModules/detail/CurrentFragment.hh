@@ -13,6 +13,9 @@ namespace mu2e {
     public:
 
       CurrentFragment() = default;
+      CurrentFragment& operator=(CurrentFragment const&) = delete;
+      CurrentFragment& operator=(CurrentFragment&&) = default;
+      virtual ~CurrentFragment() { reader_.reset(nullptr); fragment_.reset(nullptr); }
 
       // This is using pass-by-value so that we can take advantage of
       // artdaq::Fragment's move c'tor.
