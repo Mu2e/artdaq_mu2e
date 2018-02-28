@@ -39,6 +39,7 @@ namespace mu2e {
       }
 
       std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::DTC_Subsystem);
+	  size_t getFragmentCount(DTCLib::DTC_Subsystem);
 
     private:
       std::unique_ptr<artdaq::Fragment const> fragment_ {nullptr};

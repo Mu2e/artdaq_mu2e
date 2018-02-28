@@ -276,6 +276,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 
 
 	idHandler_.update(*evtHeader); // See note in mu2e::detail::EventIDHandler::update()
+	TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
 	outE = pMaker_.makeEventPrincipal(idHandler_.run(),
 		idHandler_.subRun(),
 		idHandler_.event(),
@@ -288,6 +289,9 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 	//
 	//    auto fragmentsColls = currentFragment_.extractFragmentsFromBlock(Tracker, Calorimeter);
 	//    auto const& trkFragments = fragmentsColls[Tracker]; // etc.
+
+	TLOG_TRACE("OfflineFragmentReader") << "This event has " << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker) << " Tracker Fragments and " <<
+		currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter) << " Calorimeter Fragments.";
 	put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker),
 		*outE,
 		daq_module_label,
