@@ -83,7 +83,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 	waitingTime_(ps.get<double>("waiting_time", 86400.)),
 	resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true))
 {
-  incoming_events.reset(new artdaq::SharedMemoryEventReceiver(ps.get<uint32_t>("shared_memory_key", 0xBEE70000 + getppid()), ps.get<uint32_t>("broadcast_shared_memory_key", 0xCEE70000 + getppid())));
+	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(ps.get<uint32_t>("shared_memory_key", 0xBEE70000 + getppid()), ps.get<uint32_t>("broadcast_shared_memory_key", 0xCEE70000 + getppid())));
 
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
@@ -96,7 +96,7 @@ void mu2e::OfflineFragmentReader::readFile(std::string const&, art::FileBlock*& 
 
 mu2e::OfflineFragmentReader::~OfflineFragmentReader()
 {
-  if(incoming_events) incoming_events.reset(nullptr);
+	if (incoming_events) incoming_events.reset(nullptr);
 }
 
 bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
@@ -248,7 +248,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			evtHeader = nullptr;
 			return true;
 		}
-		if(!evtHeader) return false;
+		if (!evtHeader) return false;
 
 		// make new subrun if inSR is 0 or if the subrun has changed
 		art::SubRunID subrun_check(evtHeader->run_id, evtHeader->subrun_id);
