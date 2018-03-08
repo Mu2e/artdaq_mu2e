@@ -64,6 +64,10 @@
 //      based on the number of processed superblocks.  The experiment
 //      may decide it wants to change this behavior.
 
+#ifndef CARE_ABOUT_END_RUN_FRAGMENTS
+#define CARE_ABOUT_END_RUN_FRAGMENTS 0
+#endif
+
 using namespace mu2e::detail;
 
 namespace {
@@ -138,7 +142,9 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 				incoming_events->ReleaseBuffer();
 				return false;
 			}
-			
+
+			// ELF 03/08/2018: Ignoring EndOfRun and EndOfSubrun messages for now
+#if CARE_ABOUT_END_RUN_FRAGMENTS
 			auto oldDAQEvent = evtHeader_.sequence_id;
 			auto hdrPtr = incoming_events->ReadHeader(err);
 			if (err) continue;
@@ -151,7 +157,6 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 				outR = pMaker_.makeRunPrincipal(evid.runID(), currentTime);
 				outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
 				outE = pMaker_.makeEventPrincipal(evid, currentTime);
-				return true;
 			}
 			else if (firstFragmentType == artdaq::Fragment::EndOfSubrunFragmentType)
 			{
@@ -196,6 +201,10 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			incoming_events->ReleaseBuffer();
 			err = incoming_events->ReadyForRead(true); // Continue processing broadcasts
 			return true;
+#else
+			incoming_events->ReleaseBuffer();
+			err = incoming_events->ReadyForRead(true); // Continue processing broadcasts
+#endif
 		}
 
 	// Get new fragment if nothing is stored
