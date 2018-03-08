@@ -68,8 +68,10 @@ explicit OfflineFragmentReader(fhicl::ParameterSet const& ps,
 	bool shutdownMsgReceived_ {false};
 	bool outputFileCloseNeeded_ {false};
 	detail::EventIDHandler idHandler_ {};
-        artdaq::detail::RawEventHeader* evtHeader;
 	detail::CurrentFragment currentFragment_ {};
+
+	artdaq::detail::RawEventHeader evtHeader_;
+
   };
 
 } // mu2e

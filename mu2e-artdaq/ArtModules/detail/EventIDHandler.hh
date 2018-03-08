@@ -15,9 +15,9 @@ namespace mu2e {
 			//      is just incremented.  This behavior may need to change
 			//      if encapsulating the timestamp into the art::EventID is
 			//      desired.
-			void update(artdaq::detail::RawEventHeader const& re)
+			void update(artdaq::detail::RawEventHeader re)
 			{
-				if (re.run_id != run_) {
+				if (run_ != re.run_id) {
 					run_ = re.run_id;
 					event_ = 0;
 				}
