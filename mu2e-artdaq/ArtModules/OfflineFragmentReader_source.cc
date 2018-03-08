@@ -135,6 +135,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			{
 				TLOG_INFO("OfflineFragmentReader") << "Received EndOfData Message. The remaining  " <<  currentFragment_.sizeRemaining() << " blocks from DAQ event " << evtHeader_.sequence_id << " will be lost.";
 				shutdownMsgReceived_ = true;
+				incoming_events->ReleaseBuffer();
 				return false;
 			}
 			
@@ -150,6 +151,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 				outR = pMaker_.makeRunPrincipal(evid.runID(), currentTime);
 				outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
 				outE = pMaker_.makeEventPrincipal(evid, currentTime);
+				return true;
 			}
 			else if (firstFragmentType == artdaq::Fragment::EndOfSubrunFragmentType)
 			{
@@ -193,6 +195,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			}
 			incoming_events->ReleaseBuffer();
 			err = incoming_events->ReadyForRead(true); // Continue processing broadcasts
+			return true;
 		}
 
 	// Get new fragment if nothing is stored
