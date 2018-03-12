@@ -1,4 +1,4 @@
-
+#define TRACE_NAME "OfflineFragmentReader"
 #include "artdaq/DAQdata/Globals.hh"
 
 #include "art/Framework/Core/InputSourceMacros.h"
@@ -123,7 +123,9 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 
 	// Check for broadcast fragments
 		bool err = true;
-		while (err && incoming_events->ReadyForRead(true)) {
+		while (err) {
+			if (!incoming_events->ReadyForRead(true, 0)) break;
+
 			auto types = incoming_events->GetFragmentTypes(err);
 			if (err) continue;
 
@@ -157,6 +159,8 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 				outR = pMaker_.makeRunPrincipal(evid.runID(), currentTime);
 				outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
 				outE = pMaker_.makeEventPrincipal(evid, currentTime);
+				incoming_events->ReleaseBuffer();
+				return true;
 			}
 			else if (firstFragmentType == artdaq::Fragment::EndOfSubrunFragmentType)
 			{
@@ -197,13 +201,12 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 					}
 					outR = 0;
 				}
+				incoming_events->ReleaseBuffer();
+				return true;
 			}
-			incoming_events->ReleaseBuffer();
-			err = incoming_events->ReadyForRead(true); // Continue processing broadcasts
-			return true;
 #else
 			incoming_events->ReleaseBuffer();
-			err = incoming_events->ReadyForRead(true); // Continue processing broadcasts
+			err = false;
 #endif
 		}
 
