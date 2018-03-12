@@ -180,9 +180,14 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	DTCLib::DTC_Timestamp zero(z);
 	if (mode_ != 0)
 	{
+#if 0
 		//theInterface_->ReleaseAllBuffers();
-		TLOG(TLVL_DEBUG) << "Sending requests for " << mu2e::BLOCK_COUNT_MAX << " timestamps, starting at " << mu2e::BLOCK_COUNT_MAX * ev_counter();
-		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * ev_counter()));
+		TLOG(TLVL_DEBUG) << "Sending requests for " << mu2e::BLOCK_COUNT_MAX << " timestamps, starting at " << mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1);
+		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)));
+#else
+		theCFO_->SendRequestsForRange(-1, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)));
+
+#endif
 	}
 
 	TLOG(TLVL_DEBUG) << "mu2eReceiver::getNext: Initializing mu2eFragment metadata";
