@@ -47,6 +47,7 @@ explicit OfflineFragmentReader(fhicl::ParameterSet const& ps,
 								   art::ProductRegistryHelper& help,
 								   art::SourceHelper const& pm);
 
+    virtual ~OfflineFragmentReader();
 	void closeCurrentFile() {}
 	void readFile(std::string const& name, art::FileBlock*& fb);
 
@@ -67,8 +68,10 @@ explicit OfflineFragmentReader(fhicl::ParameterSet const& ps,
 	bool shutdownMsgReceived_ {false};
 	bool outputFileCloseNeeded_ {false};
 	detail::EventIDHandler idHandler_ {};
-    std::unique_ptr<artdaq::detail::RawEventHeader> evtHeader;
 	detail::CurrentFragment currentFragment_ {};
+
+	artdaq::detail::RawEventHeader evtHeader_;
+
   };
 
 } // mu2e

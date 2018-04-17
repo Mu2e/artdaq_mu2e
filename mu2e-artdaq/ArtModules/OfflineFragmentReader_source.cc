@@ -1,4 +1,4 @@
-
+#define TRACE_NAME "OfflineFragmentReader"
 #include "artdaq/DAQdata/Globals.hh"
 
 #include "art/Framework/Core/InputSourceMacros.h"
@@ -10,7 +10,6 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "mu2e-artdaq/ArtModules/OfflineFragmentReader.hh"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
-#include "artdaq/DAQdata/Globals.hh"
 
 #include <sys/time.h>
 
@@ -65,6 +64,10 @@
 //      based on the number of processed superblocks.  The experiment
 //      may decide it wants to change this behavior.
 
+#ifndef CARE_ABOUT_END_RUN_FRAGMENTS
+#define CARE_ABOUT_END_RUN_FRAGMENTS 0
+#endif
+
 using namespace mu2e::detail;
 
 namespace {
@@ -81,8 +84,11 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 	art::SourceHelper const& pm) :
 	pMaker_{ pm },
 	waitingTime_(ps.get<double>("waiting_time", 86400.)),
-	resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true))
+	resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true)),
+	evtHeader_(0,0,0)
 {
+	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(ps.get<uint32_t>("shared_memory_key", 0xBEE70000 + getppid()), ps.get<uint32_t>("broadcast_shared_memory_key", 0xCEE70000 + getppid())));
+
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
 }
@@ -90,6 +96,11 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 void mu2e::OfflineFragmentReader::readFile(std::string const&, art::FileBlock*& fb)
 {
 	fb = new art::FileBlock{ art::FileFormatVersion{1, "RawEvent2011"}, "nothing" };
+}
+
+mu2e::OfflineFragmentReader::~OfflineFragmentReader()
+{
+	if (incoming_events) incoming_events.reset(nullptr);
 }
 
 bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
@@ -110,10 +121,98 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 	outE = nullptr;
 	art::Timestamp const currentTime = time(0);
 
+	// Check for broadcast fragments
+		bool err = true;
+		while (err) {
+			if (!incoming_events->ReadyForRead(true, 0)) break;
+
+			auto types = incoming_events->GetFragmentTypes(err);
+			if (err) continue;
+
+			if (types.size() == 0)
+			{
+				TLOG_ERROR("OfflineFragmentReader") << "Event has no Fragments! Aborting!" << TLOG_ENDL;
+				incoming_events->ReleaseBuffer();
+				return false;
+			}
+
+			auto firstFragmentType = *types.begin();
+			if (firstFragmentType == artdaq::Fragment::EndOfDataFragmentType)
+			{
+				TLOG_INFO("OfflineFragmentReader") << "Received EndOfData Message. The remaining  " <<  currentFragment_.sizeRemaining() << " blocks from DAQ event " << evtHeader_.sequence_id << " will be lost.";
+				shutdownMsgReceived_ = true;
+				incoming_events->ReleaseBuffer();
+				return false;
+			}
+
+			// ELF 03/08/2018: Ignoring EndOfRun and EndOfSubrun messages for now
+#if CARE_ABOUT_END_RUN_FRAGMENTS
+			auto oldDAQEvent = evtHeader_.sequence_id;
+			auto hdrPtr = incoming_events->ReadHeader(err);
+			if (err) continue;
+			if (!hdrPtr) return false;
+			evtHeader_ = artdaq::detail::RawEventHeader(*hdrPtr);
+			if (firstFragmentType == artdaq::Fragment::EndOfRunFragmentType)
+			{
+				TLOG_INFO("OfflineFragmentReader") << "Received EndOfRun Message. The remaining " << currentFragment_.sizeRemaining() << " block from DAQ event "  << oldDAQEvent  << " will be in the next run.";
+				art::EventID const evid(art::EventID::flushEvent());
+				outR = pMaker_.makeRunPrincipal(evid.runID(), currentTime);
+				outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
+				outE = pMaker_.makeEventPrincipal(evid, currentTime);
+				incoming_events->ReleaseBuffer();
+				return true;
+			}
+			else if (firstFragmentType == artdaq::Fragment::EndOfSubrunFragmentType)
+			{
+				TLOG_INFO("OfflineFragmentReader") << "Received EndOfSubrun Message. The remaining " << currentFragment_.sizeRemaining() << " block from DAQ event " << oldDAQEvent << " will be in the next subrun.";
+				// Check if inR == 0 or is a new run
+				if (inR == 0 || inR->run() != evtHeader_.run_id)
+				{
+					outSR = pMaker_.makeSubRunPrincipal(evtHeader_.run_id,
+						evtHeader_.subrun_id,
+						currentTime);
+					art::EventID const evid(art::EventID::flushEvent(outSR->id()));
+					outE = pMaker_.makeEventPrincipal(evid, currentTime);
+				}
+				else
+				{
+					// If the previous subrun was neither 0 nor flush and was identical with the current
+					// subrun, then it must have been associated with a data event.  In that case, we need
+					// to generate a flush event with a valid run but flush subrun and event number in order
+					// to end the subrun.
+					if (inSR != 0 && !inSR->id().isFlush() && inSR->subRun() == evtHeader_.subrun_id)
+					{
+						art::EventID const evid(art::EventID::flushEvent(inR->id()));
+						outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
+						outE = pMaker_.makeEventPrincipal(evid, currentTime);
+						// If this is either a new or another empty subrun, then generate a flush event with
+						// valid run and subrun numbers but flush event number
+						//} else if(inSR==0 || inSR->id().isFlush()){
+					}
+					else
+					{
+						outSR = pMaker_.makeSubRunPrincipal(evtHeader_.run_id,
+							evtHeader_.subrun_id,
+							currentTime);
+						art::EventID const evid(art::EventID::flushEvent(outSR->id()));
+						outE = pMaker_.makeEventPrincipal(evid, currentTime);
+						// Possible error condition
+						//} else {
+					}
+					outR = 0;
+				}
+				incoming_events->ReleaseBuffer();
+				return true;
+			}
+#else
+			incoming_events->ReleaseBuffer();
+			err = false;
+#endif
+		}
+
 	// Get new fragment if nothing is stored
 	if (currentFragment_.empty())
 	{
-
 	start:
 		bool keep_looping = true;
 		bool got_event = false;
@@ -149,8 +248,12 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 		TLOG_DEBUG("OfflineFragmentReader") << "Got Event!" << TLOG_ENDL;
 
 		auto errflag = false;
-		evtHeader.reset(incoming_events->ReadHeader(errflag));
-		if (errflag) goto start; // Buffer was changed out from under reader!
+		{
+			auto hdrPtr = incoming_events->ReadHeader(errflag);
+			if (errflag) goto start;
+			if (!hdrPtr) return false;
+			evtHeader_ = artdaq::detail::RawEventHeader(*hdrPtr);
+		}
 		auto fragmentTypes = incoming_events->GetFragmentTypes(errflag);
 		if (errflag) goto start; // Buffer was changed out from under reader!
 		if (fragmentTypes.size() == 0)
@@ -159,21 +262,12 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			incoming_events->ReleaseBuffer();
 			return false;
 		}
-		auto firstFragmentType = *fragmentTypes.begin();
 
 		// We return false, indicating we're done reading, if:
 		//   1) we did not obtain an event, because we timed out and were
 		//      configured NOT to keep trying after a timeout, or
 		//   2) the event we read was the end-of-data marker: a null
 		//      pointer
-		if (firstFragmentType == artdaq::Fragment::EndOfDataFragmentType)
-		{
-			TLOG_DEBUG("SharedMemoryReader") << "Received shutdown message, returning false" << TLOG_ENDL;
-			shutdownMsgReceived_ = true;
-			incoming_events->ReleaseBuffer();
-			return false;
-		}
-
 
 		// Check the number of fragments in the RawEvent.  If we have a single
 		// fragment and that fragment is marked as EndRun or EndSubrun we'll create
@@ -181,69 +275,17 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 		art::Timestamp currentTime = time(0);
 
 		// make new run if inR is 0 or if the run has changed
-		if (inR == 0 || inR->run() != evtHeader->run_id)
+		if (inR == 0 || inR->run() != evtHeader_.run_id)
 		{
-			outR = pMaker_.makeRunPrincipal(evtHeader->run_id, currentTime);
-		}
-
-		if (firstFragmentType == artdaq::Fragment::EndOfRunFragmentType)
-		{
-			art::EventID const evid(art::EventID::flushEvent());
-			outR = pMaker_.makeRunPrincipal(evid.runID(), currentTime);
-			outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
-			outE = pMaker_.makeEventPrincipal(evid, currentTime);
-			incoming_events->ReleaseBuffer();
-			return true;
-		}
-		else if (firstFragmentType == artdaq::Fragment::EndOfSubrunFragmentType)
-		{
-			// Check if inR == 0 or is a new run
-			if (inR == 0 || inR->run() != evtHeader->run_id)
-			{
-				outSR = pMaker_.makeSubRunPrincipal(evtHeader->run_id,
-					evtHeader->subrun_id,
-					currentTime);
-				art::EventID const evid(art::EventID::flushEvent(outSR->id()));
-				outE = pMaker_.makeEventPrincipal(evid, currentTime);
-			}
-			else
-			{
-				// If the previous subrun was neither 0 nor flush and was identical with the current
-				// subrun, then it must have been associated with a data event.  In that case, we need
-				// to generate a flush event with a valid run but flush subrun and event number in order
-				// to end the subrun.
-				if (inSR != 0 && !inSR->id().isFlush() && inSR->subRun() == evtHeader->subrun_id)
-				{
-					art::EventID const evid(art::EventID::flushEvent(inR->id()));
-					outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
-					outE = pMaker_.makeEventPrincipal(evid, currentTime);
-					// If this is either a new or another empty subrun, then generate a flush event with
-					// valid run and subrun numbers but flush event number
-					//} else if(inSR==0 || inSR->id().isFlush()){
-				}
-				else
-				{
-					outSR = pMaker_.makeSubRunPrincipal(evtHeader->run_id,
-						evtHeader->subrun_id,
-						currentTime);
-					art::EventID const evid(art::EventID::flushEvent(outSR->id()));
-					outE = pMaker_.makeEventPrincipal(evid, currentTime);
-					// Possible error condition
-					//} else {
-				}
-				outR = 0;
-			}
-			//outputFileCloseNeeded = true;
-			incoming_events->ReleaseBuffer();
-			return true;
+			outR = pMaker_.makeRunPrincipal(evtHeader_.run_id, currentTime);
 		}
 
 		// make new subrun if inSR is 0 or if the subrun has changed
-		art::SubRunID subrun_check(evtHeader->run_id, evtHeader->subrun_id);
+		art::SubRunID subrun_check(evtHeader_.run_id, evtHeader_.subrun_id);
 		if (inSR == 0 || subrun_check != inSR->id())
 		{
-			outSR = pMaker_.makeSubRunPrincipal(evtHeader->run_id,
-				evtHeader->subrun_id,
+			outSR = pMaker_.makeSubRunPrincipal(evtHeader_.run_id,
+				evtHeader_.subrun_id,
 				currentTime);
 		}
 
@@ -260,10 +302,12 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 			currentFragment_ = CurrentFragment{ std::move(product->front()) };
 			break;
 		}
+		incoming_events->ReleaseBuffer();
 	}
 
 
-	idHandler_.update(*evtHeader); // See note in mu2e::detail::EventIDHandler::update()
+	idHandler_.update(evtHeader_); // See note in mu2e::detail::EventIDHandler::update()
+	TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
 	outE = pMaker_.makeEventPrincipal(idHandler_.run(),
 		idHandler_.subRun(),
 		idHandler_.event(),
@@ -276,6 +320,9 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 	//
 	//    auto fragmentsColls = currentFragment_.extractFragmentsFromBlock(Tracker, Calorimeter);
 	//    auto const& trkFragments = fragmentsColls[Tracker]; // etc.
+	
+	TLOG_TRACE("OfflineFragmentReader") << "This event has " << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker) << " Tracker Fragments and " <<
+		currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter) << " Calorimeter Fragments.";
 	put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker),
 		*outE,
 		daq_module_label,
@@ -285,6 +332,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR,
 		daq_module_label,
 		calo_instance_name());
 	currentFragment_.advanceOneBlock();
+	
 	return true;
 }
 

@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent mu2e_artdaq	v1_02_02
+parent mu2e_artdaq	v1_02_03
 defaultqual	e15:s64
 
 # These optional lines define the installed directories where
@@ -17,15 +17,12 @@ bindir      fq_dir      bin
 
 #
 product		version		optional
-artdaq		v3_00_03
-mu2e_artdaq_core v1_02_01e
-pcie_linux_kernel_module v1_10_03
-mongodb         v3_4_6a
-offline         trig_0_2_0
-BTrk            v1_02_10
-heppdt          v3_04_01g
-xerces_c        v3_1_4b
-cetbuildtools	v7_00_02	-	only_for_build
+artdaq		v3_01_00
+mu2e_artdaq_core v1_02_03
+pcie_linux_kernel_module v1_11_01
+mongodb         v3_4_6c
+offline         trig_0_2_3
+cetbuildtools	v7_02_01	-	only_for_build
 end_product_list
 
 # e6  - with gcc 4.9.1 and -std=c++1y
@@ -34,9 +31,9 @@ end_product_list
 # -nq- means there is no qualifier
 # a "-" means the dependent product is not required by the parent and will not be setup
 
-qualifier           artdaq             mu2e_artdaq_core	   	  pcie_linux_kernel_module   mongodb    offline           BTrk     heppdt   xerces_c notes
-e15:s64:debug       e15:eth:s64:debug  e15:s64:online:debug	  e15:debug                  e15:debug  e15:s64:debug      e15:debug e15:debug e15:debug --std=c++14
-e15:s64:prof        e15:eth:s64:prof   e15:s64:online:prof	  e15:prof                   e15:prof   e15:s64:prof      e15:prof e15:prof e15:prof --std=c++14
+qualifier           artdaq             mu2e_artdaq_core	   	  pcie_linux_kernel_module   mongodb    offline          notes
+e15:s64:debug       e15:eth:s64:debug  e15:s64:online:debug	  e15:debug                  e15:debug  e15:s64:debug    --std=c++14
+e15:s64:prof        e15:eth:s64:prof   e15:s64:online:prof	  e15:prof                   e15:prof   e15:s64:prof     --std=c++14
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:
