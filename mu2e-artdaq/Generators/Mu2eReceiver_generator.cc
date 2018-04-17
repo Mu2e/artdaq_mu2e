@@ -35,8 +35,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 {
 	TLOG(TLVL_DEBUG) << "Mu2eReceiver_generator CONSTRUCTOR";
 	// mode_ can still be overridden by environment!
-	auto version = ps.get<std::string>("dtc_firmware_version", "");
-	theInterface_ = new DTCLib::DTC(version, mode_);
+	theInterface_ = new DTCLib::DTC(mode_);
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 

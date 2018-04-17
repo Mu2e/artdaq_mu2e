@@ -27,6 +27,7 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
 
 simple_plugin(DTCDataVerifier "module"
   mu2e-artdaq-core_Overlays
+  artdaq_DAQdata
   DTCInterface
   ${MF_MESSAGELOGGER}
   ${CETLIB_EXCEPT}
@@ -87,6 +88,7 @@ cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
 
 simple_plugin(OfflineFragmentReader "source"
   MF_MessageLogger
+  artdaq_DAQdata
   mu2e_artdaq_ArtModules_detail
   )
 
