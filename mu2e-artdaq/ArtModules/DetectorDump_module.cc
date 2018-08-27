@@ -163,15 +163,12 @@ mu2e::DetectorDump::DetectorDump(fhicl::ParameterSet const& pset)
 		   << "CAL.ADCIntegral.max" << 1000
 
 		   << "HEADER.rocID.type" << "I"
-		   << "HEADER.ringID.type" << "I"
 		   << "HEADER.packetType.type" << "I"
 
 		   << "HEADER.rocID.min" << 0
-		   << "HEADER.ringID.min" << 0
 		   << "HEADER.packetType.min" << 0
 
 		   << "HEADER.rocID.max" << 5
-		   << "HEADER.ringID.max" << 5
 		   << "HEADER.packetType.max" << 10
 
 		   << finalize;
@@ -238,7 +235,6 @@ void mu2e::DetectorDump::analyze(art::Event const& evt)
 						uint16_t CAL_numSamples = (dynamic_cast<CalorimeterFragmentReader*>(bb))->numSamples();
 
 						uint16_t HEADER_rocID = bb->rocID();
-						uint16_t HEADER_ringID = bb->ringID();
 						uint16_t HEADER_packetType = bb->packetType();
 
 						std::vector<mu2e::DetectorFragment::adc_t> CAL_adcVec = (dynamic_cast<CalorimeterFragmentReader*>(bb))->calorimeterADC();
@@ -260,7 +256,6 @@ void mu2e::DetectorDump::analyze(art::Event const& evt)
 							   << "CAL.ADCintegral" << CAL_ADCintegral
 
 							   << "HEADER.rocID" << HEADER_rocID
-							   << "HEADER.ringID" << HEADER_ringID
 							   << "HEADER.packetType" << HEADER_packetType
 
 							   << finalize;
