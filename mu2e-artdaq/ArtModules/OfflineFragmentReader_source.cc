@@ -85,7 +85,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 	pMaker_{ pm },
 	waitingTime_(ps.get<double>("waiting_time", 86400.)),
 	resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true)),
-	evtHeader_(0,0,0)
+	evtHeader_(0,0,0,0)
 {
 	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(ps.get<uint32_t>("shared_memory_key", 0xBEE70000 + getppid()), ps.get<uint32_t>("broadcast_shared_memory_key", 0xCEE70000 + getppid())));
 
