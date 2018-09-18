@@ -16,7 +16,7 @@
 #include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 #include "dtcInterfaceLib/DTC.h"
 
-#include "cetlib/exception.h"
+#include "cetlib_except/exception.h"
 
 #include <sstream>
 #include <iomanip>

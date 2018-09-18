@@ -3,7 +3,7 @@
 #include "canvas/Utilities/Exception.h"
 
 #include "artdaq/Application/GeneratorMacros.hh"
-#include "cetlib/exception.h"
+#include "cetlib_except/exception.h"
 
 #include "mu2e-artdaq-core/Overlays/DetectorFragment.hh"
 #include "mu2e-artdaq-core/Overlays/TrackerFragmentWriter.hh"
