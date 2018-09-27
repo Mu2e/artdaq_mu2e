@@ -6,7 +6,7 @@
 #include "canvas/Utilities/Exception.h"
 
 #include "artdaq/Application/GeneratorMacros.hh"
-#include "cetlib/exception.h"
+#include "cetlib_except/exception.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 #include "mu2e-artdaq-core/Overlays/mu2eFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
