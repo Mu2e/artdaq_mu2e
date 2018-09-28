@@ -98,6 +98,7 @@ simple_plugin(Mu2eInput "source"
   artdaq_DAQdata
   artdaq-utilities_Plugins
   artdaq-core_Core
+  artdaq-core_Utilities
   art_Framework_Core
   art_Framework_IO_Sources
   art_Framework_Principal
