@@ -6,8 +6,9 @@
 #include <string>
 
 namespace mu2e {
-struct GetPackageBuildInfo {
-  static artdaq::PackageBuildInfo getPackageBuildInfo();
+struct GetPackageBuildInfo
+{
+	static artdaq::PackageBuildInfo getPackageBuildInfo();
 };
 }  // namespace mu2e
 

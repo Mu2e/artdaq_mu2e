@@ -21,10 +21,11 @@
 
 namespace mu2e {
 
-class OfflineFragmentReader {
- public:
-  OfflineFragmentReader(OfflineFragmentReader const&) = delete;
-  OfflineFragmentReader& operator=(OfflineFragmentReader const&) = delete;
+class OfflineFragmentReader
+{
+public:
+	OfflineFragmentReader(OfflineFragmentReader const&) = delete;
+	OfflineFragmentReader& operator=(OfflineFragmentReader const&) = delete;
 #if 0
 	struct Config {
 	  fhicl::Atom<std::string> module_type { fhicl::Name("module_type") };
@@ -42,29 +43,29 @@ class OfflineFragmentReader {
 
 	using Parameters = art::ConfigTable<Config, Config::KeysToIgnore>;
 #endif
-  explicit OfflineFragmentReader(fhicl::ParameterSet const& ps, art::ProductRegistryHelper& help,
-                                 art::SourceHelper const& pm);
+	explicit OfflineFragmentReader(fhicl::ParameterSet const& ps, art::ProductRegistryHelper& help,
+								   art::SourceHelper const& pm);
 
-  virtual ~OfflineFragmentReader();
-  void closeCurrentFile() {}
-  void readFile(std::string const& name, art::FileBlock*& fb);
+	virtual ~OfflineFragmentReader();
+	void closeCurrentFile() {}
+	void readFile(std::string const& name, art::FileBlock*& fb);
 
-  bool hasMoreData() const { return !shutdownMsgReceived_; }
+	bool hasMoreData() const { return !shutdownMsgReceived_; }
 
-  bool readNext(art::RunPrincipal* const& inR, art::SubRunPrincipal* const& inSR, art::RunPrincipal*& outR,
-                art::SubRunPrincipal*& outSR, art::EventPrincipal*& outE);
+	bool readNext(art::RunPrincipal* const& inR, art::SubRunPrincipal* const& inSR, art::RunPrincipal*& outR,
+				  art::SubRunPrincipal*& outSR, art::EventPrincipal*& outE);
 
- private:
-  art::SourceHelper const& pMaker_;
-  double waitingTime_;
-  std::unique_ptr<artdaq::SharedMemoryEventReceiver> incoming_events;  ///< The events from the EventStore
-  bool resumeAfterTimeout_;
-  bool shutdownMsgReceived_{false};
-  bool outputFileCloseNeeded_{false};
-  detail::EventIDHandler idHandler_{};
-  detail::CurrentFragment currentFragment_{};
+private:
+	art::SourceHelper const& pMaker_;
+	double waitingTime_;
+	std::unique_ptr<artdaq::SharedMemoryEventReceiver> incoming_events;  ///< The events from the EventStore
+	bool resumeAfterTimeout_;
+	bool shutdownMsgReceived_{false};
+	bool outputFileCloseNeeded_{false};
+	detail::EventIDHandler idHandler_{};
+	detail::CurrentFragment currentFragment_{};
 
-  artdaq::detail::RawEventHeader evtHeader_;
+	artdaq::detail::RawEventHeader evtHeader_;
 };
 
 }  // namespace mu2e
@@ -72,8 +73,10 @@ class OfflineFragmentReader {
 // Specialize an art source trait to tell art that we don't care about
 // source.fileNames and don't want the files services to be used.
 namespace art {
-template <>
-struct Source_generator<mu2e::OfflineFragmentReader> : std::true_type {};
+template<>
+struct Source_generator<mu2e::OfflineFragmentReader> : std::true_type
+{
+};
 }  // namespace art
 
 #endif /* mu2e_artdaq_core_Overlays_Offline_OfflineFragmentReader_hh */

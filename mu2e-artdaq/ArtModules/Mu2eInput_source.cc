@@ -13,9 +13,10 @@ namespace art {
  * \brief  Specialize an art source trait to tell art that we don't care about
  * source.fileNames and don't want the files services to be used.
  */
-template <>
-struct Source_generator<artdaq::detail::SharedMemoryReader<mu2e::makeFragmentTypeMap>> {
-  static constexpr bool value = true;  ///< Used to suppress use of file services on art Source
+template<>
+struct Source_generator<artdaq::detail::SharedMemoryReader<mu2e::makeFragmentTypeMap>>
+{
+	static constexpr bool value = true;  ///< Used to suppress use of file services on art Source
 };
 }  // namespace art
 
