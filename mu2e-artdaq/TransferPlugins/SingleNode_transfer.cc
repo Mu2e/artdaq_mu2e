@@ -15,16 +15,16 @@ public:
 		return theTransfer_->receiveFragment(fragment, receiveTimeout);
 	}
 
-	virtual artdaq::TransferInterface::CopyStatus copyFragment(artdaq::Fragment& fragment, size_t send_timeout_usec)
+	virtual artdaq::TransferInterface::CopyStatus transfer_fragment_min_blocking_mode(artdaq::Fragment const& fragment, size_t send_timeout_usec)
 	{
 		if (!theTransfer_) return artdaq::TransferInterface::CopyStatus::kSuccess;
-		return theTransfer_->copyFragment(fragment, send_timeout_usec);
+		return theTransfer_->transfer_fragment_min_blocking_mode(fragment, send_timeout_usec);
 	}
 
-	virtual artdaq::TransferInterface::CopyStatus moveFragment(artdaq::Fragment&& fragment)
+	virtual artdaq::TransferInterface::CopyStatus transfer_fragment_reliable_mode(artdaq::Fragment&& fragment)
 	{
 		if (!theTransfer_) return artdaq::TransferInterface::CopyStatus::kSuccess;
-		return theTransfer_->moveFragment(std::move(fragment));
+		return theTransfer_->transfer_fragment_reliable_mode(std::move(fragment));
 	}
 
 	virtual int receiveFragmentHeader(artdaq::detail::RawFragmentHeader& hdr, size_t tmo)
