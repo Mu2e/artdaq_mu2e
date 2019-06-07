@@ -11,20 +11,19 @@
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Utilities/Exception.h"
 
-#include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 #include "artdaq-core/Data/Fragment.hh"
 #include "dtcInterfaceLib/DTC_Packets.h"
+#include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 
 #include "trace.h"
 
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <unistd.h>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
-namespace mu2e
-{
-	class DTCDump;
+namespace mu2e {
+class DTCDump;
 }
 
 class mu2e::DTCDump : public art::EDAnalyzer
@@ -43,44 +42,34 @@ private:
 };
 
 mu2e::DTCDump::DTCDump(fhicl::ParameterSet const& pset)
-	: EDAnalyzer(pset)
-	  , raw_data_label_(pset.get<std::string>("raw_data_label"))
-	  , max_DataPackets_to_show_(static_cast<uint16_t>(pset.get<int>("max_DataPackets_to_show", 0)))
-	  , print_json_(pset.get<bool>("print_json", false))
-	  , print_packet_format_(pset.get<bool>("print_packet_format", true)) {}
+	: EDAnalyzer(pset), raw_data_label_(pset.get<std::string>("raw_data_label")), max_DataPackets_to_show_(static_cast<uint16_t>(pset.get<int>("max_DataPackets_to_show", 0))), print_json_(pset.get<bool>("print_json", false)), print_packet_format_(pset.get<bool>("print_packet_format", true)) {}
 
 mu2e::DTCDump::~DTCDump() {}
 
 void mu2e::DTCDump::analyze(art::Event const& evt)
 {
 	art::EventNumber_t eventNumber = evt.event();
-	TRACE( 11, "mu2e::DTCDump::analyze enter eventNumber=%d", eventNumber );
+	TRACE(11, "mu2e::DTCDump::analyze enter eventNumber=%d", eventNumber);
 
 	art::Handle<artdaq::Fragments> raw;
 	evt.getByLabel(raw_data_label_, "DTC", raw);
 
-	if (raw.isValid())
-	{
+	if (raw.isValid()) {
 		std::cout << "######################################################################" << std::endl;
 		std::cout << std::endl;
-		std::cout << std::dec << "Run " << evt.run() << ", subrun " << evt.subRun()
-		             << ", event " << eventNumber << " has " << raw->size()
-		             << " DTCFragment(s)" << std::endl;
+		std::cout << std::dec << "Run " << evt.run() << ", subrun " << evt.subRun() << ", event " << eventNumber << " has "
+				  << raw->size() << " DTCFragment(s)" << std::endl;
 
-		for (size_t idx = 0; idx < raw->size(); ++idx)
-		{
+		for (size_t idx = 0; idx < raw->size(); ++idx) {
 			const auto& frag((*raw)[idx]);
 
 			DTCFragment bb(frag);
 
-			if (frag.hasMetadata())
-			{
+			if (frag.hasMetadata()) {
 				std::cout << std::endl;
 				std::cout << "DTCFragment SimMode: ";
-				DTCFragment::Metadata const* md =
-					frag.metadata<DTCFragment::Metadata>();
-				std::cout << DTCLib::DTC_SimModeConverter((DTCLib::DTC_SimMode)(md->sim_mode)).toString()
-					<< std::endl;
+				DTCFragment::Metadata const* md = frag.metadata<DTCFragment::Metadata>();
+				std::cout << DTCLib::DTC_SimModeConverter((DTCLib::DTC_SimMode)(md->sim_mode)).toString() << std::endl;
 				std::cout << "Timestamp: 0x" << std::hex << bb.hdr_timestamp() << std::endl;
 				std::cout << "Board ID: " << std::to_string((int)md->board_id) << std::endl;
 				std::cout << std::endl;
@@ -88,28 +77,23 @@ void mu2e::DTCDump::analyze(art::Event const& evt)
 
 			std::cout << "DTC_DataHeaderPacket:" << std::endl;
 			auto dhpacket = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket((uint8_t*)*(bb.dataBegin())));
-			if (print_json_)
-			{
+			if (print_json_) {
 				std::cout << dhpacket.toJSON() << std::endl;
 			}
-			if (print_packet_format_)
-			{
+			if (print_packet_format_) {
 				std::cout << dhpacket.toPacketFormat() << std::endl;
 			}
 			std::cout << std::endl;
 
-
 			std::cout << std::endl;
-			int packetMax = max_DataPackets_to_show_ > (bb.hdr_packet_count() - 1) ? (bb.hdr_packet_count() - 1) : max_DataPackets_to_show_;
-			for (int ii = 0; ii < packetMax; ++ii)
-			{
+			int packetMax = max_DataPackets_to_show_ > (bb.hdr_packet_count() - 1) ? (bb.hdr_packet_count() - 1)
+																				   : max_DataPackets_to_show_;
+			for (int ii = 0; ii < packetMax; ++ii) {
 				auto packet = DTCLib::DTC_DataPacket((uint8_t*)*(bb.dataBegin() + 1 + ii));
-				if (print_json_)
-				{
+				if (print_json_) {
 					std::cout << packet.toJSON() << std::endl;
 				}
-				if (print_packet_format_)
-				{
+				if (print_packet_format_) {
 					std::cout << packet.toPacketFormat() << std::endl;
 				}
 				std::cout << std::endl;
@@ -118,12 +102,10 @@ void mu2e::DTCDump::analyze(art::Event const& evt)
 	}
 	else
 	{
-		std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()
-		             << ", event " << eventNumber << " has zero"
-		             << " DTCFragments." << std::endl;
+		std::cout << "Run " << evt.run() << ", subrun " << evt.subRun() << ", event " << eventNumber << " has zero"
+				  << " DTCFragments." << std::endl;
 	}
 	std::cout << std::endl;
 }
 
 DEFINE_ART_MODULE(mu2e::DTCDump)
-

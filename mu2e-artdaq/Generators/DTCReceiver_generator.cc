@@ -1,31 +1,25 @@
 #include "mu2e-artdaq/Generators/DTCReceiver.hh"
 
-#include "canvas/Utilities/Exception.h"
+#include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
 #include "artdaq/Application/GeneratorMacros.hh"
+#include "canvas/Utilities/Exception.h"
 #include "cetlib_except/exception.h"
+#include "dtcInterfaceLib/DTC_Types.h"
+#include "fhiclcpp/ParameterSet.h"
 #include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 #include "mu2e-artdaq-core/Overlays/DTCFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
-#include "fhiclcpp/ParameterSet.h"
-#include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
-#include "dtcInterfaceLib/DTC_Types.h"
 
 #include <fstream>
 #include <iomanip>
-#include <iterator>
 #include <iostream>
+#include <iterator>
 
 #include <unistd.h>
 #include "trace.h"
 
 mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps)
-	  , fragment_type_(toFragmentType("DTC"))
-	  , fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
-	  , packets_read_(0)
-	  , mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
-	  , board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
-	  , print_packets_(ps.get<bool>("debug_print", false))
+	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType("DTC")), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, packets_read_(0), mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), print_packets_(ps.get<bool>("debug_print", false))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = new DTCLib::DTC(mode_);
@@ -34,55 +28,43 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 
 	TLOG_DEBUG("DTCReceiver") << "DTCReceiver Initialized with mode " << mode_ << TLOG_ENDL;
 
-	int ringRocs[] = {
-		ps.get<int>("ring_0_roc_count", -1),
-		ps.get<int>("ring_1_roc_count", -1),
-		ps.get<int>("ring_2_roc_count", -1),
-		ps.get<int>("ring_3_roc_count", -1),
-		ps.get<int>("ring_4_roc_count", -1),
-		ps.get<int>("ring_5_roc_count", -1)
-	};
-
-	bool ringTiming[] = {
-		ps.get<bool>("ring_0_timing_enabled", true),
-		ps.get<bool>("ring_1_timing_enabled", true),
-		ps.get<bool>("ring_2_timing_enabled", true),
-		ps.get<bool>("ring_3_timing_enabled", true),
-		ps.get<bool>("ring_4_timing_enabled", true),
-		ps.get<bool>("ring_5_timing_enabled", true)
-	};
-
-	bool ringEmulators[] = {
-		ps.get<bool>("ring_0_roc_emulator_enabled", false),
-		ps.get<bool>("ring_1_roc_emulator_enabled", false),
-		ps.get<bool>("ring_2_roc_emulator_enabled", false),
-		ps.get<bool>("ring_3_roc_emulator_enabled", false),
-		ps.get<bool>("ring_4_roc_emulator_enabled", false),
-		ps.get<bool>("ring_5_roc_emulator_enabled", false)
-	};
-
-	for (int ring = 0; ring < 6; ++ring)
-	{
-		if (ringRocs[ring] >= 0)
-		{
-			theInterface_->EnableRing(DTCLib::DTC_Rings[ring],
-			                          DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
-			                          DTCLib::DTC_ROCS[ringRocs[ring]]);
-			if (ringEmulators[ring])
-			{
-				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
-			}
-			else
-			{
-				theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]);
-			}
-		}
-	}
+//	int ringRocs[] = {ps.get<int>("ring_0_roc_count", -1), ps.get<int>("ring_1_roc_count", -1),
+//					  ps.get<int>("ring_2_roc_count", -1), ps.get<int>("ring_3_roc_count", -1),
+//					  ps.get<int>("ring_4_roc_count", -1), ps.get<int>("ring_5_roc_count", -1)};
+//
+//	bool ringTiming[] = {ps.get<bool>("ring_0_timing_enabled", true), ps.get<bool>("ring_1_timing_enabled", true),
+//						 ps.get<bool>("ring_2_timing_enabled", true), ps.get<bool>("ring_3_timing_enabled", true),
+//						 ps.get<bool>("ring_4_timing_enabled", true), ps.get<bool>("ring_5_timing_enabled", true)};
+//
+//	bool ringEmulators[] = {
+//		ps.get<bool>("ring_0_roc_emulator_enabled", false), ps.get<bool>("ring_1_roc_emulator_enabled", false),
+//		ps.get<bool>("ring_2_roc_emulator_enabled", false), ps.get<bool>("ring_3_roc_emulator_enabled", false),
+//		ps.get<bool>("ring_4_roc_emulator_enabled", false), ps.get<bool>("ring_5_roc_emulator_enabled", false)};
+//
+//	for (int ring = 0; ring < 6; ++ring)
+//	{
+//		if (ringRocs[ring] >= 0)
+//		{
+//			theInterface_->EnableRing(DTCLib::DTC_Rings[ring], DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
+//									  DTCLib::DTC_ROCS[ringRocs[ring]]);
+//			if (ringEmulators[ring])
+//			{
+//				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
+//			}
+//			else
+//			{
+//				theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]);
+//			}
+//		}
+//	}
 
 	char* file_c = getenv("DTCLIB_SIM_FILE");
 
 	auto sim_file = ps.get<std::string>("sim_file", "");
-	if (file_c != nullptr) { sim_file = std::string(file_c); }
+	if (file_c != nullptr)
+	{
+		sim_file = std::string(file_c);
+	}
 	if (sim_file.size() > 0)
 	{
 		simFileRead_ = false;
@@ -97,7 +79,8 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 
 void mu2e::DTCReceiver::readSimFile_(std::string sim_file)
 {
-	TLOG_INFO("DTCReceiver") << "Starting read of simulation file " << sim_file << "." << " Please wait to start the run until finished." << TLOG_ENDL;
+	TLOG_INFO("DTCReceiver") << "Starting read of simulation file " << sim_file << "."
+							 << " Please wait to start the run until finished." << TLOG_ENDL;
 	theInterface_->WriteSimFileToDTC(sim_file, true);
 	simFileRead_ = true;
 	TLOG_INFO("DTCReceiver") << "Done reading simulation file into DTC memory." << TLOG_ENDL;
@@ -110,10 +93,7 @@ mu2e::DTCReceiver::~DTCReceiver()
 	delete theCFO_;
 }
 
-bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs& frags)
-{
-	return getNextDTCFragment(frags);
-}
+bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs& frags) { return getNextDTCFragment(frags); }
 
 bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 {
@@ -145,8 +125,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	// ...where we'll start off setting the payload (data after the
 	// header and metadata) to empty; this will be resized below
 
-	frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0],
-	                                        fragment_type_, metadata));
+	frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
 
 	// Now we make an instance of the overlay to put the data into...
 	DTCFragmentWriter newfrag(*frags.back());
@@ -184,7 +163,8 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		std::cout << first.toJSON() << std::endl;
 		for (int ii = 0; ii < first.GetPacketCount(); ++ii)
 		{
-			std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON() << std::endl;
+			std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON()
+					  << std::endl;
 		}
 	}
 
@@ -197,7 +177,8 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 			std::cout << packet.toJSON() << std::endl;
 			for (int ii = 0; ii < packet.GetPacketCount(); ++ii)
 			{
-				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON() << std::endl;
+				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON()
+						  << std::endl;
 			}
 		}
 	}
@@ -206,13 +187,14 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 	TRACE(3, "DTC Response for timestamp %lu includes %i packets.", ts.GetTimestamp(true), packetCount);
 	newfrag.resize(packetCount);
-	TRACE(3, "DTCFragment size: %lu",newfrag.size() * sizeof(artdaq::Fragment::value_type));
+	TRACE(3, "DTCFragment size: %lu", newfrag.size() * sizeof(artdaq::Fragment::value_type));
 
 	size_t packetsProcessed = 0;
 	for (size_t i = 0; i < data.size(); ++i)
 	{
 		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-		memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i].blockPointer, (1 + packet.GetPacketCount()) * sizeof(packet_t));
+		memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i].blockPointer,
+			   (1 + packet.GetPacketCount()) * sizeof(packet_t));
 		packetsProcessed += 1 + packet.GetPacketCount();
 	}
 
@@ -223,4 +205,3 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 // The following macro is defined in artdaq's GeneratorMacros.hh header
 DEFINE_ARTDAQ_COMMANDABLE_GENERATOR(mu2e::DTCReceiver)
-
