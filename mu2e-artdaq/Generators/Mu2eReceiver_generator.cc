@@ -6,7 +6,7 @@
 #include "canvas/Utilities/Exception.h"
 
 #include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
-#include "artdaq/Application/GeneratorMacros.hh"
+#include "artdaq/Generators/GeneratorMacros.hh"
 #include "cetlib_except/exception.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"

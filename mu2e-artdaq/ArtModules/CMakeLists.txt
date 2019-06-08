@@ -33,6 +33,8 @@ simple_plugin(DTCDataVerifier "module"
   ${CETLIB_EXCEPT}
 )
 
+set(MONGODB_CXX_LIBRARIES $ENV{MONGODB_LIB}/libbsoncxx.so $ENV{MONGODB_LIB}/libmongocxx.so)
+
 simple_plugin(Mu2eDump "module"
   mu2e-artdaq-core_Overlays
   DTCInterface

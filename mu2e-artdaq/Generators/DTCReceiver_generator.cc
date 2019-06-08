@@ -1,7 +1,7 @@
 #include "mu2e-artdaq/Generators/DTCReceiver.hh"
 
 #include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
-#include "artdaq/Application/GeneratorMacros.hh"
+#include "artdaq/Generators/GeneratorMacros.hh"
 #include "canvas/Utilities/Exception.h"
 #include "cetlib_except/exception.h"
 #include "dtcInterfaceLib/DTC_Types.h"

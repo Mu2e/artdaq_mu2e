@@ -2,7 +2,7 @@
 
 #include "canvas/Utilities/Exception.h"
 
-#include "artdaq/Application/GeneratorMacros.hh"
+#include "artdaq/Generators/GeneratorMacros.hh"
 #include "cetlib_except/exception.h"
 
 #include "mu2e-artdaq-core/Overlays/CalorimeterFragmentWriter.hh"
