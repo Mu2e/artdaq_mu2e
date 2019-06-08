@@ -123,8 +123,11 @@ mu2e::DetectorDump::DetectorDump(fhicl::ParameterSet const& pset)
 	std::cout << std::endl;
 
 	std::cout << "Connected to mongodb database..." << std::endl;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	std::cout << "\t"
 			  << "Database entry count: " << cl.coll.count({}) << std::endl;
+#pragma GCC diagnostic pop
 
 	//  auto cursor = cl.coll.find({});
 	//  for (auto&& doc : cursor) {
@@ -137,8 +140,11 @@ mu2e::DetectorDump::DetectorDump(fhicl::ParameterSet const& pset)
 								   << "event" << finalize);
 	cl.coll.delete_many(document{} << "type"
 								   << "config" << finalize);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	std::cout << "\t"
 			  << "Entries remaining: " << cl.coll.count({}) << std::endl;
+#pragma GCC diagnostic pop
 	auto variables_doc = document{} << "type"
 									<< "config"
 
@@ -260,7 +266,10 @@ void mu2e::DetectorDump::analyze(art::Event const& evt)
 			};
 			std::cout << "numDataBlocks: " << bb->numDataBlocks() << std::endl;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 			int count = cl.coll.count({});
+#pragma GCC diagnostic pop
 			if (count % 1000 == 0) std::cout << "DBcount: " << count << std::endl;
 
 			//      bb->printAll();

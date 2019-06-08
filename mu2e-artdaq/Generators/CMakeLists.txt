@@ -1,7 +1,7 @@
 simple_plugin(DTCReceiver "generator"
   mu2e-artdaq-core_Overlays
   artdaq_DAQdata
-  artdaq_Application
+  artdaq_Generators
   artdaq_DAQrate
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}
@@ -16,7 +16,7 @@ simple_plugin(Mu2eReceiver "generator"
   mu2e-artdaq-core_Overlays
   artdaq-utilities_Plugins
   artdaq-core_Utilities
-  artdaq_Application
+  artdaq_Generators
   artdaq_DAQdata
   artdaq_DAQrate
   artdaq-core_Data
@@ -31,7 +31,7 @@ simple_plugin(Mu2eReceiver "generator"
 
 simple_plugin(OverlayTest "generator"
   mu2e-artdaq-core_Overlays
-  artdaq_Application
+  artdaq_Generators
   artdaq_DAQdata
   artdaq_DAQrate
   ${CANVAS_LIB_LIST}

@@ -39,6 +39,10 @@ public:
 		return theTransfer_->receiveFragmentData(loc, sz);
 	}
 
+  virtual void flush_buffers() {
+    return theTransfer_->flush_buffers();
+  }
+
 private:
 	std::unique_ptr<artdaq::TransferInterface> theTransfer_;
 };
