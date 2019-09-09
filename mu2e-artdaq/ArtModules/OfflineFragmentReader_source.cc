@@ -267,7 +267,8 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 		// make new subrun if inSR is 0 or if the subrun has changed
 		art::SubRunID subrun_check(evtHeader_.run_id, evtHeader_.subrun_id);
-		if (inSR == 0 || subrun_check != inSR->id()) {
+		//		if (inSR == 0 || subrun_check != inSR->id()) {
+		if (inSR == 0 || subrun_check != inSR->subRunID()) {
 			outSR = pMaker_.makeSubRunPrincipal(evtHeader_.run_id, evtHeader_.subrun_id, currentTime);
 		}
 
