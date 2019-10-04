@@ -46,6 +46,7 @@ simple_plugin(Mu2eDump "module"
 
 simple_plugin(OfflineFragmentsDumper "module"
   mu2e-artdaq-core_Overlays
+  ${MF_MESSAGELOGGER}
   ${CETLIB_EXCEPT}
 )
 

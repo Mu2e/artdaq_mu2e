@@ -102,7 +102,7 @@ message("-DMESSAGEFACILITY_HEX_VERSION=0x${MESSAGEFACILITY_MAJOR_VERSION}${MESSA
 add_definitions(-DMESSAGEFACILITY_HEX_VERSION=0x${MESSAGEFACILITY_MAJOR_VERSION}${MESSAGEFACILITY_MINOR_VERSION}${MESSAGEFACILITY_PATCH_VERSION})
 
 # macros for art_dictionary and simple_plugin
-include(ArtDictionary)
+#include(ArtDictionary)
 include(ArtMake)
 include(BuildPlugins)
 include(CetTest)
