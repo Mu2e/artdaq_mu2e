@@ -68,6 +68,8 @@
 #define CARE_ABOUT_END_RUN_FRAGMENTS 0
 #endif
 
+#define build_key(seed) seed + ((GetPartitionNumber() + 1) << 16) + (getppid() & 0xFFFF)
+
 using namespace mu2e::detail;
 
 namespace {
@@ -83,9 +85,9 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 												   art::SourceHelper const& pm)
 	: pMaker_{pm}, waitingTime_(ps.get<double>("waiting_time", 86400.)), resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true)), evtHeader_(0, 0, 0, 0)
 {
-	incoming_events.reset(
-		new artdaq::SharedMemoryEventReceiver(ps.get<uint32_t>("shared_memory_key", 0xBEE70000 + getppid()),
-											  ps.get<uint32_t>("broadcast_shared_memory_key", 0xCEE70000 + getppid())));
+	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(
+		ps.get<uint32_t>("shared_memory_key", build_key(0xEE000000)),
+		ps.get<uint32_t>("broadcast_shared_memory_key", build_key(0xBB000000))));
 
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
