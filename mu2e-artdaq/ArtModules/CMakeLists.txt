@@ -42,6 +42,7 @@ simple_plugin(Mu2eDump "module"
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
   ${CETLIB_EXCEPT}
+  ${MF_MESSAGELOGGER}
 )
 
 simple_plugin(OfflineFragmentsDumper "module"
@@ -56,6 +57,7 @@ simple_plugin(DTCDump "module"
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
   ${CETLIB_EXCEPT}
+  ${MF_MESSAGELOGGER}
 )
 
 simple_plugin(DetectorDump "module"
@@ -64,6 +66,7 @@ simple_plugin(DetectorDump "module"
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
   ${CETLIB_EXCEPT}
+  ${MF_MESSAGELOGGER}
 )
 
 simple_plugin(Mu2eArtdaqBuildInfo "module"
@@ -96,6 +99,7 @@ cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
   ${CETLIB}
   ${CETLIB_EXCEPT}
   DTCInterface
+  ${MF_MESSAGELOGGER}
   )
 
 simple_plugin(OfflineFragmentReader "source"

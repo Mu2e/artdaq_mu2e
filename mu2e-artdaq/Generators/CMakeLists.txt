@@ -3,6 +3,7 @@ simple_plugin(DTCReceiver "generator"
   artdaq_DAQdata
   artdaq_Generators
   artdaq_DAQrate
+  artdaq-core_Utilities
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}
   ${CETLIB}
@@ -34,6 +35,7 @@ simple_plugin(OverlayTest "generator"
   artdaq_Generators
   artdaq_DAQdata
   artdaq_DAQrate
+  artdaq-core_Utilities
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}
   ${CETLIB}
