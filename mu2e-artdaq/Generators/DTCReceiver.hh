@@ -27,6 +27,7 @@
 
 #include <atomic>
 #include <vector>
+#include <condition_variable>
 
 #include "dtcInterfaceLib/DTC.h"
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
@@ -51,11 +52,13 @@ private:
 
 	bool getNext_(artdaq::FragmentPtrs& output) override;
 
-	void start() override {}
+	void start() override;
 
 	void stopNoMutex() override {}
 
-	void stop() override {}
+	void stop() override;
+
+	void fragment_thread_();
 
 	void readSimFile_(std::string sim_file);
 
@@ -82,6 +85,11 @@ private:
 
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
+
+	std::mutex fragment_mutex_;
+	artdaq::FragmentPtr current_container_fragment_;
+	std::condition_variable fragment_ready_condition_;
+	boost::thread fragment_receiver_thread_;
 
 	// For Debugging:
 	bool print_packets_;

@@ -9,6 +9,7 @@
 #include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
 #include "mu2e-artdaq-core/Overlays/DTCFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
+#include "artdaq-core/Data/ContainerFragmentLoader.hh"
 
 #include <fstream>
 #include <iomanip>
@@ -28,35 +29,35 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 
 	TLOG_DEBUG("DTCReceiver") << "DTCReceiver Initialized with mode " << mode_ << TLOG_ENDL;
 
-//	int ringRocs[] = {ps.get<int>("ring_0_roc_count", -1), ps.get<int>("ring_1_roc_count", -1),
-//					  ps.get<int>("ring_2_roc_count", -1), ps.get<int>("ring_3_roc_count", -1),
-//					  ps.get<int>("ring_4_roc_count", -1), ps.get<int>("ring_5_roc_count", -1)};
-//
-//	bool ringTiming[] = {ps.get<bool>("ring_0_timing_enabled", true), ps.get<bool>("ring_1_timing_enabled", true),
-//						 ps.get<bool>("ring_2_timing_enabled", true), ps.get<bool>("ring_3_timing_enabled", true),
-//						 ps.get<bool>("ring_4_timing_enabled", true), ps.get<bool>("ring_5_timing_enabled", true)};
-//
-//	bool ringEmulators[] = {
-//		ps.get<bool>("ring_0_roc_emulator_enabled", false), ps.get<bool>("ring_1_roc_emulator_enabled", false),
-//		ps.get<bool>("ring_2_roc_emulator_enabled", false), ps.get<bool>("ring_3_roc_emulator_enabled", false),
-//		ps.get<bool>("ring_4_roc_emulator_enabled", false), ps.get<bool>("ring_5_roc_emulator_enabled", false)};
-//
-//	for (int ring = 0; ring < 6; ++ring)
-//	{
-//		if (ringRocs[ring] >= 0)
-//		{
-//			theInterface_->EnableRing(DTCLib::DTC_Rings[ring], DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
-//									  DTCLib::DTC_ROCS[ringRocs[ring]]);
-//			if (ringEmulators[ring])
-//			{
-//				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
-//			}
-//			else
-//			{
-//				theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]);
-//			}
-//		}
-//	}
+	//	int ringRocs[] = {ps.get<int>("ring_0_roc_count", -1), ps.get<int>("ring_1_roc_count", -1),
+	//					  ps.get<int>("ring_2_roc_count", -1), ps.get<int>("ring_3_roc_count", -1),
+	//					  ps.get<int>("ring_4_roc_count", -1), ps.get<int>("ring_5_roc_count", -1)};
+	//
+	//	bool ringTiming[] = {ps.get<bool>("ring_0_timing_enabled", true), ps.get<bool>("ring_1_timing_enabled", true),
+	//						 ps.get<bool>("ring_2_timing_enabled", true), ps.get<bool>("ring_3_timing_enabled", true),
+	//						 ps.get<bool>("ring_4_timing_enabled", true), ps.get<bool>("ring_5_timing_enabled", true)};
+	//
+	//	bool ringEmulators[] = {
+	//		ps.get<bool>("ring_0_roc_emulator_enabled", false), ps.get<bool>("ring_1_roc_emulator_enabled", false),
+	//		ps.get<bool>("ring_2_roc_emulator_enabled", false), ps.get<bool>("ring_3_roc_emulator_enabled", false),
+	//		ps.get<bool>("ring_4_roc_emulator_enabled", false), ps.get<bool>("ring_5_roc_emulator_enabled", false)};
+	//
+	//	for (int ring = 0; ring < 6; ++ring)
+	//	{
+	//		if (ringRocs[ring] >= 0)
+	//		{
+	//			theInterface_->EnableRing(DTCLib::DTC_Rings[ring], DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
+	//									  DTCLib::DTC_ROCS[ringRocs[ring]]);
+	//			if (ringEmulators[ring])
+	//			{
+	//				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
+	//			}
+	//			else
+	//			{
+	//				theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]);
+	//			}
+	//		}
+	//	}
 
 	char* file_c = getenv("DTCLIB_SIM_FILE");
 
@@ -95,6 +96,22 @@ mu2e::DTCReceiver::~DTCReceiver()
 
 bool mu2e::DTCReceiver::getNext_(artdaq::FragmentPtrs& frags) { return getNextDTCFragment(frags); }
 
+void mu2e::DTCReceiver::start()
+{
+	if (fragment_receiver_thread_.joinable()) fragment_receiver_thread_.join();
+	TLOG(TLVL_INFO) << "Starting Data Receiver Thread";
+	try
+	{
+		fragment_receiver_thread_ = boost::thread(&DTCReceiver::fragment_thread_, this);
+	}
+	catch (const boost::exception& e)
+	{
+		TLOG(TLVL_ERROR) << "Caught boost::exception starting Data Receiver thread: " << boost::diagnostic_information(e) << ", errno=" << errno;
+		std::cerr << "Caught boost::exception starting Data Receiver thread: " << boost::diagnostic_information(e) << ", errno=" << errno << std::endl;
+		exit(5);
+	}
+}
+
 bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 {
 	while (!simFileRead_ && !should_stop())
@@ -107,100 +124,98 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		return false;
 	}
 
-	// Set fragment's metadata
-	TRACE(3, "DTCReceiver::getNextDTCFragment allocating DTCFragment metadata");
-	DTCFragment::Metadata metadata;
-	metadata.sim_mode = static_cast<int>(mode_);
-	metadata.run_number = run_number();
-	metadata.board_id = board_id_;
+	std::unique_lock<std::mutex> lk(fragment_mutex_);
+	fragment_ready_condition_.wait(lk, [&]() { return current_container_fragment_ != nullptr; });
+	
+	frags.emplace_back(std::move(current_container_fragment_));
+	ev_counter_inc();
+	current_container_fragment_.reset(nullptr);
 
-	// And use it, along with the artdaq::Fragment header information
-	// (fragment id, sequence id, and user type) to create a fragment
+	return true;
+}
 
-	// Constructor used is:
+void mu2e::DTCReceiver::stop()
+{
+	if (fragment_receiver_thread_.joinable()) fragment_receiver_thread_.join();
+}
 
-	// Fragment(std::size_t payload_size, sequence_id_t sequence_id,
-	//  fragment_id_t fragment_id, type_t type, const T & metadata);
-
-	// ...where we'll start off setting the payload (data after the
-	// header and metadata) to empty; this will be resized below
-
-	frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
-
-	// Now we make an instance of the overlay to put the data into...
-	DTCFragmentWriter newfrag(*frags.back());
-
-	std::vector<DTCLib::DTC_DataBlock> data;
-
-	if (mode_ != 0)
+void mu2e::DTCReceiver::fragment_thread_()
+{
+	artdaq::ContainerFragmentLoader* loader = nullptr;
+	while (!should_stop())
 	{
-		theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter()));
-	}
+		std::vector<DTCLib::DTC_DataBlock> data;
 
-	int retryCount = 5;
-	while (data.size() == 0 && retryCount >= 0)
-	{
-		try
+		if (mode_ != 0)
 		{
-			data = theInterface_->GetData(DTCLib::DTC_Timestamp());
+			theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter()));
 		}
-		catch (std::exception ex)
-		{
-			std::cerr << ex.what() << std::endl;
-		}
-		retryCount--;
-	}
-	if (retryCount < 0 && data.size() == 0)
-	{
-		return false;
-	}
 
-	auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
-	DTCLib::DTC_Timestamp ts = first.GetTimestamp();
-	int packetCount = first.GetPacketCount() + 1;
-	if (print_packets_)
-	{
-		std::cout << first.toJSON() << std::endl;
-		for (int ii = 0; ii < first.GetPacketCount(); ++ii)
+		while (data.size() == 0 && !should_stop())
 		{
-			std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON()
-					  << std::endl;
+			try
+			{
+				data = theInterface_->GetData(DTCLib::DTC_Timestamp());
+			}
+			catch (std::exception ex)
+			{
+				std::cerr << ex.what() << std::endl;
+			}
 		}
-	}
 
-	for (size_t i = 1; i < data.size(); ++i)
-	{
-		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-		packetCount += packet.GetPacketCount() + 1;
+		if (should_stop()) return;
+		
+		auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
+		DTCLib::DTC_Timestamp ts = first.GetTimestamp();
+		int packetCount = first.GetPacketCount() + 1;
 		if (print_packets_)
 		{
-			std::cout << packet.toJSON() << std::endl;
-			for (int ii = 0; ii < packet.GetPacketCount(); ++ii)
+			std::cout << first.toJSON() << std::endl;
+			for (int ii = 0; ii < first.GetPacketCount(); ++ii)
 			{
-				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON()
+				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON()
 						  << std::endl;
 			}
 		}
+
+		for (size_t i = 1; i < data.size(); ++i)
+		{
+			auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
+			packetCount += packet.GetPacketCount() + 1;
+			if (print_packets_)
+			{
+				std::cout << packet.toJSON() << std::endl;
+				for (int ii = 0; ii < packet.GetPacketCount(); ++ii)
+				{
+					std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON()
+							  << std::endl;
+				}
+			}
+		}
+
+		std::unique_lock<std::mutex> lk(fragment_mutex_);
+		if (current_container_fragment_ == nullptr)
+		{
+			current_container_fragment_.reset(new artdaq::Fragment(ev_counter(), fragment_ids_.front(), artdaq::Fragment::ContainerFragmentType, ts));
+			loader = new artdaq::ContainerFragmentLoader(*current_container_fragment_, fragment_type_);
+		}
+
+		auto newFrag = loader->appendFragment(packetCount * 16 / sizeof(artdaq::RawDataType));
+		newFrag->type = fragment_type_;
+		newFrag->timestamp = ts;
+
+		size_t packetsProcessed = 0;
+		packet_t* dataStart = reinterpret_cast<packet_t*>(newFrag + 1);
+		for (size_t i = 0; i < data.size(); ++i)
+		{
+			auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
+			memcpy((void*)(dataStart + packetsProcessed), data[i].blockPointer,
+				   (1 + packet.GetPacketCount()) * sizeof(packet_t));
+			packetsProcessed += 1 + packet.GetPacketCount();
+		}
+
+		fragment_ready_condition_.notify_all();
 	}
-
-	newfrag.set_hdr_timestamp(ts.GetTimestamp(true));
-
-	TRACE(3, "DTC Response for timestamp %lu includes %i packets.", ts.GetTimestamp(true), packetCount);
-	newfrag.resize(packetCount);
-	TRACE(3, "DTCFragment size: %lu", newfrag.size() * sizeof(artdaq::Fragment::value_type));
-
-	size_t packetsProcessed = 0;
-	for (size_t i = 0; i < data.size(); ++i)
-	{
-		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-		memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i].blockPointer,
-			   (1 + packet.GetPacketCount()) * sizeof(packet_t));
-		packetsProcessed += 1 + packet.GetPacketCount();
-	}
-
-	ev_counter_inc();
-
-	return true;
 }
 
 // The following macro is defined in artdaq's GeneratorMacros.hh header
