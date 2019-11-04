@@ -60,14 +60,14 @@ simple_plugin(DTCDump "module"
   ${MF_MESSAGELOGGER}
 )
 
-simple_plugin(DetectorDump "module"
-  mu2e-artdaq-core_Overlays
-  DTCInterface
-  ${Boost_SYSTEM_LIBRARY}
-  ${MONGODB_CXX_LIBRARIES}
-  ${CETLIB_EXCEPT}
-  ${MF_MESSAGELOGGER}
-)
+#simple_plugin(DetectorDump "module"
+#  mu2e-artdaq-core_Overlays
+#  DTCInterface
+#  ${Boost_SYSTEM_LIBRARY}
+#  ${MONGODB_CXX_LIBRARIES}
+#  ${CETLIB_EXCEPT}
+#  ${MF_MESSAGELOGGER}
+#)
 
 simple_plugin(Mu2eArtdaqBuildInfo "module"
   art_Framework_Core

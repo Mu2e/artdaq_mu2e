@@ -6,8 +6,6 @@
 #include "cetlib_except/exception.h"
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
-#include "mu2e-artdaq-core/Overlays/DTCFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 
 #include <fstream>
@@ -106,14 +104,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	{
 		return false;
 	}
-
-	// Set fragment's metadata
-	TRACE(3, "DTCReceiver::getNextDTCFragment allocating DTCFragment metadata");
-	DTCFragment::Metadata metadata;
-	metadata.sim_mode = static_cast<int>(mode_);
-	metadata.run_number = run_number();
-	metadata.board_id = board_id_;
-
+	
 	// And use it, along with the artdaq::Fragment header information
 	// (fragment id, sequence id, and user type) to create a fragment
 
@@ -125,10 +116,8 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	// ...where we'll start off setting the payload (data after the
 	// header and metadata) to empty; this will be resized below
 
-	frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
 
 	// Now we make an instance of the overlay to put the data into...
-	DTCFragmentWriter newfrag(*frags.back());
 
 	std::vector<DTCLib::DTC_DataBlock> data;
 
@@ -183,17 +172,14 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		}
 	}
 
-	newfrag.set_hdr_timestamp(ts.GetTimestamp(true));
-
-	TRACE(3, "DTC Response for timestamp %lu includes %i packets.", ts.GetTimestamp(true), packetCount);
-	newfrag.resize(packetCount);
-	TRACE(3, "DTCFragment size: %lu", newfrag.size() * sizeof(artdaq::Fragment::value_type));
+	frags.emplace_back(new artdaq::Fragment(packetCount * sizeof(packet_t) / sizeof(artdaq::RawDataType), ev_counter(), fragment_ids_[0], fragment_type_, ts.GetTimestamp(true)));
 
 	size_t packetsProcessed = 0;
+	packet_t* dataBegin = reinterpret_cast<packet_t*>(frags.back()->dataBegin());
 	for (size_t i = 0; i < data.size(); ++i)
 	{
 		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-		memcpy((void*)(newfrag.dataBegin() + packetsProcessed), data[i].blockPointer,
+		memcpy((void*)(dataBegin + packetsProcessed), data[i].blockPointer,
 			   (1 + packet.GetPacketCount()) * sizeof(packet_t));
 		packetsProcessed += 1 + packet.GetPacketCount();
 	}
