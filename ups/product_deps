@@ -18,7 +18,7 @@ bindir      fq_dir      bin
 #
 product		version		optional
 artdaq		v3_06_02
-mu2e_artdaq_core v1_02_32
+mu2e_artdaq_core v1_02_33
 pcie_linux_kernel_module v2_02_05
 mongodb         v4_0_8b
 offline         trig_0_4_2

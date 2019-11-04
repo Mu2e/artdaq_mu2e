@@ -7,7 +7,6 @@
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "mu2e-artdaq-core/Overlays/DTCFragment.hh"
-#include "mu2e-artdaq-core/Overlays/DTCFragmentWriter.hh"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "artdaq-core/Data/ContainerFragmentLoader.hh"
 
@@ -196,13 +195,13 @@ void mu2e::DTCReceiver::fragment_thread_()
 		std::unique_lock<std::mutex> lk(fragment_mutex_);
 		if (current_container_fragment_ == nullptr)
 		{
-			current_container_fragment_.reset(new artdaq::Fragment(ev_counter(), fragment_ids_.front(), artdaq::Fragment::ContainerFragmentType, ts));
+			current_container_fragment_.reset(new artdaq::Fragment(ev_counter(), fragment_ids_[0], artdaq::Fragment::ContainerFragmentType, ts.GetTimestamp(true));
 			loader = new artdaq::ContainerFragmentLoader(*current_container_fragment_, fragment_type_);
 		}
 
 		auto newFrag = loader->appendFragment(packetCount * 16 / sizeof(artdaq::RawDataType));
 		newFrag->type = fragment_type_;
-		newFrag->timestamp = ts;
+		newFrag->timestamp = ts.GetTimestamp(true);
 
 		size_t packetsProcessed = 0;
 		packet_t* dataStart = reinterpret_cast<packet_t*>(newFrag + 1);
