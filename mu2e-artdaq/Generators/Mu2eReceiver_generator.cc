@@ -105,8 +105,8 @@ void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 mu2e::Mu2eReceiver::~Mu2eReceiver()
 {
 	rawOutputStream_.close();
-	delete theInterface_;
 	delete theCFO_;
+	delete theInterface_;
 }
 
 void mu2e::Mu2eReceiver::stop()
