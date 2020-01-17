@@ -23,6 +23,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 	while (data < end) {
 		// Construct DTC_DataHeaderPacket to determine byte count of
 		// current data block.
+		try{
 		DTCLib::DTC_DataPacket const dataPacket{data};
 		DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
 		auto const byteCount = headerPacket.GetByteCount();
@@ -40,9 +41,11 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 								   .get());
 		}
 		data += byteCount;
+		} catch(...) { TLOG(TLVL_TRACE) << "Error reading Fragments from block";break; }
 	}
-	return data == end ? std::move(result)
-					   : throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
+	if(data <= end) { return result; }
+TLOG(TLVL_ERROR) << "ma::CurrentFragment::extractFragmentsFromBlock: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+					    throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
 							 << "The data pointer has shot past the 'end' pointer.";
 }
 
@@ -59,6 +62,7 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 	auto const end = reinterpret_cast<char const*>(current_ + reader_->blockSize(processedSuperBlocks()));
 	auto data = reinterpret_cast<char const*>(begin);
 	while (data < end) {
+		try {
 		// Construct DTC_DataHeaderPacket to determine byte count of
 		// current data block.
 		DTCLib::DTC_DataPacket const dataPacket{data};
@@ -69,11 +73,34 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 			result++;
 		}
 		data += byteCount;
+		}
+		catch(...) { TLOG(TLVL_TRACE) << "Error reading Fragments from Block"; break;}
 	}
-	return data == end ? result
-					   : throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
+
+	if(data <= end) { return result; }
+TLOG(TLVL_ERROR) << "ma::CurrentFragment::getFragmentCount: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+					    throw art::Exception{art::errors::DataCorruption, "CurrentFragment::getFragmentCount"}
 							 << "The data pointer has shot past the 'end' pointer.";
 }
+
+  uint64_t CurrentFragment::getCurrentTimestamp()
+  {
+    uint64_t result = 0;
+    auto data = reinterpret_cast<char const*>(current_);
+      // Construct DTC_DataHeaderPacket to determine byte count of
+      // current data block.
+      DTCLib::DTC_DataPacket const dataPacket{data};
+      DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
+
+      result = headerPacket.GetTimestamp().GetTimestamp(true);
+
+    // Catch roll-over in Detector Emulator mode
+    if(result < (fragment_->sequenceID() -1) * DATA_BLOCKS_PER_MU2E_FRAGMENT && fragment_->sequenceID() < 0xFFFFFFFFFFFF) {
+      result += (fragment_->sequenceID() -1) * DATA_BLOCKS_PER_MU2E_FRAGMENT;
+    }
+
+    return result;
+  }
 
 }  // namespace detail
 }  // namespace mu2e

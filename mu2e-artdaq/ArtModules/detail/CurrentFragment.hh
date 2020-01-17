@@ -75,6 +75,8 @@ public:
 	/// <returns>Number of Fragments in block</returns>
 	size_t getFragmentCount(DTCLib::DTC_Subsystem sub);
 
+  uint64_t getCurrentTimestamp();
+
 private:
 	std::unique_ptr<artdaq::Fragment const> fragment_{nullptr};
 	std::unique_ptr<mu2eFragment const> reader_{nullptr};

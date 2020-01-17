@@ -133,7 +133,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		{
 			data = theInterface_->GetData(DTCLib::DTC_Timestamp());
 		}
-		catch (std::exception ex)
+		catch (std::exception const& ex)
 		{
 			std::cerr << ex.what() << std::endl;
 		}

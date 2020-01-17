@@ -112,12 +112,14 @@ simple_plugin(Mu2eInput "source"
   mu2e-artdaq-core_Overlays
   artdaq_ArtModules
   artdaq_DAQdata
+  artdaq_ArtModules_ArtdaqSharedMemoryService_service
   artdaq-utilities_Plugins
   artdaq-core_Core
   artdaq-core_Utilities
   art_Framework_Core
   art_Framework_IO_Sources
   art_Framework_Principal
+  art_Framework_Services_Registry
   art_Persistency_Provenance
   art_Utilities
   MF_MessageLogger
