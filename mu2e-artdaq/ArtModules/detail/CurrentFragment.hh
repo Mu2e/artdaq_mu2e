@@ -29,7 +29,8 @@ public:
 	/// Constructor
 	/// </summary>
 	/// <param name="f">Fragment to process</param>
-	CurrentFragment(artdaq::Fragment f);
+        /// <param name="debug_event_number_mode">Event Number Debug Mode (for testing with Detector Emulator files)</param>
+  CurrentFragment(artdaq::Fragment f, bool debug_event_number_mode);
 
 	/// <summary>
 	/// Get the count of blocks processed from the artdaq Fragment
@@ -82,6 +83,8 @@ private:
 	std::unique_ptr<mu2eFragment const> reader_{nullptr};
 	uint8_t const* current_{nullptr};
 	size_t block_count_;
+
+  bool debug_event_number_mode_;
 };
 
 }  // namespace detail

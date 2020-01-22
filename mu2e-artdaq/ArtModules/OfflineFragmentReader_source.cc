@@ -93,7 +93,11 @@ std::string calo_instance_name() { return "calo"; }
 
 mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps, art::ProductRegistryHelper& help,
 												   art::SourceHelper const& pm)
-	: pMaker_{pm}, waitingTime_(ps.get<double>("waiting_time", 30.)), resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true)), evtHeader_(0, 0, 0, 0)
+  : pMaker_{pm}
+							      , waitingTime_(ps.get<double>("waiting_time", 30.))
+, resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true))
+							      , debugEventNumberMode_(ps.get<bool>("debug_event_number_mode", false))
+,evtHeader_(0, 0, 0, 0)
 {
 	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(
 		ps.get<uint32_t>("shared_memory_key", build_key(0xEE000000)),
@@ -117,15 +121,15 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 										   art::RunPrincipal*& outR, art::SubRunPrincipal*& outSR,
 										   art::EventPrincipal*& outE)
 {
-	if (outputFileCloseNeeded_) {
-		outputFileCloseNeeded_ = false;
-		return false;
-	}
-
 	// Establish default 'results'
 	outR = nullptr;
 	outSR = nullptr;
 	outE = nullptr;
+
+	if (outputFileCloseNeeded_) {
+		outputFileCloseNeeded_ = false;
+		return false;
+	}
 
 	// Check for broadcast fragments
 	bool err = true;
@@ -252,6 +256,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			if (!hdrPtr) return false;
 			evtHeader_ = artdaq::detail::RawEventHeader(*hdrPtr);
 		}
+		TLOG_DEBUG("OfflineFragmentReader") << "Calling GetFragmentTypes";
 		auto fragmentTypes = incoming_events->GetFragmentTypes(errflag);
 		if (errflag) goto start;  // Buffer was changed out from under reader!
 		if (fragmentTypes.size() == 0) {
@@ -259,6 +264,17 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			incoming_events->ReleaseBuffer();
 			return false;
 		}
+
+		auto firstFragmentType = *fragmentTypes.begin();
+		if (firstFragmentType == artdaq::Fragment::EndOfDataFragmentType) {
+			TLOG_INFO("OfflineFragmentReader") << "Received EndOfData Message. The remaining  "
+											   << currentFragment_.sizeRemaining() << " blocks from DAQ event "
+											   << evtHeader_.sequence_id << " will be lost.";
+			shutdownMsgReceived_ = true;
+			incoming_events->ReleaseBuffer();
+			return false;
+		}
+
 
 		// We return false, indicating we're done reading, if:
 		//   1) we did not obtain an event, because we timed out and were
@@ -271,6 +287,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		// the special principals for that.
 
 
+		TLOG_DEBUG("OfflineFragmentReader") << "Iterating through Fragment types";
 		  for (auto& type_code : fragmentTypes) {
 		    // Remove uninteresting fragments -- do not store
 		    if (type_code == artdaq::Fragment::EmptyFragmentType) continue;
@@ -279,7 +296,8 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		    if (errflag) goto start;  // Buffer was changed out from under reader!
 
 		    assert(product->size() == 1ull);
-		    currentFragment_ = CurrentFragment{std::move(product->front())};
+		    TLOG_DEBUG("OfflineFragmentReader") << "Creating CurrentFragment using Fragment of type " << type_code;
+		currentFragment_ = CurrentFragment{std::move(product->front()), debugEventNumberMode_};
 		    break;
 		  }
 		  incoming_events->ReleaseBuffer();
@@ -296,6 +314,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 		try {
 
+		TLOG_DEBUG("OfflineFragmentReader") << "Updating Run/Subrun/Event IDs";
 		  idHandler_.update(evtHeader_, currentFragment_.getCurrentTimestamp());  // See note in mu2e::detail::EventIDHandler::update()
 
 		art::Timestamp currentTime = time(0);
@@ -326,12 +345,15 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		currentFragment_.advanceOneBlock();
 
 		return true;
-	} catch(art::Exception const& ) {
-	  TLOG(TLVL_ERROR) << "Error retrieving Tracker and Calorimeter Fragments from current Event. Shutting down.";
-	  shutdownMsgReceived_ = true;
-	  outE = nullptr;
-	  return false;
-	}
+		} catch(...) {
+
+		  TLOG(TLVL_ERROR) << "Error retrieving Tracker and Calorimeter Fragments from current Event. Shutting down.";
+		  shutdownMsgReceived_ = true;
+		  outR = nullptr;
+		  outSR = nullptr;
+		  outE = nullptr;
+		  return false;
+		}
 }
 
 DEFINE_ART_INPUT_SOURCE(art::Source<mu2e::OfflineFragmentReader>)

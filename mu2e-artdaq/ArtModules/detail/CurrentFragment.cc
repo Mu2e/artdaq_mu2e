@@ -2,11 +2,20 @@
 #include "canvas/Utilities/Exception.h"
 #include "dtcInterfaceLib/DTC_Packets.h"
 
+#define TRACE_NAME "CurrentFragment"
+
 namespace mu2e {
 namespace detail {
 
-CurrentFragment::CurrentFragment(artdaq::Fragment f)
-	: fragment_{std::make_unique<artdaq::Fragment>(std::move(f))}, reader_{std::make_unique<mu2eFragment>(*fragment_)}, current_{reinterpret_cast<const uint8_t*>(reader_->dataBegin())}, block_count_(0) {}
+  static size_t event_num = 0;
+
+  CurrentFragment::CurrentFragment(artdaq::Fragment f, bool debug_event_number_mode)
+	: fragment_{std::make_unique<artdaq::Fragment>(std::move(f))}
+, reader_{std::make_unique<mu2eFragment>(*fragment_)}
+, current_{reinterpret_cast<const uint8_t*>(reader_->dataBegin())}
+, block_count_(0) 
+  , debug_event_number_mode_(debug_event_number_mode)
+{}
 
 std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DTCLib::DTC_Subsystem const subsystem)
 {
@@ -61,8 +70,11 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 	auto const begin = current_;
 	auto const end = reinterpret_cast<char const*>(current_ + reader_->blockSize(processedSuperBlocks()));
 	auto data = reinterpret_cast<char const*>(begin);
+	TLOG(TLVL_TRACE) << "data is " << (void*)data << ", end is " << (void*)end;
+
 	while (data < end) {
 		try {
+		  //TLOG(TLVL_TRACE) << "Constructing DTC_DataHeaderPacket with data from " << (void*)data << ", (end=" << (void*)end <<")";
 		// Construct DTC_DataHeaderPacket to determine byte count of
 		// current data block.
 		DTCLib::DTC_DataPacket const dataPacket{data};
@@ -86,6 +98,7 @@ TLOG(TLVL_ERROR) << "ma::CurrentFragment::getFragmentCount: The data pointer has
   uint64_t CurrentFragment::getCurrentTimestamp()
   {
     uint64_t result = 0;
+    if(!debug_event_number_mode_) {
     auto data = reinterpret_cast<char const*>(current_);
       // Construct DTC_DataHeaderPacket to determine byte count of
       // current data block.
@@ -94,9 +107,9 @@ TLOG(TLVL_ERROR) << "ma::CurrentFragment::getFragmentCount: The data pointer has
 
       result = headerPacket.GetTimestamp().GetTimestamp(true);
 
-    // Catch roll-over in Detector Emulator mode
-    if(result < (fragment_->sequenceID() -1) * DATA_BLOCKS_PER_MU2E_FRAGMENT && fragment_->sequenceID() < 0xFFFFFFFFFFFF) {
-      result += (fragment_->sequenceID() -1) * DATA_BLOCKS_PER_MU2E_FRAGMENT;
+    }
+    else {
+      return (static_cast<uint64_t>(getpid()) << 32) + (++event_num);
     }
 
     return result;
