@@ -89,6 +89,7 @@ namespace {
 constexpr char const* daq_module_label{"daq"};
 std::string trk_instance_name() { return "trk"; }
 std::string calo_instance_name() { return "calo"; }
+std::string header_instance_name() { return "header"; }
 }  // namespace
 
 mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps, art::ProductRegistryHelper& help,
@@ -332,6 +333,8 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 		TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
 		outE = pMaker_.makeEventPrincipal(idHandler_.run(), idHandler_.subRun(), idHandler_.event(), currentTime);
+
+		put_product_in_principal(currentFragment_.makeMu2eEventHeader(), *outE, daq_module_label, header_instance_name());
 
 		TLOG_TRACE("OfflineFragmentReader") << "This event has "
 						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
