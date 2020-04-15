@@ -68,6 +68,18 @@
 #define CARE_ABOUT_END_RUN_FRAGMENTS 0
 #endif
 
+#if ART_HEX_VERSION < 0x30000
+#define RUN_ID id
+#define SUBRUN_ID id
+#define EVENT_ID id
+#else
+#define RUN_ID runID
+#define SUBRUN_ID subRunID
+#define EVENT_ID eventID
+#endif
+
+#define build_key(seed) seed + ((GetPartitionNumber() + 1) << 16) + (getppid() & 0xFFFF)
+
 using namespace mu2e::detail;
 
 namespace {
@@ -77,15 +89,20 @@ namespace {
 constexpr char const* daq_module_label{"daq"};
 std::string trk_instance_name() { return "trk"; }
 std::string calo_instance_name() { return "calo"; }
+std::string header_instance_name() { return "header"; }
 }  // namespace
 
 mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps, art::ProductRegistryHelper& help,
 												   art::SourceHelper const& pm)
-	: pMaker_{pm}, waitingTime_(ps.get<double>("waiting_time", 86400.)), resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true)), evtHeader_(0, 0, 0, 0)
+  : pMaker_{pm}
+							      , waitingTime_(ps.get<double>("waiting_time", 30.))
+, resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true))
+							      , debugEventNumberMode_(ps.get<bool>("debug_event_number_mode", false))
+,evtHeader_(0, 0, 0, 0)
 {
-	incoming_events.reset(
-		new artdaq::SharedMemoryEventReceiver(ps.get<uint32_t>("shared_memory_key", 0xBEE70000 + getppid()),
-											  ps.get<uint32_t>("broadcast_shared_memory_key", 0xCEE70000 + getppid())));
+	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(
+		ps.get<uint32_t>("shared_memory_key", build_key(0xEE000000)),
+		ps.get<uint32_t>("broadcast_shared_memory_key", build_key(0xBB000000))));
 
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
@@ -105,16 +122,15 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 										   art::RunPrincipal*& outR, art::SubRunPrincipal*& outSR,
 										   art::EventPrincipal*& outE)
 {
-	if (outputFileCloseNeeded_) {
-		outputFileCloseNeeded_ = false;
-		return false;
-	}
-
 	// Establish default 'results'
 	outR = nullptr;
 	outSR = nullptr;
 	outE = nullptr;
-	art::Timestamp const currentTime = time(0);
+
+	if (outputFileCloseNeeded_) {
+		outputFileCloseNeeded_ = false;
+		return false;
+	}
 
 	// Check for broadcast fragments
 	bool err = true;
@@ -166,7 +182,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			// Check if inR == 0 or is a new run
 			if (inR == 0 || inR->run() != evtHeader_.run_id) {
 				outSR = pMaker_.makeSubRunPrincipal(evtHeader_.run_id, evtHeader_.subrun_id, currentTime);
-				art::EventID const evid(art::EventID::flushEvent(outSR->id()));
+				art::EventID const evid(art::EventID::flushEvent(outSR->SUBRUN_ID()));
 				outE = pMaker_.makeEventPrincipal(evid, currentTime);
 			}
 			else
@@ -175,8 +191,8 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 				// subrun, then it must have been associated with a data event.  In that case, we need
 				// to generate a flush event with a valid run but flush subrun and event number in order
 				// to end the subrun.
-				if (inSR != 0 && !inSR->id().isFlush() && inSR->subRun() == evtHeader_.subrun_id) {
-					art::EventID const evid(art::EventID::flushEvent(inR->id()));
+				if (inSR != 0 && !inSR->SUBRUN_ID().isFlush() && inSR->subRun() == evtHeader_.subrun_id) {
+					art::EventID const evid(art::EventID::flushEvent(inR->RUN_ID()));
 					outSR = pMaker_.makeSubRunPrincipal(evid.subRunID(), currentTime);
 					outE = pMaker_.makeEventPrincipal(evid, currentTime);
 					// If this is either a new or another empty subrun, then generate a flush event with
@@ -186,7 +202,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 				else
 				{
 					outSR = pMaker_.makeSubRunPrincipal(evtHeader_.run_id, evtHeader_.subrun_id, currentTime);
-					art::EventID const evid(art::EventID::flushEvent(outSR->id()));
+					art::EventID const evid(art::EventID::flushEvent(outSR->SUBRUN_ID()));
 					outE = pMaker_.makeEventPrincipal(evid, currentTime);
 					// Possible error condition
 					//} else {
@@ -241,6 +257,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			if (!hdrPtr) return false;
 			evtHeader_ = artdaq::detail::RawEventHeader(*hdrPtr);
 		}
+		TLOG_DEBUG("OfflineFragmentReader") << "Calling GetFragmentTypes";
 		auto fragmentTypes = incoming_events->GetFragmentTypes(errflag);
 		if (errflag) goto start;  // Buffer was changed out from under reader!
 		if (fragmentTypes.size() == 0) {
@@ -248,6 +265,17 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			incoming_events->ReleaseBuffer();
 			return false;
 		}
+
+		auto firstFragmentType = *fragmentTypes.begin();
+		if (firstFragmentType == artdaq::Fragment::EndOfDataFragmentType) {
+			TLOG_INFO("OfflineFragmentReader") << "Received EndOfData Message. The remaining  "
+											   << currentFragment_.sizeRemaining() << " blocks from DAQ event "
+											   << evtHeader_.sequence_id << " will be lost.";
+			shutdownMsgReceived_ = true;
+			incoming_events->ReleaseBuffer();
+			return false;
+		}
+
 
 		// We return false, indicating we're done reading, if:
 		//   1) we did not obtain an event, because we timed out and were
@@ -258,57 +286,77 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		// Check the number of fragments in the RawEvent.  If we have a single
 		// fragment and that fragment is marked as EndRun or EndSubrun we'll create
 		// the special principals for that.
+
+
+		TLOG_DEBUG("OfflineFragmentReader") << "Iterating through Fragment types";
+		  for (auto& type_code : fragmentTypes) {
+		    // Remove uninteresting fragments -- do not store
+		    if (type_code == artdaq::Fragment::EmptyFragmentType) continue;
+
+		    auto product = incoming_events->GetFragmentsByType(errflag, type_code);
+		    if (errflag) goto start;  // Buffer was changed out from under reader!
+
+		    assert(product->size() == 1ull);
+		    TLOG_DEBUG("OfflineFragmentReader") << "Creating CurrentFragment using Fragment of type " << type_code;
+		currentFragment_ = CurrentFragment{std::move(product->front()), debugEventNumberMode_};
+		    break;
+		  }
+		  incoming_events->ReleaseBuffer();
+		}
+
+		// Making two calls to extractFragmentsFromBlock is likely
+		// inefficient.  However, it is used here for now to clean up the
+		// interface.  If efficiency becomes important at this stage, then
+		// we can alter the call structure to be something like:
+		//
+		//    auto fragmentsColls = currentFragment_.extractFragmentsFromBlock(Tracker, Calorimeter);
+		//    auto const& trkFragments = fragmentsColls[Tracker]; // etc.
+
+
+		try {
+
+		TLOG_DEBUG("OfflineFragmentReader") << "Updating Run/Subrun/Event IDs";
+		  idHandler_.update(evtHeader_, currentFragment_.getCurrentTimestamp());  // See note in mu2e::detail::EventIDHandler::update()
+
 		art::Timestamp currentTime = time(0);
+		  // make new run if inR is 0 or if the run has changed
+		  if (inR == 0 || inR->run() != idHandler_.run()) {
+		    outR = pMaker_.makeRunPrincipal(idHandler_.run(), currentTime);
+		  }
 
-		// make new run if inR is 0 or if the run has changed
-		if (inR == 0 || inR->run() != evtHeader_.run_id) {
-			outR = pMaker_.makeRunPrincipal(evtHeader_.run_id, currentTime);
+		  // make new subrun if inSR is 0 or if the subrun has changed
+		  art::SubRunID subrun_check(idHandler_.run(), idHandler_.subRun());
+		  //		if (inSR == 0 || subrun_check != inSR->id()) {
+		  if (inSR == 0 || subrun_check != inSR->subRunID()) {
+		    outSR = pMaker_.makeSubRunPrincipal(idHandler_.run(), idHandler_.subRun(), currentTime);
+		  }
+
+		TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
+		outE = pMaker_.makeEventPrincipal(idHandler_.run(), idHandler_.subRun(), idHandler_.event(), currentTime);
+
+		put_product_in_principal(currentFragment_.makeMu2eEventHeader(), *outE, daq_module_label, header_instance_name());
+
+		TLOG_TRACE("OfflineFragmentReader") << "This event has "
+						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
+						    << " Tracker Fragments and "
+						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter)
+						    << " Calorimeter Fragments.";
+		put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker), *outE,
+					 daq_module_label, trk_instance_name());
+		put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter), *outE,
+					 daq_module_label, calo_instance_name());
+		currentFragment_.advanceOneBlock();
+
+		return true;
+		} catch(...) {
+
+		  TLOG(TLVL_ERROR) << "Error retrieving Tracker and Calorimeter Fragments from current Event. Shutting down.";
+		  shutdownMsgReceived_ = true;
+		  outR = nullptr;
+		  outSR = nullptr;
+		  outE = nullptr;
+		  return false;
 		}
-
-		// make new subrun if inSR is 0 or if the subrun has changed
-		art::SubRunID subrun_check(evtHeader_.run_id, evtHeader_.subrun_id);
-		if (inSR == 0 || subrun_check != inSR->id()) {
-			outSR = pMaker_.makeSubRunPrincipal(evtHeader_.run_id, evtHeader_.subrun_id, currentTime);
-		}
-
-		for (auto& type_code : fragmentTypes) {
-			// Remove uninteresting fragments -- do not store
-			if (type_code == artdaq::Fragment::EmptyFragmentType) continue;
-
-			auto product = incoming_events->GetFragmentsByType(errflag, type_code);
-			if (errflag) goto start;  // Buffer was changed out from under reader!
-
-			assert(product->size() == 1ull);
-			currentFragment_ = CurrentFragment{std::move(product->front())};
-			break;
-		}
-		incoming_events->ReleaseBuffer();
-	}
-
-	idHandler_.update(evtHeader_);  // See note in mu2e::detail::EventIDHandler::update()
-	TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
-	outE = pMaker_.makeEventPrincipal(idHandler_.run(), idHandler_.subRun(), idHandler_.event(), currentTime);
-
-	// Making two calls to extractFragmentsFromBlock is likely
-	// inefficient.  However, it is used here for now to clean up the
-	// interface.  If efficiency becomes important at this stage, then
-	// we can alter the call structure to be something like:
-	//
-	//    auto fragmentsColls = currentFragment_.extractFragmentsFromBlock(Tracker, Calorimeter);
-	//    auto const& trkFragments = fragmentsColls[Tracker]; // etc.
-
-	TLOG_TRACE("OfflineFragmentReader") << "This event has "
-										<< currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
-										<< " Tracker Fragments and "
-										<< currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter)
-										<< " Calorimeter Fragments.";
-	put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker), *outE,
-							 daq_module_label, trk_instance_name());
-	put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter), *outE,
-							 daq_module_label, calo_instance_name());
-	currentFragment_.advanceOneBlock();
-
-	return true;
 }
 
 DEFINE_ART_INPUT_SOURCE(art::Source<mu2e::OfflineFragmentReader>)

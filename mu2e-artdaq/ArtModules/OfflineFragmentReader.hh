@@ -62,6 +62,7 @@ private:
 	bool resumeAfterTimeout_;
 	bool shutdownMsgReceived_{false};
 	bool outputFileCloseNeeded_{false};
+  bool debugEventNumberMode_{false};
 	detail::EventIDHandler idHandler_{};
 	detail::CurrentFragment currentFragment_{};
 

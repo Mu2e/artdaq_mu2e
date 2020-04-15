@@ -9,6 +9,7 @@ art_make(NO_PLUGINS # WAnt different link lists for modues
   ${CANVAS_PERSISTENCY_PROVENANCE}
  LIB_LIBRARIES 
   mu2e-artdaq-core_Overlays
+  artdaq-core_Utilities
   artdaq_ArtModules
   art_Framework_Core
   art_Framework_IO_Sources
@@ -41,10 +42,12 @@ simple_plugin(Mu2eDump "module"
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
   ${CETLIB_EXCEPT}
+  ${MF_MESSAGELOGGER}
 )
 
 simple_plugin(OfflineFragmentsDumper "module"
   mu2e-artdaq-core_Overlays
+  ${MF_MESSAGELOGGER}
   ${CETLIB_EXCEPT}
 )
 
@@ -54,22 +57,31 @@ simple_plugin(DTCDump "module"
   ${Boost_SYSTEM_LIBRARY}
   ${MONGODB_CXX_LIBRARIES}
   ${CETLIB_EXCEPT}
+  ${MF_MESSAGELOGGER}
 )
 
-simple_plugin(DetectorDump "module"
-  mu2e-artdaq-core_Overlays
-  DTCInterface
-  ${Boost_SYSTEM_LIBRARY}
-  ${MONGODB_CXX_LIBRARIES}
-  ${CETLIB_EXCEPT}
-)
+#simple_plugin(DetectorDump "module"
+#  mu2e-artdaq-core_Overlays
+#  DTCInterface
+#  ${Boost_SYSTEM_LIBRARY}
+#  ${MONGODB_CXX_LIBRARIES}
+#  ${CETLIB_EXCEPT}
+#  ${MF_MESSAGELOGGER}
+#)
 
 simple_plugin(Mu2eArtdaqBuildInfo "module"
+  art_Framework_Core
+  art_Framework_IO_Sources
+  art_Framework_Principal
+  art_Persistency_Provenance
+  art_Utilities
+  artdaq-core_Utilities
   artdaq_DAQdata
   artdaq_BuildInfo
   artdaq-core_BuildInfo
   mu2e-artdaq_BuildInfo
   mu2e-artdaq-core_BuildInfo
+  mu2e-artdaq-core_Overlays
   ${MF_MESSAGELOGGER}
   ${FHICLCPP}
   ${CETLIB}
@@ -80,12 +92,14 @@ cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
   SOURCE
   detail/CurrentFragment.cc
   LIBRARIES
+  artdaq-core_Utilities
   artdaq-core_Core
   artdaq-core_Data
   ${CANVAS_LIB_LIST}
   ${CETLIB}
   ${CETLIB_EXCEPT}
   DTCInterface
+  ${MF_MESSAGELOGGER}
   )
 
 simple_plugin(OfflineFragmentReader "source"
@@ -98,12 +112,14 @@ simple_plugin(Mu2eInput "source"
   mu2e-artdaq-core_Overlays
   artdaq_ArtModules
   artdaq_DAQdata
+  artdaq_ArtModules_ArtdaqSharedMemoryService_service
   artdaq-utilities_Plugins
   artdaq-core_Core
   artdaq-core_Utilities
   art_Framework_Core
   art_Framework_IO_Sources
   art_Framework_Principal
+  art_Framework_Services_Registry
   art_Persistency_Provenance
   art_Utilities
   MF_MessageLogger

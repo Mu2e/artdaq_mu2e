@@ -65,15 +65,15 @@ void mu2e::DTCDump::analyze(art::Event const& evt)
 
 			DTCFragment bb(frag);
 
-			if (frag.hasMetadata()) {
-				std::cout << std::endl;
-				std::cout << "DTCFragment SimMode: ";
-				DTCFragment::Metadata const* md = frag.metadata<DTCFragment::Metadata>();
-				std::cout << DTCLib::DTC_SimModeConverter((DTCLib::DTC_SimMode)(md->sim_mode)).toString() << std::endl;
-				std::cout << "Timestamp: 0x" << std::hex << bb.hdr_timestamp() << std::endl;
-				std::cout << "Board ID: " << std::to_string((int)md->board_id) << std::endl;
-				std::cout << std::endl;
-			}
+			//if (frag.hasMetadata()) {
+			//	std::cout << std::endl;
+			//	std::cout << "DTCFragment SimMode: ";
+			//	DTCFragment::Metadata const* md = frag.metadata<DTCFragment::Metadata>();
+			//	std::cout << DTCLib::DTC_SimModeConverter((DTCLib::DTC_SimMode)(md->sim_mode)).toString() << std::endl;
+			//	std::cout << "Timestamp: 0x" << std::hex << bb.hdr_timestamp() << std::endl;
+			//	std::cout << "Board ID: " << std::to_string((int)md->board_id) << std::endl;
+			//	std::cout << std::endl;
+			//}
 
 			std::cout << "DTC_DataHeaderPacket:" << std::endl;
 			auto dhpacket = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket((uint8_t*)*(bb.dataBegin())));

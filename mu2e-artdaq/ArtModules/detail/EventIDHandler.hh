@@ -15,17 +15,14 @@ public:
 	//      is just incremented.  This behavior may need to change
 	//      if encapsulating the timestamp into the art::EventID is
 	//      desired.
-	void update(artdaq::detail::RawEventHeader re)
+  void update(artdaq::detail::RawEventHeader re, uint64_t timestamp)
 	{
 		if (run_ != re.run_id) {
 			run_ = re.run_id;
 			event_ = 0;
 		}
-		if (re.subrun_id != subRun_) {
-			subRun_ = re.subrun_id;
-			event_ = 0;
-		}
-		++event_;
+		subRun_ = static_cast<uint32_t>(timestamp >> 32) + 1; // Subruns are 1-based!
+		event_ = static_cast<uint32_t>(timestamp) + 1; // Events are 1-based
 	}
 
 	auto run() const { return run_; }

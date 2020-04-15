@@ -5,9 +5,11 @@
 #include "artdaq-core/Data/Fragment.hh"
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
+#include "mu2e-artdaq-core/Overlays/Mu2eEventHeader.hh"
 
 namespace mu2e {
 namespace detail {
+
 /// <summary>
 /// Helper class for processing artdaq Fragments into art Events
 /// </summary>
@@ -29,7 +31,8 @@ public:
 	/// Constructor
 	/// </summary>
 	/// <param name="f">Fragment to process</param>
-	CurrentFragment(artdaq::Fragment f);
+        /// <param name="debug_event_number_mode">Event Number Debug Mode (for testing with Detector Emulator files)</param>
+  CurrentFragment(artdaq::Fragment f, bool debug_event_number_mode);
 
 	/// <summary>
 	/// Get the count of blocks processed from the artdaq Fragment
@@ -68,6 +71,13 @@ public:
 	/// <param name="sub">Subsystem to extract blocks for</param>
 	/// <returns>Pointer to Fragments list</returns>
 	std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::DTC_Subsystem sub);
+
+	/// <summary>
+	/// Extract the information needed to make the Mu2eEventHeader from the current block
+	/// </summary>
+	/// <returns>Pointer to Mu2eEventHeader</returns>
+	std::unique_ptr<Mu2eEventHeader> makeMu2eEventHeader();
+
 	/// <summary>
 	/// Get the number of Fragments for the given subsystem in the current block
 	/// </summary>
@@ -75,11 +85,15 @@ public:
 	/// <returns>Number of Fragments in block</returns>
 	size_t getFragmentCount(DTCLib::DTC_Subsystem sub);
 
+  uint64_t getCurrentTimestamp();
+
 private:
 	std::unique_ptr<artdaq::Fragment const> fragment_{nullptr};
 	std::unique_ptr<mu2eFragment const> reader_{nullptr};
 	uint8_t const* current_{nullptr};
 	size_t block_count_;
+
+  bool debug_event_number_mode_;
 };
 
 }  // namespace detail

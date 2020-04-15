@@ -3,6 +3,7 @@ simple_plugin(DTCReceiver "generator"
   artdaq_DAQdata
   artdaq_Generators
   artdaq_DAQrate
+  artdaq-core_Utilities
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}
   ${CETLIB}
@@ -29,19 +30,20 @@ simple_plugin(Mu2eReceiver "generator"
   ${Boost_SYSTEM_LIBRARY}
   )
 
-simple_plugin(OverlayTest "generator"
-  mu2e-artdaq-core_Overlays
-  artdaq_Generators
-  artdaq_DAQdata
-  artdaq_DAQrate
-  ${CANVAS_LIB_LIST}
-  ${FHICLCPP}
-  ${CETLIB}
-  ${CETLIB_EXCEPT}
-  MF_MessageLogger
-  DTCInterface
-  ${Boost_SYSTEM_LIBRARY}
-  )
+#simple_plugin(OverlayTest "generator"
+#  mu2e-artdaq-core_Overlays
+#  artdaq_Generators
+#  artdaq_DAQdata
+#  artdaq_DAQrate
+#  artdaq-core_Utilities
+#  ${CANVAS_LIB_LIST}
+#  ${FHICLCPP}
+#  ${CETLIB}
+#  ${CETLIB_EXCEPT}
+#  MF_MessageLogger
+#  DTCInterface
+#  ${Boost_SYSTEM_LIBRARY}
+#  )
 
 #get_cmake_property(_variableNames VARIABLES)
 #foreach (_variableName ${_variableNames})

@@ -105,8 +105,8 @@ void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 mu2e::Mu2eReceiver::~Mu2eReceiver()
 {
 	rawOutputStream_.close();
-	delete theInterface_;
 	delete theCFO_;
+	delete theInterface_;
 }
 
 void mu2e::Mu2eReceiver::stop()
@@ -191,7 +191,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 				data = theInterface_->GetData(zero);
 				TLOG(30) << "Done calling theInterface->GetData(zero)";
 			}
-			catch (std::exception ex)
+			catch (std::exception const& ex)
 			{
 				TLOG_ERROR("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what();
 			}
