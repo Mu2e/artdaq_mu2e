@@ -92,6 +92,7 @@ cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
   SOURCE
   detail/CurrentFragment.cc
   LIBRARIES
+  mu2e-artdaq-core_Overlays
   artdaq-core_Utilities
   artdaq-core_Core
   artdaq-core_Data
@@ -108,22 +109,14 @@ simple_plugin(OfflineFragmentReader "source"
   mu2e_artdaq_ArtModules_detail
   )
 
-simple_plugin(Mu2eInput "source"
-  mu2e-artdaq-core_Overlays
-  artdaq_ArtModules
-  artdaq_DAQdata
-  artdaq_ArtModules_ArtdaqSharedMemoryService_service
-  artdaq-utilities_Plugins
-  artdaq-core_Core
-  artdaq-core_Utilities
-  art_Framework_Core
-  art_Framework_IO_Sources
-  art_Framework_Principal
+simple_plugin(Mu2eArtdaqFragmentNamingService "service"
+artdaq_ArtModules_ArtdaqFragmentNamingService_service
+artdaq-core_Data
+mu2e-artdaq-core_Overlays
   art_Framework_Services_Registry
-  art_Persistency_Provenance
-  art_Utilities
   MF_MessageLogger
-)
+  fhiclcpp)
+  
 
 # Subdirectories.
 add_subdirectory(fcl)

@@ -63,7 +63,6 @@ std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
 	std::unique_ptr<Mu2eEventHeader> output = nullptr;
 	// Increment through the data blocks of the current super block.
 	auto const begin = current_;
-	auto const end = reinterpret_cast<char const*>(current_ + reader_->blockSize(processedSuperBlocks()));
 	auto data = reinterpret_cast<char const*>(begin);
 	
 		// Construct DTC_DataHeaderPacket to determine byte count of
