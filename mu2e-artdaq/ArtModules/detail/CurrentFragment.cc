@@ -7,14 +7,14 @@
 namespace mu2e {
 namespace detail {
 
-  static size_t event_num = 0;
+static size_t event_num = 0;
 
-  CurrentFragment::CurrentFragment(artdaq::Fragment f, bool debug_event_number_mode)
+CurrentFragment::CurrentFragment(artdaq::Fragment f, bool debug_event_number_mode)
 	: fragment_{std::make_unique<artdaq::Fragment>(std::move(f))}
-, reader_{std::make_unique<mu2eFragment>(*fragment_)}
-, current_{reinterpret_cast<const uint8_t*>(reader_->dataBegin())}
-, block_count_(0) 
-  , debug_event_number_mode_(debug_event_number_mode)
+	, reader_{std::make_unique<mu2eFragment>(*fragment_)}
+	, current_{reinterpret_cast<const uint8_t*>(reader_->dataBegin())}
+	, block_count_(0)
+	, debug_event_number_mode_(debug_event_number_mode)
 {}
 
 std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DTCLib::DTC_Subsystem const subsystem)
@@ -29,33 +29,56 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 	auto const begin = current_;
 	auto const end = reinterpret_cast<char const*>(current_ + reader_->blockSize(processedSuperBlocks()));
 	auto data = reinterpret_cast<char const*>(begin);
-	while (data < end) {
+	while (data < end)
+	{
 		// Construct DTC_DataHeaderPacket to determine byte count of
 		// current data block.
-		try{
-		DTCLib::DTC_DataPacket const dataPacket{data};
-		DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
-		auto const byteCount = headerPacket.GetByteCount();
+		try
+		{
+			DTCLib::DTC_DataPacket const dataPacket{data};
+			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
+			auto byteCount = headerPacket.GetByteCount();
 
-		// Use byte count to calculate how many words the current data
-		// block should occupy in the new fragment.
-		auto const wordCount = byteCount / sizeof(artdaq::RawDataType);
-		auto const packetSize = (byteCount % 8 == 0) ? wordCount : wordCount + 1;
+			if (headerPacket.GetSubsystem() == subsystem)
+			{
 
-		if (headerPacket.GetSubsystem() == subsystem) {
-			result->push_back(*artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
-														  headerPacket.GetEVBMode(),  // Returns evbMode (see mu2e-docdb 4914)
-														  reinterpret_cast<artdaq::RawDataType const*>(data), packetSize,
-														  fragment_->timestamp())
-								   .get());
+			while (data + byteCount < end) {
+				DTCLib::DTC_DataPacket const newDataPacket{data + byteCount};
+				DTCLib::DTC_DataHeaderPacket const newHeaderPacket{dataPacket};
+
+				// Collapse multiple blocks from the same DTC/ROC into one Fragment
+				if (newHeaderPacket.GetSubsystem() == subsystem
+					&& newHeaderPacket.GetID() == headerPacket.GetID()
+					&& newHeaderPacket.GetRingID() == headerPacket.GetRingID()
+					&& newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
+				{
+					byteCount += newHeaderPacket.GetByteCount();
+				}
+			}
+
+			// Use byte count to calculate how many words the current data
+			// block should occupy in the new fragment.
+			auto const wordCount = byteCount / sizeof(artdaq::RawDataType);
+			auto const fragmentSize = (byteCount % sizeof(artdaq::RawDataType) == 0) ? wordCount : wordCount + 1;
+
+				result->push_back(*artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
+															  headerPacket.GetEVBMode(),  // Returns evbMode (see mu2e-docdb 4914)
+															  reinterpret_cast<artdaq::RawDataType const*>(data), fragmentSize,
+															  fragment_->timestamp())
+									   .get());
+			}
+			data += byteCount;
 		}
-		data += byteCount;
-		} catch(...) { TLOG(TLVL_TRACE) << "Error reading Fragments from block";break; }
+		catch (...)
+		{
+			TLOG(TLVL_TRACE) << "Error reading Fragments from block";
+			break;
+		}
 	}
-	if(data <= end) { return result; }
-TLOG(TLVL_ERROR) << "ma::CurrentFragment::extractFragmentsFromBlock: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
-					    throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
-							 << "The data pointer has shot past the 'end' pointer.";
+	if (data <= end) { return result; }
+	TLOG(TLVL_ERROR) << "ma::CurrentFragment::extractFragmentsFromBlock: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+	throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
+		<< "The data pointer has shot past the 'end' pointer.";
 }
 
 std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
@@ -64,24 +87,24 @@ std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
 	// Increment through the data blocks of the current super block.
 	auto const begin = current_;
 	auto data = reinterpret_cast<char const*>(begin);
-	
-		// Construct DTC_DataHeaderPacket to determine byte count of
-		// current data block.
-		try
-		{
-			DTCLib::DTC_DataPacket const dataPacket{data};
-			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
-			output.reset(new Mu2eEventHeader(headerPacket.GetTimestamp().GetTimestamp(true), headerPacket.GetEVBMode()));
-		}
-		catch (...)
-		{
-			TLOG(TLVL_TRACE) << "Error reading Fragments from block when trying to create Mu2eEventHeader product!";
-		}
+
+	// Construct DTC_DataHeaderPacket to determine byte count of
+	// current data block.
+	try
+	{
+		DTCLib::DTC_DataPacket const dataPacket{data};
+		DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
+		output.reset(new Mu2eEventHeader(headerPacket.GetTimestamp().GetTimestamp(true), headerPacket.GetEVBMode()));
+	}
+	catch (...)
+	{
+		TLOG(TLVL_TRACE) << "Error reading Fragments from block when trying to create Mu2eEventHeader product!";
+	}
 
 	return output;
 }
 
-	size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
+size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 {
 	auto result = 0;
 
@@ -95,48 +118,56 @@ std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
 	auto data = reinterpret_cast<char const*>(begin);
 	TLOG(TLVL_TRACE) << "data is " << (void*)data << ", end is " << (void*)end;
 
-	while (data < end) {
-		try {
-		  //TLOG(TLVL_TRACE) << "Constructing DTC_DataHeaderPacket with data from " << (void*)data << ", (end=" << (void*)end <<")";
+	while (data < end)
+	{
+		try
+		{
+			//TLOG(TLVL_TRACE) << "Constructing DTC_DataHeaderPacket with data from " << (void*)data << ", (end=" << (void*)end <<")";
+			// Construct DTC_DataHeaderPacket to determine byte count of
+			// current data block.
+			DTCLib::DTC_DataPacket const dataPacket{data};
+			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
+			auto const byteCount = headerPacket.GetByteCount();
+
+			if (headerPacket.GetSubsystem() == subsystem)
+			{
+				result++;
+			}
+			data += byteCount;
+		}
+		catch (...)
+		{
+			TLOG(TLVL_TRACE) << "Error reading Fragments from Block";
+			break;
+		}
+	}
+
+	if (data <= end) { return result; }
+	TLOG(TLVL_ERROR) << "ma::CurrentFragment::getFragmentCount: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+	throw art::Exception{art::errors::DataCorruption, "CurrentFragment::getFragmentCount"}
+		<< "The data pointer has shot past the 'end' pointer.";
+}
+
+uint64_t CurrentFragment::getCurrentTimestamp()
+{
+	uint64_t result = 0;
+	if (!debug_event_number_mode_)
+	{
+		auto data = reinterpret_cast<char const*>(current_);
 		// Construct DTC_DataHeaderPacket to determine byte count of
 		// current data block.
 		DTCLib::DTC_DataPacket const dataPacket{data};
 		DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
-		auto const byteCount = headerPacket.GetByteCount();
 
-		if (headerPacket.GetSubsystem() == subsystem) {
-			result++;
-		}
-		data += byteCount;
-		}
-		catch(...) { TLOG(TLVL_TRACE) << "Error reading Fragments from Block"; break;}
+		result = headerPacket.GetTimestamp().GetTimestamp(true);
+	}
+	else
+	{
+		return (static_cast<uint64_t>(getpid()) << 32) + (++event_num);
 	}
 
-	if(data <= end) { return result; }
-TLOG(TLVL_ERROR) << "ma::CurrentFragment::getFragmentCount: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
-					    throw art::Exception{art::errors::DataCorruption, "CurrentFragment::getFragmentCount"}
-							 << "The data pointer has shot past the 'end' pointer.";
+	return result;
 }
-
-  uint64_t CurrentFragment::getCurrentTimestamp()
-  {
-    uint64_t result = 0;
-    if(!debug_event_number_mode_) {
-    auto data = reinterpret_cast<char const*>(current_);
-      // Construct DTC_DataHeaderPacket to determine byte count of
-      // current data block.
-      DTCLib::DTC_DataPacket const dataPacket{data};
-      DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
-
-      result = headerPacket.GetTimestamp().GetTimestamp(true);
-
-    }
-    else {
-      return (static_cast<uint64_t>(getpid()) << 32) + (++event_num);
-    }
-
-    return result;
-  }
 
 }  // namespace detail
 }  // namespace mu2e
