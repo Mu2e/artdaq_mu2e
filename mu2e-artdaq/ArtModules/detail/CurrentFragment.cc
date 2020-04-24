@@ -58,7 +58,30 @@ TLOG(TLVL_ERROR) << "ma::CurrentFragment::extractFragmentsFromBlock: The data po
 							 << "The data pointer has shot past the 'end' pointer.";
 }
 
-size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
+std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
+{
+	std::unique_ptr<Mu2eEventHeader> output = nullptr;
+	// Increment through the data blocks of the current super block.
+	auto const begin = current_;
+	auto data = reinterpret_cast<char const*>(begin);
+	
+		// Construct DTC_DataHeaderPacket to determine byte count of
+		// current data block.
+		try
+		{
+			DTCLib::DTC_DataPacket const dataPacket{data};
+			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
+			output.reset(new Mu2eEventHeader(headerPacket.GetTimestamp().GetTimestamp(true), headerPacket.GetEVBMode()));
+		}
+		catch (...)
+		{
+			TLOG(TLVL_TRACE) << "Error reading Fragments from block when trying to create Mu2eEventHeader product!";
+		}
+
+	return output;
+}
+
+	size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 {
 	auto result = 0;
 

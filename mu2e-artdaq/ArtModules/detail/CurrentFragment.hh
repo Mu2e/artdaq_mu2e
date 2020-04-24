@@ -5,9 +5,11 @@
 #include "artdaq-core/Data/Fragment.hh"
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
+#include "mu2e-artdaq-core/Overlays/Mu2eEventHeader.hh"
 
 namespace mu2e {
 namespace detail {
+
 /// <summary>
 /// Helper class for processing artdaq Fragments into art Events
 /// </summary>
@@ -69,6 +71,13 @@ public:
 	/// <param name="sub">Subsystem to extract blocks for</param>
 	/// <returns>Pointer to Fragments list</returns>
 	std::unique_ptr<artdaq::Fragments> extractFragmentsFromBlock(DTCLib::DTC_Subsystem sub);
+
+	/// <summary>
+	/// Extract the information needed to make the Mu2eEventHeader from the current block
+	/// </summary>
+	/// <returns>Pointer to Mu2eEventHeader</returns>
+	std::unique_ptr<Mu2eEventHeader> makeMu2eEventHeader();
+
 	/// <summary>
 	/// Get the number of Fragments for the given subsystem in the current block
 	/// </summary>
