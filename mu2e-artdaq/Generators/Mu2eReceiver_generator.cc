@@ -20,7 +20,12 @@
 #include <unistd.h>
 
 mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType("MU2E")), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, timestamps_read_(0), lastReportTime_(std::chrono::steady_clock::now()), mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), rawOutput_(ps.get<bool>("raw_output_enable", false)), rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin")), nSkip_(ps.get<size_t>("fragment_receiver_count", 1)), sendEmpties_(ps.get<bool>("send_empty_fragments", false)), verbose_(ps.get<bool>("verbose", false))
+	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType("MU2E"))
+	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
+	, timestamps_read_(0), lastReportTime_(std::chrono::steady_clock::now())
+	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), rawOutput_(ps.get<bool>("raw_output_enable", false))
+	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin")), nSkip_(ps.get<size_t>("fragment_receiver_count", 1)), sendEmpties_(ps.get<bool>("send_empty_fragments", false)), verbose_(ps.get<bool>("verbose", false)), nEvents_(ps.get<size_t>("number_of_events_to_generate", -1))
 {
 	TLOG(TLVL_DEBUG) << "Mu2eReceiver_generator CONSTRUCTOR";
 	// mode_ can still be overridden by environment!
@@ -121,7 +126,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
-	if (should_stop()) {
+	if (should_stop() || ev_counter() > nEvents_) {
 		return false;
 	}
 

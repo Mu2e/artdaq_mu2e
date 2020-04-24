@@ -75,6 +75,7 @@ private:
 	size_t nSkip_;
 	bool sendEmpties_;
 	bool verbose_;
+	size_t nEvents_;
 
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
