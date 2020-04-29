@@ -339,7 +339,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		TLOG_DEBUG("OfflineFragmentReader") << "Extracting Mu2e Event Header from CurrentFragment";
 		auto mu2eHeader = currentFragment_.makeMu2eEventHeader();
 		TLOG_DEBUG("OfflineFragmentReader") << "Putting Mu2e Event Header into Mu2e Event";
-		put_product_in_principal(mu2eHeader, *outE, daq_module_label, header_instance_name());
+		put_product_in_principal(std::move(mu2eHeader), *outE, daq_module_label, header_instance_name());
 
 		TLOG_DEBUG("OfflineFragmentReader") << "Getting Tracker and Calorimeter Fragments from CurrentFragment";
 		TLOG_TRACE("OfflineFragmentReader") << "This event has "
