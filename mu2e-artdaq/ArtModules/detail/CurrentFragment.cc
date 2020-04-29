@@ -6,7 +6,6 @@
 #include "canvas/Utilities/Exception.h"
 #include "dtcInterfaceLib/DTC_Packets.h"
 
-
 namespace mu2e {
 namespace detail {
 
@@ -44,30 +43,34 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 
 			if (headerPacket.GetSubsystem() == subsystem)
 			{
-
-			while (data + byteCount < end) {
-				try
+				while (data + byteCount < end)
 				{
-					DTCLib::DTC_DataPacket const newDataPacket{data + byteCount};
-					DTCLib::DTC_DataHeaderPacket const newHeaderPacket{dataPacket};
-
-					// Collapse multiple blocks from the same DTC/ROC into one Fragment
-					if (newHeaderPacket.GetSubsystem() == subsystem && newHeaderPacket.GetID() == headerPacket.GetID() && newHeaderPacket.GetRingID() == headerPacket.GetRingID() && newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
+					try
 					{
-						byteCount += newHeaderPacket.GetByteCount();
+						DTCLib::DTC_DataPacket const newDataPacket{data + byteCount};
+						DTCLib::DTC_DataHeaderPacket const newHeaderPacket{dataPacket};
+
+						// Collapse multiple blocks from the same DTC/ROC into one Fragment
+						if (newHeaderPacket.GetSubsystem() == subsystem && newHeaderPacket.GetID() == headerPacket.GetID() && newHeaderPacket.GetRingID() == headerPacket.GetRingID() && newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
+						{
+							byteCount += newHeaderPacket.GetByteCount();
+						}
+						else
+						{
+							break;
+						}
+					}
+					catch (...)
+					{
+						TLOG_ERROR("CurrentFragment") << "There may be data corruption in the Fragment. Aborting search for same-ROC blocks";
+						break;
 					}
 				}
-				catch (...)
-				{
-					TLOG_ERROR("CurrentFragment") << "There may be data corruption in the Fragment. Aborting search for same-ROC blocks";
-					break;
-				}
-			}
 
-			// Use byte count to calculate how many words the current data
-			// block should occupy in the new fragment.
-			auto const wordCount = byteCount / sizeof(artdaq::RawDataType);
-			auto const fragmentSize = (byteCount % sizeof(artdaq::RawDataType) == 0) ? wordCount : wordCount + 1;
+				// Use byte count to calculate how many words the current data
+				// block should occupy in the new fragment.
+				auto const wordCount = byteCount / sizeof(artdaq::RawDataType);
+				auto const fragmentSize = (byteCount % sizeof(artdaq::RawDataType) == 0) ? wordCount : wordCount + 1;
 
 				result->push_back(*artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
 															  headerPacket.GetEVBMode(),  // Returns evbMode (see mu2e-docdb 4914)
@@ -92,15 +95,16 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
 {
 	std::unique_ptr<Mu2eEventHeader> output = nullptr;
-	// Increment through the data blocks of the current super block.
-	auto const begin = current_;
-	auto data = reinterpret_cast<char const*>(begin);
 
 	uint64_t timestamp = getCurrentTimestamp();
 	uint8_t evbmode = 0;
 
 	if (!debug_event_number_mode_)
 	{
+		// Increment through the data blocks of the current super block.
+		auto const begin = current_;
+		auto data = reinterpret_cast<char const*>(begin);
+
 		// Construct DTC_DataHeaderPacket to determine byte count of
 		// current data block.
 		try

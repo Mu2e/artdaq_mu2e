@@ -104,6 +104,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 		ps.get<uint32_t>("shared_memory_key", build_key(0xEE000000)),
 		ps.get<uint32_t>("broadcast_shared_memory_key", build_key(0xBB000000))));
 
+	help.reconstitutes<mu2e::Mu2eEventHeader, art::InEvent>(daq_module_label, header_instance_name());
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
 	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
 }
@@ -336,7 +337,9 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 
 		TLOG_DEBUG("OfflineFragmentReader") << "Extracting Mu2e Event Header from CurrentFragment";
-		put_product_in_principal(currentFragment_.makeMu2eEventHeader(), *outE, daq_module_label, header_instance_name());
+		auto mu2eHeader = currentFragment_.makeMu2eEventHeader();
+		TLOG_DEBUG("OfflineFragmentReader") << "Putting Mu2e Event Header into Mu2e Event";
+		put_product_in_principal(mu2eHeader, *outE, daq_module_label, header_instance_name());
 
 		TLOG_DEBUG("OfflineFragmentReader") << "Getting Tracker and Calorimeter Fragments from CurrentFragment";
 		TLOG_TRACE("OfflineFragmentReader") << "This event has "
@@ -349,6 +352,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter), *outE,
 					 daq_module_label, calo_instance_name());
 		currentFragment_.advanceOneBlock();
+		TLOG_DEBUG("OfflineFragmentReader") << "Done extracting Tracker and Calorimeter Fragments from CurrentFragment";
 
 		return true;
 		} catch(...) {
