@@ -1,8 +1,11 @@
+
+#include "TRACE/tracemf.h"
+#define TRACE_NAME "CurrentFragment"
+
 #include "mu2e-artdaq/ArtModules/detail/CurrentFragment.hh"
 #include "canvas/Utilities/Exception.h"
 #include "dtcInterfaceLib/DTC_Packets.h"
 
-#define TRACE_NAME "CurrentFragment"
 
 namespace mu2e {
 namespace detail {
@@ -56,7 +59,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 				}
 				catch (...)
 				{
-					TLOG(TLVL_ERROR) << "There may be data corruption in the Fragment. Aborting search for same-ROC blocks";
+					TLOG_ERROR("CurrentFragment") << "There may be data corruption in the Fragment. Aborting search for same-ROC blocks";
 					break;
 				}
 			}
@@ -81,7 +84,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 		}
 	}
 	if (data <= end) { return result; }
-	TLOG(TLVL_ERROR) << "ma::CurrentFragment::extractFragmentsFromBlock: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+	TLOG_ERROR("CurrentFragment") << "ma::CurrentFragment::extractFragmentsFromBlock: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
 	throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
 		<< "The data pointer has shot past the 'end' pointer.";
 }
@@ -148,7 +151,7 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 	}
 
 	if (data <= end) { return result; }
-	TLOG(TLVL_ERROR) << "ma::CurrentFragment::getFragmentCount: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+	TLOG_ERROR("CurrentFragment") << "ma::CurrentFragment::getFragmentCount: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
 	throw art::Exception{art::errors::DataCorruption, "CurrentFragment::getFragmentCount"}
 		<< "The data pointer has shot past the 'end' pointer.";
 }
