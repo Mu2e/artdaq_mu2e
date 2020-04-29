@@ -43,16 +43,21 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 			{
 
 			while (data + byteCount < end) {
-				DTCLib::DTC_DataPacket const newDataPacket{data + byteCount};
-				DTCLib::DTC_DataHeaderPacket const newHeaderPacket{dataPacket};
-
-				// Collapse multiple blocks from the same DTC/ROC into one Fragment
-				if (newHeaderPacket.GetSubsystem() == subsystem
-					&& newHeaderPacket.GetID() == headerPacket.GetID()
-					&& newHeaderPacket.GetRingID() == headerPacket.GetRingID()
-					&& newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
+				try
 				{
-					byteCount += newHeaderPacket.GetByteCount();
+					DTCLib::DTC_DataPacket const newDataPacket{data + byteCount};
+					DTCLib::DTC_DataHeaderPacket const newHeaderPacket{dataPacket};
+
+					// Collapse multiple blocks from the same DTC/ROC into one Fragment
+					if (newHeaderPacket.GetSubsystem() == subsystem && newHeaderPacket.GetID() == headerPacket.GetID() && newHeaderPacket.GetRingID() == headerPacket.GetRingID() && newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
+					{
+						byteCount += newHeaderPacket.GetByteCount();
+					}
+				}
+				catch (...)
+				{
+					TLOG(TLVL_ERROR) << "There may be data corruption in the Fragment. Aborting search for same-ROC blocks";
+					break;
 				}
 			}
 
