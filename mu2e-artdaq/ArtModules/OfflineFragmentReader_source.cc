@@ -334,8 +334,11 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
 		outE = pMaker_.makeEventPrincipal(idHandler_.run(), idHandler_.subRun(), idHandler_.event(), currentTime);
 
+
+		TLOG_DEBUG("OfflineFragmentReader") << "Extracting Mu2e Event Header from CurrentFragment";
 		put_product_in_principal(currentFragment_.makeMu2eEventHeader(), *outE, daq_module_label, header_instance_name());
 
+		TLOG_DEBUG("OfflineFragmentReader") << "Getting Tracker and Calorimeter Fragments from CurrentFragment";
 		TLOG_TRACE("OfflineFragmentReader") << "This event has "
 						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
 						    << " Tracker Fragments and "
