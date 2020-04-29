@@ -347,10 +347,14 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 						    << " Tracker Fragments and "
 						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter)
 						    << " Calorimeter Fragments.";
+
+		TLOG_TRACE("OfflineFragmentReader") << "Extracting Tracker Fragments from CurrentFragment";
 		put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker), *outE,
 					 daq_module_label, trk_instance_name());
+		TLOG_TRACE("OfflineFragmentReader") << "Extracting Calorimeter Fragments from CurrentFragment";
 		put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter), *outE,
 					 daq_module_label, calo_instance_name());
+		TLOG_TRACE("OfflineFragmentReader") << "Advancing to next block";
 		currentFragment_.advanceOneBlock();
 		TLOG_DEBUG("OfflineFragmentReader") << "Done extracting Tracker and Calorimeter Fragments from CurrentFragment";
 
