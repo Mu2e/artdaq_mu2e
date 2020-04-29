@@ -96,18 +96,27 @@ std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
 	auto const begin = current_;
 	auto data = reinterpret_cast<char const*>(begin);
 
-	// Construct DTC_DataHeaderPacket to determine byte count of
-	// current data block.
-	try
+	uint64_t timestamp = getCurrentTimestamp();
+	uint8_t evbmode = 0;
+
+	if (!debug_event_number_mode_)
 	{
-		DTCLib::DTC_DataPacket const dataPacket{data};
-		DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
-		output.reset(new Mu2eEventHeader(headerPacket.GetTimestamp().GetTimestamp(true), headerPacket.GetEVBMode()));
+		// Construct DTC_DataHeaderPacket to determine byte count of
+		// current data block.
+		try
+		{
+			DTCLib::DTC_DataPacket const dataPacket{data};
+			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
+			timestamp = headerPacket.GetTimestamp().GetTimestamp(true);
+			evbmode = headerPacket.GetEVBMode();
+		}
+		catch (...)
+		{
+			TLOG(TLVL_TRACE) << "Error reading Fragments from block when trying to create Mu2eEventHeader product!";
+		}
 	}
-	catch (...)
-	{
-		TLOG(TLVL_TRACE) << "Error reading Fragments from block when trying to create Mu2eEventHeader product!";
-	}
+
+	output.reset(new Mu2eEventHeader(timestamp, evbmode));
 
 	return output;
 }
