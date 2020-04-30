@@ -70,10 +70,14 @@ outputs:
 
 source:
 {
-module_type: RawInput
+module_type: ArtdaqInput
+}
+
+services: {
+    ArtdaqFragmentNamingServiceInterface: { service_provider: Mu2eArtdaqFragmentNamingService }
+    ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqSharedMemoryService
 waiting_time: 900
-resume_after_timeout: true
-fragment_type_map: [[2, "DTC"] ]
+resume_after_timeout: true }
 }
 
 process_name: Driver
