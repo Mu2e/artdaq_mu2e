@@ -67,6 +67,10 @@ private:
 	detail::CurrentFragment currentFragment_{};
 
 	artdaq::detail::RawEventHeader evtHeader_;
+
+        bool readTrkFragments_;
+        bool readCaloFragments_;
+        bool readCrvFragments_;
 };
 
 }  // namespace mu2e

@@ -84,29 +84,34 @@ using namespace mu2e::detail;
 
 namespace {
 // Per agreement, the fictitious module label is "daq" and the
-// instance names of the fragments corresponding to the tracker and
-// calorimeter are "trk" and "calo", respectively.
+// instance names of the fragments corresponding to the tracker, 
+// calorimeter, and crv are "trk", "calo", and "crv", respectively.
 constexpr char const* daq_module_label{"daq"};
 std::string trk_instance_name() { return "trk"; }
 std::string calo_instance_name() { return "calo"; }
+std::string crv_instance_name() { return "crv"; }
 std::string header_instance_name() { return "header"; }
 }  // namespace
 
 mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps, art::ProductRegistryHelper& help,
 												   art::SourceHelper const& pm)
   : pMaker_{pm}
-							      , waitingTime_(ps.get<double>("waiting_time", 30.))
+, waitingTime_(ps.get<double>("waiting_time", 30.))
 , resumeAfterTimeout_(ps.get<bool>("resume_after_timeout", true))
-							      , debugEventNumberMode_(ps.get<bool>("debug_event_number_mode", false))
-,evtHeader_(0, 0, 0, 0)
+, debugEventNumberMode_(ps.get<bool>("debug_event_number_mode", false))
+, evtHeader_(0, 0, 0, 0)
+, readTrkFragments_(ps.get<bool>("readTrkFragments", true))
+, readCaloFragments_(ps.get<bool>("readCaloFragments", true))
+, readCrvFragments_(ps.get<bool>("readCrvFragments", true))
 {
 	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(
 		ps.get<uint32_t>("shared_memory_key", build_key(0xEE000000)),
 		ps.get<uint32_t>("broadcast_shared_memory_key", build_key(0xBB000000))));
 
 	help.reconstitutes<mu2e::Mu2eEventHeader, art::InEvent>(daq_module_label, header_instance_name());
-	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
-	help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
+	if(readTrkFragments_)  help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
+	if(readCaloFragments_) help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
+	if(readCrvFragments_)  help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, crv_instance_name());
 }
 
 void mu2e::OfflineFragmentReader::readFile(std::string const&, art::FileBlock*& fb)
@@ -341,27 +346,41 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		TLOG_DEBUG("OfflineFragmentReader") << "Putting Mu2e Event Header into Mu2e Event";
 		put_product_in_principal(std::move(mu2eHeader), *outE, daq_module_label, header_instance_name());
 
-		TLOG_DEBUG("OfflineFragmentReader") << "Getting Tracker and Calorimeter Fragments from CurrentFragment";
+		TLOG_DEBUG("OfflineFragmentReader") << "Getting Tracker, Calorimeter, and Crv Fragments from CurrentFragment";
 		TLOG_TRACE("OfflineFragmentReader") << "This event has "
 						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
-						    << " Tracker Fragments and "
+						    << (readTrkFragments_?"Tracker Fragments, ":"Tracker Fragments (ignored), ")
 						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter)
-						    << " Calorimeter Fragments.";
+						    << (readCaloFragments_?"Calorimeter Fragments, and ":"Calorimeter Fragments (ignored), and ")
+						    << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_CRV)
+						    << (readCrvFragments_?"CRV Fragments.":"CRV Fragments (ignored).");
 
-		TLOG_TRACE("OfflineFragmentReader") << "Extracting Tracker Fragments from CurrentFragment";
-		put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker), *outE,
-					 daq_module_label, trk_instance_name());
-		TLOG_TRACE("OfflineFragmentReader") << "Extracting Calorimeter Fragments from CurrentFragment";
-		put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter), *outE,
-					 daq_module_label, calo_instance_name());
+		if(readTrkFragments_)
+		{
+		  TLOG_TRACE("OfflineFragmentReader") << "Extracting Tracker Fragments from CurrentFragment";
+		  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker), *outE,
+					   daq_module_label, trk_instance_name());
+		}
+		if(readCaloFragments_)
+		{
+		  TLOG_TRACE("OfflineFragmentReader") << "Extracting Calorimeter Fragments from CurrentFragment";
+		  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter), *outE,
+					   daq_module_label, calo_instance_name());
+		}
+		if(readCrvFragments_)
+		{
+		  TLOG_TRACE("OfflineFragmentReader") << "Extracting Crv Fragments from CurrentFragment";
+		  put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_CRV), *outE,
+					   daq_module_label, crv_instance_name());
+		}
 		TLOG_TRACE("OfflineFragmentReader") << "Advancing to next block";
 		currentFragment_.advanceOneBlock();
-		TLOG_DEBUG("OfflineFragmentReader") << "Done extracting Tracker and Calorimeter Fragments from CurrentFragment";
+		TLOG_DEBUG("OfflineFragmentReader") << "Done extracting Tracker, Calorimeter, and Crv Fragments from CurrentFragment";
 
 		return true;
 		} catch(...) {
 
-		  TLOG(TLVL_ERROR) << "Error retrieving Tracker and Calorimeter Fragments from current Event. Shutting down.";
+		  TLOG(TLVL_ERROR) << "Error retrieving Tracker, Calorimeter, and Crv Fragments from current Event. Shutting down.";
 		  shutdownMsgReceived_ = true;
 		  outR = nullptr;
 		  outSR = nullptr;
