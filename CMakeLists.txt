@@ -50,6 +50,8 @@ find_ups_product( art v1_10_00 )
 find_ups_product( fhiclcpp v2_16_00 )
 find_ups_product( messagefacility v1_10_00 )
 find_ups_product( TRACE v3_03_00 )
+find_ups_product( hep_concurrency )
+find_ups_product( sqlite )
 find_ups_product( cetlib v1_03_00 )
 find_ups_product( mongodb v3_0_4 )
 find_ups_product( offline trig_0_1_2 )
@@ -65,6 +67,7 @@ find_ups_boost( v1_50_0 filesystem
 # have to make sure cmake doesn't select the system libraries
 # define libsigc
 cet_find_library( SIGC    NAMES sigc-2.0  PATHS ENV LIBSIGCPP_LIB NO_DEFAULT_PATH )
+cet_find_library( SQLITE3 NAMES sqlite3_ups PATHS ENV SQLITE_LIB_NO_DEFAULT_PATH )
 
 check_ups_version(canvas "$ENV{CANVAS_VERSION}" v1_06_00 PRODUCT_OLDER_VAR CANVAS_MULTILIB)
 if(CANVAS_MULTILIB)
