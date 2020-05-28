@@ -131,7 +131,7 @@ public:
   ArtdaqTimeTrackerServiceInterface(Parameters const& config, ActivityRegistry& areg): 
     printSummary_{config().printSummary()}
     , db_{ServiceHandle<DatabaseConnection>{}->get(
-						   config().dbOutput().filename()+ app_name+".csv")}
+						   config().dbOutput().filename()+"_"+app_name+".csv")}
 	  , overwriteContents_{config().dbOutput().overwrite()}
 	  , timeSourceColumnNames_{{"Run", "SubRun", "Event", "Source", "Time"}}
 	  , timeEventColumnNames_{{"Run", "SubRun", "Event", "Time"}}

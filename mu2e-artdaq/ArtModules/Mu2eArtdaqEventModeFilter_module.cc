@@ -1,10 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////////////
-// Class:       DetectorDump
-// Module Type: EDAnalyzer
-// File:        DetectorDump_module.cc
-// Description: Prints out DTCFragments in HWUG Packet format (see mu2e-docdb #4097)
-///////////////////////////////////////////////////////////////////////////////////////
-
 #include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
