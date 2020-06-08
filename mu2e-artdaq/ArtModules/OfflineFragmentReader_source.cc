@@ -102,7 +102,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 , evtHeader_(0, 0, 0, 0)
 , readTrkFragments_(ps.get<bool>("readTrkFragments", true))
 , readCaloFragments_(ps.get<bool>("readCaloFragments", true))
-, readCrvFragments_(ps.get<bool>("readCrvFragments", true))
+, readCrvFragments_(ps.get<bool>("readCrvFragments", false))
 {
 	incoming_events.reset(new artdaq::SharedMemoryEventReceiver(
 		ps.get<uint32_t>("shared_memory_key", build_key(0xEE000000)),
@@ -295,7 +295,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 
 		TLOG_DEBUG("OfflineFragmentReader") << "Iterating through Fragment types";
-		  for (auto& type_code : fragmentTypes) {
+		for (auto& type_code : fragmentTypes) {
 		    // Remove uninteresting fragments -- do not store
 		    if (type_code == artdaq::Fragment::EmptyFragmentType) continue;
 
@@ -304,7 +304,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 		    assert(product->size() == 1ull);
 		    TLOG_DEBUG("OfflineFragmentReader") << "Creating CurrentFragment using Fragment of type " << type_code;
-		currentFragment_ = CurrentFragment{std::move(product->front()), debugEventNumberMode_};
+		    currentFragment_ = CurrentFragment{std::move(product->front()), debugEventNumberMode_};
 		    break;
 		  }
 		  incoming_events->ReleaseBuffer();
