@@ -102,7 +102,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 	, evtHeader_(new artdaq::detail::RawEventHeader(0, 0, 0, 0))
 	, readTrkFragments_(ps.get<bool>("readTrkFragments", true))
 	, readCaloFragments_(ps.get<bool>("readCaloFragments", true))
-	, readCrvFragments_(ps.get<bool>("readCrvFragments", true))
+	, readCrvFragments_(ps.get<bool>("readCrvFragments", false))
 {
 	// Instantiate ArtdaqSharedMemoryService to set up artdaq Globals and MetricManager
 	art::ServiceHandle<ArtdaqSharedMemoryServiceInterface> shm;
@@ -243,7 +243,6 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		}
 		TLOG_DEBUG("OfflineFragmentReader") << "Got Event!" << TLOG_ENDL;
 
-
 		// We return false, indicating we're done reading, if:
 		//   1) we did not obtain an event, because we timed out and were
 		//      configured NOT to keep trying after a timeout, or
@@ -259,7 +258,6 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		{
 			// Remove uninteresting fragments -- do not store
 			if (fragments.first == artdaq::Fragment::EmptyFragmentType) continue;
-
 
 			assert(fragments.second->size() == 1ull);
 			TLOG_DEBUG("OfflineFragmentReader") << "Creating CurrentFragment using Fragment of type " << fragments.first;
