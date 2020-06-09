@@ -107,6 +107,7 @@ simple_plugin(OfflineFragmentReader "source"
   MF_MessageLogger
   artdaq_DAQdata
   mu2e_artdaq_ArtModules_detail
+              art_Framework_Services_Registry
   )
 
 simple_plugin(Mu2eArtdaqFragmentNamingService "service"
