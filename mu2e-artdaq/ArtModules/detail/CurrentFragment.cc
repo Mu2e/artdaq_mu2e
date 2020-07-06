@@ -187,7 +187,7 @@ uint64_t CurrentFragment::getCurrentTimestamp()
 	}
 	else
 	{
-		return (static_cast<uint64_t>(getpid()) << 32) + (++event_num);
+		return (static_cast<uint64_t>(getpid()) << 16) + (++event_num);
 	}
 
 	return result;
