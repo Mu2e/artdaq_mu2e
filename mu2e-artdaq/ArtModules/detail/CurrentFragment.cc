@@ -37,14 +37,14 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 		// current data block.
 		try
 		{
-			TLOG(TLVL_TRACE) << "Getting first block header";
+			TLOG(9) << "Getting first block header";
 			DTCLib::DTC_DataPacket const dataPacket{data};
 			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
 			auto byteCount = headerPacket.GetByteCount();
 
 			if (headerPacket.GetSubsystem() == subsystem)
 			{
-				TLOG(TLVL_TRACE) << "Checking subsequent blocks to see if they are from the same ROC";
+				TLOG(9) << "Checking subsequent blocks to see if they are from the same ROC";
 				while (data + byteCount < end)
 				{
 					try
@@ -55,7 +55,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 						// Collapse multiple blocks from the same DTC/ROC into one Fragment
 						if (newHeaderPacket.GetSubsystem() == subsystem && newHeaderPacket.GetID() == headerPacket.GetID() && newHeaderPacket.GetRingID() == headerPacket.GetRingID() && newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
 						{
-							TLOG(TLVL_TRACE) << "Adding " << newHeaderPacket.GetByteCount() << " bytes to current block size (" << byteCount << "), as this block is from the same ROC as previous";
+							TLOG(9) << "Adding " << newHeaderPacket.GetByteCount() << " bytes to current block size (" << byteCount << "), as this block is from the same ROC as previous";
 							byteCount += newHeaderPacket.GetByteCount();
 						}
 						else
@@ -140,7 +140,7 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 	auto const begin = current_;
 	auto const end = reinterpret_cast<char const*>(current_ + reader_->blockSize(processedSuperBlocks()));
 	auto data = reinterpret_cast<char const*>(begin);
-	TLOG(TLVL_TRACE) << "data is " << (void*)data << ", end is " << (void*)end;
+	TLOG(10) << "data is " << (void*)data << ", end is " << (void*)end;
 
 	while (data < end)
 	{
