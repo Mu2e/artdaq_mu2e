@@ -99,7 +99,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 												   art::SourceHelper const& pm)
 	: pMaker_{pm}
 	, debugEventNumberMode_(ps.get<bool>("debug_event_number_mode", false))
-	, evtHeader_(new artdaq::detail::RawEventHeader(0, 0, 0, 0))
+							      , evtHeader_(new artdaq::detail::RawEventHeader(0, 0, 0, 0, 0))
 	, readTrkFragments_(ps.get<bool>("readTrkFragments", true))
 	, readCaloFragments_(ps.get<bool>("readCaloFragments", true))
 	, readCrvFragments_(ps.get<bool>("readCrvFragments", false))
@@ -107,6 +107,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 	// Instantiate ArtdaqSharedMemoryService to set up artdaq Globals and MetricManager
 	art::ServiceHandle<ArtdaqSharedMemoryServiceInterface> shm;
 
+	help.reconstitutes<artdaq::detail::RawEventHeader, art::InEvent>(daq_module_label, "RawEventHeader");
 	help.reconstitutes<mu2e::Mu2eEventHeader, art::InEvent>(daq_module_label, header_instance_name());
 	if (readTrkFragments_) help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, trk_instance_name());
 	if (readCaloFragments_) help.reconstitutes<artdaq::Fragments, art::InEvent>(daq_module_label, calo_instance_name());
@@ -208,8 +209,10 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 	try
 	{
-		TLOG_DEBUG("OfflineFragmentReader") << "Updating Run/Subrun/Event IDs";
-		idHandler_.update(*evtHeader_, currentFragment_.getCurrentTimestamp());  // See note in mu2e::detail::EventIDHandler::update()
+		auto ts = currentFragment_.getCurrentTimestamp();
+		TLOG_DEBUG("OfflineFragmentReader") << "Updating Run/Subrun/Event IDs, Current timestamp is " << ts;
+		idHandler_.update(*evtHeader_, ts);  // See note in mu2e::detail::EventIDHandler::update()
+		evtHeader_->timestamp = ts;
 
 		art::Timestamp currentTime = time(0);
 		// make new run if inR is 0 or if the run has changed
@@ -228,6 +231,14 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 		TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
 		outE = pMaker_.makeEventPrincipal(idHandler_.run(), idHandler_.subRun(), idHandler_.event(), currentTime);
+
+		TLOG_DEBUG("OfflineFragmentReader") << "Putting artdaq RawEventHeader into event";
+		auto artHdrPtr = std::make_unique<artdaq::detail::RawEventHeader>();
+		if (evtHeader_ != nullptr)
+		{
+			memcpy(artHdrPtr.get(), evtHeader_.get(), sizeof(artdaq::detail::RawEventHeader));
+			put_product_in_principal(std::move(artHdrPtr), *outE, daq_module_label, "RawEventHeader");
+		}
 
 		TLOG_DEBUG("OfflineFragmentReader") << "Extracting Mu2e Event Header from CurrentFragment";
 		auto mu2eHeader = currentFragment_.makeMu2eEventHeader();
