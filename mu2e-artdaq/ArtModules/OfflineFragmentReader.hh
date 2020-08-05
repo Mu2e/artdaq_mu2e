@@ -18,6 +18,7 @@
 
 #include <set>
 #include <string>
+#include <memory>
 
 namespace mu2e {
 
@@ -57,16 +58,17 @@ public:
 
 private:
 	art::SourceHelper const& pMaker_;
-	double waitingTime_;
-	std::unique_ptr<artdaq::SharedMemoryEventReceiver> incoming_events;  ///< The events from the EventStore
-	bool resumeAfterTimeout_;
 	bool shutdownMsgReceived_{false};
 	bool outputFileCloseNeeded_{false};
-  bool debugEventNumberMode_{false};
+	bool debugEventNumberMode_{false};
 	detail::EventIDHandler idHandler_{};
 	detail::CurrentFragment currentFragment_{};
 
-	artdaq::detail::RawEventHeader evtHeader_;
+	std::shared_ptr<artdaq::detail::RawEventHeader> evtHeader_;
+
+	bool readTrkFragments_;
+	bool readCaloFragments_;
+	bool readCrvFragments_;
 };
 
 }  // namespace mu2e

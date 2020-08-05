@@ -107,15 +107,39 @@ simple_plugin(OfflineFragmentReader "source"
   MF_MessageLogger
   artdaq_DAQdata
   mu2e_artdaq_ArtModules_detail
+              art_Framework_Services_Registry
   )
 
 simple_plugin(Mu2eArtdaqFragmentNamingService "service"
-artdaq_ArtModules_ArtdaqFragmentNamingService_service
-artdaq-core_Data
-mu2e-artdaq-core_Overlays
-  art_Framework_Services_Registry
-  MF_MessageLogger
-  fhiclcpp)
+	      artdaq_ArtModules_ArtdaqFragmentNamingService_service
+	      artdaq-core_Data
+              mu2e-artdaq-core_Overlays
+              art_Framework_Services_Registry
+	      MF_MessageLogger
+	      fhiclcpp
+          )
+
+simple_plugin(Mu2eArtdaqTimeTrackerService "service"
+	      artdaq-core_Data
+              artdaq_DAQdata
+              artdaq_ArtModules
+              mu2e-artdaq-core_Overlays
+              art_Framework_Principal
+              art_Framework_Services_Registry
+              art_Persistency_Provenance
+              art_Utilities	
+               ${CANVAS_PERSISTENCY_PROVENANCE}
+              ${CANVAS_LIB_LIST}
+              MF_MessageLogger
+              ${CETLIB_EXCEPT}
+              ${CETLIB}
+              ${TBB}
+              hep_concurrency
+              ${SQLITE3}
+              cetlib
+	      fhiclcpp
+              ${Boost_SYSTEM_LIBRARY}
+          )
   
 
 # Subdirectories.
