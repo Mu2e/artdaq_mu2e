@@ -1,5 +1,6 @@
 simple_plugin(DTCReceiver "generator"
   mu2e-artdaq-core_Overlays
+  artdaq-utilities_Plugins
   artdaq_DAQdata
   artdaq_Generators
   artdaq_DAQrate
