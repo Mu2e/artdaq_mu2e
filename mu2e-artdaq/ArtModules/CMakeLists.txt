@@ -110,15 +110,6 @@ simple_plugin(OfflineFragmentReader "source"
               art_Framework_Services_Registry
   )
 
-simple_plugin(Mu2eArtdaqFragmentNamingService "service"
-	      artdaq_ArtModules_ArtdaqFragmentNamingService_service
-	      artdaq-core_Data
-              mu2e-artdaq-core_Overlays
-              art_Framework_Services_Registry
-	      MF_MessageLogger
-	      fhiclcpp
-          )
-
 simple_plugin(Mu2eArtdaqTimeTrackerService "service"
 	      artdaq-core_Data
               artdaq_DAQdata
