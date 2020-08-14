@@ -4,6 +4,7 @@ simple_plugin(DTCReceiver "generator"
   artdaq_DAQdata
   artdaq_Generators
   artdaq_DAQrate
+  artdaq-core_Data
   artdaq-core_Utilities
   ${CANVAS_LIB_LIST}
   ${FHICLCPP}

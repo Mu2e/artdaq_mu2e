@@ -180,6 +180,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	TLOG(TLVL_DEBUG) << "mu2eReceiver::getNext: Starting DTCFragment Loop";
 	theInterface_->GetDevice()->ResetDeviceTime();
 	size_t totalSize = 0;
+	bool first = true;
 	while (newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX) {
 		if (should_stop()) {
 			break;
@@ -237,12 +238,26 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		// auto offset = newfrag.dataBegin() + newfrag.blockSizeBytes();
 		size_t offset = newfrag.dataEndBytes();
 		for (size_t i = 0; i < data.size(); ++i) {
-			if (verbose_) {
+			if (verbose_ || first) {
 				auto dp = DTCLib::DTC_DataPacket(data[i].blockPointer);
 				auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
 				TLOG_TRACE("Mu2eReceiver") << "Placing DataBlock with timestamp "
 										   << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment"
 										   << TLOG_ENDL;
+				if(first) {
+				first = false;
+				//frags.back()->setTimestamp(dhp.GetTimestamp().GetTimestamp(true));
+				auto fragment_timestamp = dhp.GetTimestamp().GetTimestamp(true);
+	if(fragment_timestamp < highest_timestamp_seen_) {
+	  fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+	} else if(fragment_timestamp > highest_timestamp_seen_){
+	  highest_timestamp_seen_ = fragment_timestamp;
+	} else {
+	  fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+	  timestamp_loops_++;
+	}
+				frags.back()->setTimestamp(fragment_timestamp);
+				}
 			}
 
 			auto begin = data[i].blockPointer;

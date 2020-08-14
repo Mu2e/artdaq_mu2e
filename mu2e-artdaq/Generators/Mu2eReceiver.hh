@@ -64,6 +64,8 @@ private:
 
 	// State
 	size_t timestamps_read_;
+  size_t highest_timestamp_seen_{0};
+  size_t timestamp_loops_{0}; // For playback mode, so that we continually generate unique timestamps
 	std::chrono::steady_clock::time_point lastReportTime_;
 	std::chrono::steady_clock::time_point procStartTime_;
 	DTCLib::DTC_SimMode mode_;

@@ -179,9 +179,21 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	}
 
 	//auto after_print = std::chrono::steady_clock::now();
-	frags.emplace_back(new artdaq::Fragment(packetCount * sizeof(packet_t) / sizeof(artdaq::RawDataType), ev_counter(), fragment_ids_[0], fragment_type_, ts.GetTimestamp(true)));
 
-	TLOG(14) << "Copying DTC packets into DTCFragment";
+	auto fragment_timestamp = ts.GetTimestamp(true);
+	if(fragment_timestamp < highest_timestamp_seen_) {
+	  fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+	} else if(fragment_timestamp > highest_timestamp_seen_){
+	  highest_timestamp_seen_ = fragment_timestamp;
+	} else {
+	  fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+	  timestamp_loops_++;
+	}
+
+	frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], fragment_type_, fragment_timestamp));
+	frags.back()->resize(packetCount * sizeof(packet_t) / sizeof(artdaq::RawDataType));
+
+	TLOG(14) << "Copying DTC packets into DTCFragment with timestamp " << ts.GetTimestamp(true);
 	size_t packetsProcessed = 0;
 	packet_t* dataBegin = reinterpret_cast<packet_t*>(frags.back()->dataBegin());
 	for (size_t i = 0; i < data.size(); ++i)
@@ -194,10 +206,10 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 	auto after_copy = std::chrono::steady_clock::now();
 
-	TLOG(TLVL_DEBUG) << "Incrementing event counter";
+	TLOG(26) << "Incrementing event counter";
 	ev_counter_inc();
 
-	TLOG(TLVL_DEBUG) << "Reporting Metrics";
+	TLOG(26) << "Reporting Metrics";
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
 	double hw_timestamp_rate = 1 / hwTime;
@@ -208,7 +220,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
 	metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, artdaq::MetricMode::Average);
 
-	TLOG(TLVL_DEBUG) << "Returning true";
+	TLOG(26) << "Returning true";
 
 	return true;
 }
