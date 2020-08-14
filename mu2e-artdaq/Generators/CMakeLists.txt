@@ -31,6 +31,22 @@ simple_plugin(Mu2eReceiver "generator"
   ${Boost_SYSTEM_LIBRARY}
   )
 
+  simple_plugin(CRVReceiver "generator"
+  mu2e-artdaq-core_Overlays
+  artdaq-utilities_Plugins
+  artdaq_DAQdata
+  artdaq_Generators
+  artdaq_DAQrate
+  artdaq-core_Utilities
+  ${CANVAS_LIB_LIST}
+  ${FHICLCPP}
+  ${CETLIB}
+  ${CETLIB_EXCEPT}
+  MF_MessageLogger
+  DTCInterface
+  ${Boost_SYSTEM_LIBRARY}
+  )
+
 #simple_plugin(OverlayTest "generator"
 #  mu2e-artdaq-core_Overlays
 #  artdaq_Generators
