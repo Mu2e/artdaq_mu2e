@@ -6,6 +6,7 @@
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "mu2e-artdaq-core/Overlays/mu2eFragment.hh"
 #include "mu2e-artdaq-core/Overlays/Mu2eEventHeader.hh"
+#include "dtcInterfaceLib/DTC_Packets.h"
 
 namespace mu2e {
 namespace detail {
@@ -92,6 +93,9 @@ private:
 	std::unique_ptr<mu2eFragment const> reader_{nullptr};
 	uint8_t const* current_{nullptr};
 	size_t block_count_;
+  int64_t first_block_timestamp_{-1};
+
+  uint64_t getBlockTimestamp_(DTCLib::DTC_DataHeaderPacket const& pkt);
 
   bool debug_event_number_mode_;
 };

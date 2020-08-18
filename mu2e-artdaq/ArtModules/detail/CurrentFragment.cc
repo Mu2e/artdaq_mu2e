@@ -75,7 +75,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 				auto const wordCount = byteCount / sizeof(artdaq::RawDataType);
 				auto const fragmentSize = (byteCount % sizeof(artdaq::RawDataType) == 0) ? wordCount : wordCount + 1;
 
-				result->push_back(*artdaq::Fragment::dataFrag(headerPacket.GetTimestamp().GetTimestamp(true),
+				result->push_back(*artdaq::Fragment::dataFrag(getBlockTimestamp_(headerPacket),
 															  headerPacket.GetEVBMode(),  // Returns evbMode (see mu2e-docdb 4914)
 															  reinterpret_cast<artdaq::RawDataType const*>(data), fragmentSize,
 															  fragment_->timestamp())
@@ -114,7 +114,7 @@ std::unique_ptr<Mu2eEventHeader> CurrentFragment::makeMu2eEventHeader()
 		{
 			DTCLib::DTC_DataPacket const dataPacket{data};
 			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
-			timestamp = headerPacket.GetTimestamp().GetTimestamp(true);
+			timestamp = getBlockTimestamp_(headerPacket);
 			evbmode = headerPacket.GetEVBMode();
 		}
 		catch (...)
@@ -172,6 +172,16 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 		<< "The data pointer has shot past the 'end' pointer.";
 }
 
+  uint64_t CurrentFragment::getBlockTimestamp_(DTCLib::DTC_DataHeaderPacket const& pkt)
+  {
+		uint64_t result = pkt.GetTimestamp().GetTimestamp(true);
+		if(first_block_timestamp_ == -1) {
+		  first_block_timestamp_ = result;
+		}
+		result = fragment_->timestamp() + (result - static_cast<uint64_t>(first_block_timestamp_));
+		return result;
+  }
+
 uint64_t CurrentFragment::getCurrentTimestamp()
 {
 	uint64_t result = 0;
@@ -183,7 +193,7 @@ uint64_t CurrentFragment::getCurrentTimestamp()
 		DTCLib::DTC_DataPacket const dataPacket{data};
 		DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
 
-		result = headerPacket.GetTimestamp().GetTimestamp(true);
+		result = getBlockTimestamp_(headerPacket);
 	}
 	else
 	{

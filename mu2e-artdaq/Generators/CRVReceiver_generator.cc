@@ -71,6 +71,7 @@ private:
 	DTCLib::DTC_SimMode mode_;
 	uint8_t board_id_;
 	bool simFileRead_;
+	bool detectorEmulatorMode_{false};
 
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
@@ -78,11 +79,14 @@ private:
 
 	// For Debugging:
 	bool print_packets_;
+
+  std::set<artdaq::Fragment::sequence_id_t> seen_sequence_ids_{};
+  size_t sequence_id_list_max_size_{1000};
 };
 }  // namespace mu2e
 
 mu2e::CRVReceiver::CRVReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType("DTC")), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, packets_read_(0), mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), print_packets_(ps.get<bool>("debug_print", false))
+	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType(ps.get<std::string>("fragment_type", "CRV"))), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, packets_read_(0), mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), print_packets_(ps.get<bool>("debug_print", false))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = new DTCLib::DTC(mode_, -1, 1, "", false, ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
@@ -101,6 +105,7 @@ mu2e::CRVReceiver::CRVReceiver(fhicl::ParameterSet const& ps)
 	if (sim_file.size() > 0)
 	{
 		simFileRead_ = false;
+		detectorEmulatorMode_ = true;
 		std::thread reader(&mu2e::CRVReceiver::readSimFile_, this, sim_file);
 		reader.detach();
 	}
@@ -135,21 +140,39 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
+	if(requests_ == nullptr) {
+		requests_ = GetRequestBuffer();
+	}
+	if(requests_ == nullptr) { 
+		TLOG(TLVL_ERROR) << "Request Buffer pointer is null! Returning false!";
+		return false;
+	}
+
+	while(!should_stop() && !requests_->WaitForRequests(100)) {
+	}
+	auto reqs = requests_->GetAndClearRequests();
+	requests_->reset();
+
 	if (should_stop())
 	{
 		return false;
 	}
 
-	auto req = requests_->GetNextRequest();
-	while (req.first == 0 && req.second == 0) {
-		usleep(10000);
-		req = requests_->GetNextRequest();
-	}
+	for(auto& req : reqs) {
+	  if(seen_sequence_ids_.count(req.first)) {
+	    continue;
+	  } else {
+	    seen_sequence_ids_.insert(req.first);
+	    if(seen_sequence_ids_.size() > sequence_id_list_max_size_) {
+	      seen_sequence_ids_.erase(seen_sequence_ids_.begin());
+	  }
+	  }
 
+	  TLOG(TLVL_DEBUG) << "Requesting CRV data for Event Window Tag " << req.second;
 	std::vector<DTCLib::DTC_DataBlock> data;
-	DTCLib::DTC_Timestamp ts(req.second);
+	DTCLib::DTC_Timestamp ts(detectorEmulatorMode_ ? 0 : req.second);
 
-		theCFO_->SendRequestForTimestamp(ts);
+	theCFO_->SendRequestForTimestamp(ts);
 
 	auto before_read = std::chrono::steady_clock::now();
 	int retryCount = 5;
@@ -175,14 +198,9 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 	auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
 	DTCLib::DTC_Timestamp out_ts = first.GetTimestamp();
-	if (out_ts.GetTimestamp(true) != req.second ) {
+	if (out_ts.GetTimestamp(true) != req.second && !detectorEmulatorMode_ ) {
 		TLOG(TLVL_TRACE) << "Requested timestamp " << req.second << ", received data with timestamp " << out_ts.GetTimestamp(true);
 	}
-	else
-	{
-		requests_->RemoveRequest(req.first);
-	}
-
 
 	int packetCount = first.GetPacketCount() + 1;
 	if (print_packets_)
@@ -239,7 +257,7 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	metricMan->sendMetric("Fragment Prep Time", artdaq::TimeUtils::GetElapsedTime(before_read, after_read), "s", 3, artdaq::MetricMode::Average);
 	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
 	metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, artdaq::MetricMode::Average);
-
+	}
 	TLOG(TLVL_DEBUG) << "Returning true";
 
 	return true;
