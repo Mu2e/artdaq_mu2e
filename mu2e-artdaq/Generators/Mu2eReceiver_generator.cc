@@ -29,53 +29,15 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 
-	if (!ps.get<bool>("use_detector_emulator", false))
-	{
-		theInterface_->ClearDetectorEmulatorInUse();  // Needed if we're doing ROC Emulator...make sure Detector Emulation
-													  // is disabled
-	}
-	else
-	{
-		theInterface_->SetDetectorEmulatorInUse();
-	}
-
 	TLOG_INFO("Mu2eReceiver") << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion()
 							  << TLOG_ENDL;
 
-	//	int ringRocs[] = {ps.get<int>("ring_0_roc_count", -1), ps.get<int>("ring_1_roc_count", -1),
-	//					  ps.get<int>("ring_2_roc_count", -1), ps.get<int>("ring_3_roc_count", -1),
-	//					  ps.get<int>("ring_4_roc_count", -1), ps.get<int>("ring_5_roc_count", -1)};
-	//
-	//	bool ringTiming[] = {ps.get<bool>("ring_0_timing_enabled", true), ps.get<bool>("ring_1_timing_enabled", true),
-	//						 ps.get<bool>("ring_2_timing_enabled", true), ps.get<bool>("ring_3_timing_enabled", true),
-	//						 ps.get<bool>("ring_4_timing_enabled", true), ps.get<bool>("ring_5_timing_enabled", true)};
-	//
-	//	bool ringEmulators[] = {
-	//		ps.get<bool>("ring_0_roc_emulator_enabled", false), ps.get<bool>("ring_1_roc_emulator_enabled", false),
-	//		ps.get<bool>("ring_2_roc_emulator_enabled", false), ps.get<bool>("ring_3_roc_emulator_enabled", false),
-	//		ps.get<bool>("ring_4_roc_emulator_enabled", false), ps.get<bool>("ring_5_roc_emulator_enabled", false)};
-	//
-	//	int ringEmulatorCount[] = {ps.get<int>("ring_0_roc_emulator_count", 0), ps.get<int>("ring_1_roc_emulator_count", 0),
-	//							   ps.get<int>("ring_2_roc_emulator_count", 0), ps.get<int>("ring_3_roc_emulator_count", 0),
-	//							   ps.get<int>("ring_4_roc_emulator_count", 0), ps.get<int>("ring_5_roc_emulator_count", 0)};
-	//
-	//	for (int ring = 0; ring < 6; ++ring) {
-	//		if (ringRocs[ring] >= 0) {
-	//			theInterface_->EnableRing(DTCLib::DTC_Rings[ring], DTCLib::DTC_RingEnableMode(true, true, ringTiming[ring]),
-	//									  DTCLib::DTC_ROCS[ringRocs[ring]]);
-	//			if (ringEmulators[ring]) {
-	//				theInterface_->SetMaxROCNumber(DTCLib::DTC_Rings[ring], DTCLib::DTC_ROCS[ringEmulatorCount[ring]]);
-	//				theInterface_->EnableROCEmulator(DTCLib::DTC_Rings[ring]);
-	//			}
-	//			else
-	//			{
-	//				theInterface_->DisableROCEmulator(DTCLib::DTC_Rings[ring]);
-	//			}
-	//		}
-	//	}
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
+		theInterface_->SetDetectorEmulatorInUse();
+		theInterface_->ResetDDR();
+
 		char* file_c = getenv("DTCLIB_SIM_FILE");
 
 		auto sim_file = ps.get<std::string>("sim_file", "");
@@ -92,6 +54,8 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	}
 	else
 	{
+		theInterface_->ClearDetectorEmulatorInUse();  // Needed if we're doing ROC Emulator...make sure Detector Emulation
+													  // is disabled
 		simFileRead_ = true;
 	}
 
@@ -102,7 +66,7 @@ void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 {
 	TLOG_INFO("Mu2eReceiver") << "Starting read of simulation file " << sim_file << "."
 							  << " Please wait to start the run until finished." << TLOG_ENDL;
-	theInterface_->WriteSimFileToDTC(sim_file, true);
+	theInterface_->WriteSimFileToDTC(sim_file, true, true);
 	simFileRead_ = true;
 	TLOG_INFO("Mu2eReceiver") << "Done reading simulation file into DTC memory." << TLOG_ENDL;
 }
