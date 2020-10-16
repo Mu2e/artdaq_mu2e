@@ -2,6 +2,7 @@
 #include "artdaq/DAQdata/Globals.hh"
 
 #include "artdaq/ArtModules/ArtdaqSharedMemoryService.h"
+#include "artdaq/ArtModules/ArtdaqFragmentNamingService.h"
 #include "art/Framework/Core/InputSourceMacros.h"
 #include "art/Framework/IO/Sources/Source.h"
 #include "art/Framework/IO/Sources/put_product_in_principal.h"
@@ -169,7 +170,11 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		      shutdownMsgReceived_ = true;
 		      return false;
 		    } else {
+			art::ServiceHandle<ArtdaqFragmentNamingServiceInterface> names;
 		    TLOG_INFO("OfflineFragmentReader") << "Received event of unknown type from shared memory, ignoring";
+			for(auto& frags : eventData) {
+				TLOG(TLVL_DEBUG) << "Fragment Type: " << static_cast<int>(frags.first) << " (" << names->GetInstanceNameForType(frags.first) << ") has " << frags.second->size() << " Fragments.";
+			}
 		    usleep(10000);
 		    continue;
 		  }
