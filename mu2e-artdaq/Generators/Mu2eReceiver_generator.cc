@@ -241,19 +241,18 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 				frags.back()->setTimestamp(fragment_timestamp);
 			}
 
-			auto begin = data[i].blockPointer;
+			auto begin = reinterpret_cast<const uint8_t*>(data[i].blockPointer);
 			auto size = data[i].byteSize;
 
-			while (data[i + 1].blockPointer ==
-				   data[i].blockPointer + (data[i].byteSize / sizeof(DTCLib::DTC_DataBlock::pointer_t)))
+			while (data[i + 1].blockPointer == static_cast<const void*>(begin + size))
 			{
 				size += data[++i].byteSize;
 			}
 
-			TLOG(15) << "Copying data from " << reinterpret_cast<void*>(begin) << " to "
+			TLOG(15) << "Copying data from " << begin << " to "
 					 << reinterpret_cast<void*>(newfrag.dataAtBytes(offset)) << " (sz=" << size << ")";
 			// memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
-			std::copy(begin, begin + (size / sizeof(DTCLib::DTC_DataBlock::pointer_t)), newfrag.dataAtBytes(offset));
+			std::copy(begin, reinterpret_cast<const uint8_t*>(begin) + size, newfrag.dataAtBytes(offset));
 			if (rawOutput_) rawOutputStream_.write((char*)begin, size);
 			offset += size;
 		}

@@ -1,7 +1,7 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent mu2e_artdaq	v1_03_02
-defaultqual	e19:s96
+parent       mu2e_artdaq  v1_03_03
+defaultqual  e19:s96
 
 # These optional lines define the installed directories where
 # headers, libraries, and executables will be found
@@ -16,14 +16,13 @@ libdir      fq_dir      lib
 bindir      fq_dir      bin
 
 #
-product		version		optional
-artdaq          v3_09_01
-mu2e_artdaq_core v1_04_06
-pcie_linux_kernel_module v2_03_05
-mongodb         v4_0_8c
-offline         v09_03_01
-#offline         trig_0_4_3
-cetbuildtools	v7_17_01	-	only_for_build
+product                   version    optional
+artdaq                    v3_09_02
+mu2e_artdaq_core          v1_05_01
+mongodb                   v4_0_8c
+offline                   v09_03_01  s96
+offline                   v09_03_02  s101
+cetbuildtools             v7_17_01   -       only_for_build
 end_product_list
 
 # e6  - with gcc 4.9.1 and -std=c++1y
@@ -32,21 +31,21 @@ end_product_list
 # -nq- means there is no qualifier
 # a "-" means the dependent product is not required by the parent and will not be setup
 
-qualifier           artdaq             mu2e_artdaq_core	   	  pcie_linux_kernel_module   	mongodb	    offline           notes
-e20:s100:debug       e20:s100:debug      e20:s100:online:debug	  e20:s100:debug	        e20:debug   e20:s100:debug     --std=c++17		
-e20:s100:prof	    e20:s100:prof       e20:s100:online:prof  	  e20:s100:prof			e20:prof    e20:s100:prof      --std=c++17
-e19:s100:debug       e19:s100:debug      e19:s100:online:debug	  e19:s100:debug	        e19:debug   e19:s100:debug     --std=c++17		
-e19:s100:prof	    e19:s100:prof       e19:s100:online:prof  	  e19:s100:prof			e19:prof    e19:s100:prof      --std=c++17
+qualifier       artdaq          mu2e_artdaq_core       mongodb    offline         notes
+# e20:s101:debug  e20:s101:debug  e20:s101:online:debug  e20:debug  e20:s101:debug  --std=c++17
+# e20:s101:prof   e20:s101:prof   e20:s101:online:prof   e20:prof   e20:s101:prof   --std=c++17
+e19:s101:debug  e19:s101:debug  e19:s101:online:debug  e19:debug  e19:s101:debug  --std=c++17
+e19:s101:prof   e19:s101:prof   e19:s101:online:prof   e19:prof   e19:s101:prof   --std=c++17
 
-e19:s96:debug       e19:s96:debug      e19:s96:online:debug	  e19:s96:debug	                e19:debug   e19:s96:debug     --std=c++17		
-e19:s96:prof	    e19:s96:prof       e19:s96:online:prof  	  e19:s96:prof			e19:prof    e19:s96:prof      --std=c++17
+e19:s96:debug   e19:s96:debug   e19:s96:online:debug   e19:debug  e19:s96:debug   --std=c++17
+e19:s96:prof    e19:s96:prof    e19:s96:online:prof    e19:prof   e19:s96:prof    --std=c++17
 
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:
 
 ### Local Variables:
-### tab-width: 8
+### tab-width: 4
 ### End:
 
-# vi:set ts=8 noexpandtab:
+# vi:set ts=4 noexpandtab:
