@@ -252,7 +252,9 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			TLOG(15) << "Copying data from " << begin << " to "
 					 << reinterpret_cast<void*>(newfrag.dataAtBytes(offset)) << " (sz=" << size << ")";
 			// memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
-			std::copy(begin, reinterpret_cast<const uint8_t*>(begin) + size, newfrag.dataAtBytes(offset));
+			memcpy(newfrag.dataAtBytes(offset), begin, size);
+			TLOG(15) << "Done with copy";
+			//std::copy(begin, reinterpret_cast<const uint8_t*>(begin) + size, newfrag.dataAtBytes(offset));
 			if (rawOutput_) rawOutputStream_.write((char*)begin, size);
 			offset += size;
 		}
