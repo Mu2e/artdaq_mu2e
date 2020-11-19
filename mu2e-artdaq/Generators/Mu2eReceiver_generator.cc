@@ -21,17 +21,33 @@
 #include <unistd.h>
 
 mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType("MU2E")), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, timestamps_read_(0), lastReportTime_(std::chrono::steady_clock::now()), mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), rawOutput_(ps.get<bool>("raw_output_enable", false)), rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin")), nSkip_(ps.get<size_t>("fragment_receiver_count", 1)), sendEmpties_(ps.get<bool>("send_empty_fragments", false)), verbose_(ps.get<bool>("verbose", false)), nEvents_(ps.get<size_t>("number_of_events_to_generate", -1))
+	: CommandableFragmentGenerator(ps)
+	, fragment_type_(toFragmentType("MU2E"))
+	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
+	, timestamps_read_(0)
+	, lastReportTime_(std::chrono::steady_clock::now())
+	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
+	, rawOutput_(ps.get<bool>("raw_output_enable", false))
+	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
+	, nSkip_(ps.get<size_t>("fragment_receiver_count", 1))
+	, sendEmpties_(ps.get<bool>("send_empty_fragments", false))
+	, verbose_(ps.get<bool>("verbose", false))
+	, nEvents_(ps.get<size_t>("number_of_events_to_generate", -1))
+	, request_delay_(ps.get<size_t>("delay_between_requests_ticks", 20000))
+	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
 {
 	TLOG(TLVL_DEBUG) << "Mu2eReceiver_generator CONSTRUCTOR";
 	// mode_ can still be overridden by environment!
 	theInterface_ = new DTCLib::DTC(mode_, ps.get<int>("dtc_id", -1), ps.get<unsigned>("roc_mask", 0x1), "", false, ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
-	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
+	fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
+	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, cfoConfig.get<bool>("use_dtc_cfo_emulator", true), cfoConfig.get<size_t>("debug_packet_count", 0)
+		, DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")), cfoConfig.get<bool>("sticky_debug_type", false), cfoConfig.get<bool>("quiet", false), cfoConfig.get<bool>("asyncRR", false), cfoConfig.get<bool>("force_no_debug_mode", false), cfoConfig.get<bool>("useCFODRP", false)
+	);
 	mode_ = theInterface_->ReadSimMode();
 
 	TLOG_INFO("Mu2eReceiver") << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion()
 							  << TLOG_ENDL;
-
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
@@ -123,7 +139,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		TLOG(TLVL_DEBUG) << "Sending requests for " << mu2e::BLOCK_COUNT_MAX << " timestamps, starting at " << mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1);
 		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)));
 #else
-		theCFO_->SendRequestsForRange(-1, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)));
+		theCFO_->SendRequestsForRange(-1, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)), true, request_delay_, 1, heartbeats_after_);
 
 #endif
 	}
@@ -220,23 +236,23 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			TLOG(16) << "Placing DataBlock with timestamp "
 					 << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment"
 					 << TLOG_ENDL;
-			
 
-				auto fragment_timestamp = dhp.GetTimestamp().GetTimestamp(true);
-				if(fragment_timestamp > highest_timestamp_seen_) {
-				  highest_timestamp_seen_ = fragment_timestamp;
-				}
+			auto fragment_timestamp = dhp.GetTimestamp().GetTimestamp(true);
+			if (fragment_timestamp > highest_timestamp_seen_)
+			{
+				highest_timestamp_seen_ = fragment_timestamp;
+			}
 
 			if (first)
 			{
 				first = false;
 
-			if (fragment_timestamp < highest_timestamp_seen_)
-			{
-			  if(fragment_timestamp == 0) { timestamp_loops_++; }
-			  // Timestamps start at 0, so make sure to offset by one so we don't repeat highest_timestamp_seen_
-			  fragment_timestamp += timestamp_loops_ * (highest_timestamp_seen_ + 1);
-			}
+				if (fragment_timestamp < highest_timestamp_seen_)
+				{
+					if (fragment_timestamp == 0) { timestamp_loops_++; }
+					// Timestamps start at 0, so make sure to offset by one so we don't repeat highest_timestamp_seen_
+					fragment_timestamp += timestamp_loops_ * (highest_timestamp_seen_ + 1);
+				}
 
 				frags.back()->setTimestamp(fragment_timestamp);
 			}

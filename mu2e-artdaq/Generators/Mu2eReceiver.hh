@@ -78,6 +78,8 @@ private:
 	bool sendEmpties_;
 	bool verbose_;
 	size_t nEvents_;
+	size_t request_delay_;
+	size_t heartbeats_after_;
 
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
