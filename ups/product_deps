@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent       mu2e_artdaq  v1_03_04_indev
+parent       mu2e_artdaq  v1_03_04
 defaultqual  e19:s96
 
 # These optional lines define the installed directories where
@@ -17,11 +17,12 @@ bindir      fq_dir      bin
 
 #
 product                   version    optional
-artdaq                    v3_09_02
-mu2e_artdaq_core          v1_05_01
+artdaq                    v3_09_03a
+mu2e_artdaq_core          v1_05_03
 mongodb                   v4_0_8c
 offline                   v09_03_01  s96
 offline                   v09_03_02  s101
+offline                   v09_11_00  s104
 cetbuildtools             v7_17_01   -       only_for_build
 end_product_list
 
@@ -32,11 +33,14 @@ end_product_list
 # a "-" means the dependent product is not required by the parent and will not be setup
 
 qualifier       artdaq          mu2e_artdaq_core       mongodb    offline         notes
-e20:s101:debug  e20:s101:debug  e20:s101:online:debug  e20:debug  e20:s101:debug  --std=c++17
-e20:s101:prof   e20:s101:prof   e20:s101:online:prof   e20:prof   e20:s101:prof   --std=c++17
+e20:s104:debug  e20:s104:debug  e20:s104:online:debug  e20:debug  e20:s104:debug:trig  --std=c++17
+e20:s104:prof   e20:s104:prof   e20:s104:online:prof   e20:prof   e20:s104:prof:trig   --std=c++17
 
-e19:s96:debug   e19:s96:debug   e19:s96:online:debug   e19:debug  e19:s96:debug   --std=c++17
-e19:s96:prof    e19:s96:prof    e19:s96:online:prof    e19:prof   e19:s96:prof    --std=c++17
+e20:s101:debug  e20:s101:debug  e20:s101:online:debug  e20:debug  e20:s101:debug:trig  --std=c++17
+e20:s101:prof   e20:s101:prof   e20:s101:online:prof   e20:prof   e20:s101:prof:trig   --std=c++17
+
+e19:s96:debug   e19:s96:debug   e19:s96:online:debug   e19:debug  e19:s96:debug:trig   --std=c++17
+e19:s96:prof    e19:s96:prof    e19:s96:online:prof    e19:prof   e19:s96:prof:trig    --std=c++17
 
 end_qualifier_list
 
