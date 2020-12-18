@@ -1,5 +1,6 @@
 #include "artdaq/TransferPlugins/ShmemTransfer.hh"
 #include "artdaq/TransferPlugins/TransferInterface.hh"
+#define TRACE_NAME (app_name + "_SingleNodeTransfer").c_str()
 
 namespace mu2e {
 
@@ -39,9 +40,10 @@ public:
 		return theTransfer_->receiveFragmentData(loc, sz);
 	}
 
-  virtual void flush_buffers() {
-    return theTransfer_->flush_buffers();
-  }
+	virtual void flush_buffers()
+	{
+		return theTransfer_->flush_buffers();
+	}
 
 private:
 	std::unique_ptr<artdaq::TransferInterface> theTransfer_;
@@ -52,26 +54,30 @@ private:
 mu2e::SingleNodeTransfer::SingleNodeTransfer(const fhicl::ParameterSet& pset, artdaq::TransferInterface::Role role)
 	: artdaq::TransferInterface(pset, role)
 {
-	TLOG_DEBUG(uniqueLabel()) << "Begin SingleNodeTransfer constructor" << TLOG_ENDL;
+	TLOG(TLVL_DEBUG) << GetTraceName() << "Begin SingleNodeTransfer constructor";
 	std::string srcHost, destHost;
 	auto hosts = pset.get<std::vector<fhicl::ParameterSet>>("host_map");
-	for (auto& ps : hosts) {
+	for (auto& ps : hosts)
+	{
 		auto rank = ps.get<int>("rank", -1);
-		if (rank == source_rank()) {
+		if (rank == source_rank())
+		{
 			srcHost = ps.get<std::string>("host", "localhost");
 		}
-		if (rank == destination_rank()) {
+		if (rank == destination_rank())
+		{
 			destHost = ps.get<std::string>("host", "localhost");
 		}
 	}
-	TLOG_DEBUG(uniqueLabel()) << "SNT: srcHost=" << srcHost << ", destHost=" << destHost << TLOG_ENDL;
-	if (srcHost == destHost) {
-		TLOG_DEBUG(uniqueLabel()) << "SNT: Constructing ShmemTransfer" << TLOG_ENDL;
+	TLOG(TLVL_DEBUG) << GetTraceName() << "SNT: srcHost=" << srcHost << ", destHost=" << destHost;
+	if (srcHost == destHost)
+	{
+		TLOG(TLVL_DEBUG) << GetTraceName() << "SNT: Constructing ShmemTransfer";
 		theTransfer_.reset(new artdaq::ShmemTransfer(pset, role));
 	}
 	else
 	{
-		TLOG_DEBUG(uniqueLabel()) << "SNT: Aborting!" << TLOG_ENDL;
+		TLOG(TLVL_DEBUG) << GetTraceName() << "SNT: Aborting!";
 		theTransfer_.reset(nullptr);
 		throw new cet::exception("Not the same host");
 	}

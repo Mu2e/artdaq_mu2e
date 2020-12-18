@@ -6,6 +6,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "artdaq/DAQdata/Globals.hh"
+#define TRACE_NAME "DTCDataVerifier"
 
 #include "canvas/Utilities/InputTag.h"
 
@@ -52,12 +53,14 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 {
 	artdaq::Fragments fragments;
 
-	for (auto label : fragment_type_labels_) {
+	for (auto label : fragment_type_labels_)
+	{
 		art::Handle<artdaq::Fragments> fragments_with_label;
 
 		e.getByLabel("daq", label, fragments_with_label);
 
-		for (auto frag : *fragments_with_label) {
+		for (auto frag : *fragments_with_label)
+		{
 			fragments.emplace_back(frag);
 		}
 	}
@@ -65,68 +68,68 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 	artdaq::Fragment::sequence_id_t expected_sequence_id = std::numeric_limits<artdaq::Fragment::sequence_id_t>::max();
 
 	//  for (std::size_t i = 0; i < fragments.size(); ++i) {
-	for (const auto& frag : fragments) {
+	for (const auto& frag : fragments)
+	{
 		// Pointers to the types of fragment overlays DTCDataVerifier can handle;
 		// only one will be used per fragment, of course
 
 		//  const auto& frag( fragments[i] );  // Basically a shorthand
 
 		//    if (i == 0)
-		if (expected_sequence_id == std::numeric_limits<artdaq::Fragment::sequence_id_t>::max()) {
+		if (expected_sequence_id == std::numeric_limits<artdaq::Fragment::sequence_id_t>::max())
+		{
 			expected_sequence_id = frag.sequenceID();
 		}
 
-		if (expected_sequence_id != frag.sequenceID()) {
-			TLOG_WARNING("DTCDataVerifier") << "Expected fragment with sequence ID " << expected_sequence_id
-											<< ", received one with sequence ID " << frag.sequenceID() << TLOG_ENDL;
+		if (expected_sequence_id != frag.sequenceID())
+		{
+			TLOG(TLVL_WARNING) << "Expected fragment with sequence ID " << expected_sequence_id
+							   << ", received one with sequence ID " << frag.sequenceID();
 		}
 
 		FragmentType fragtype = static_cast<FragmentType>(frag.type());
 
 		switch (fragtype)
 		{
-			case FragmentType::DTC:
-			{
+			case FragmentType::DTC: {
 				auto ts = static_cast<DTCFragment>(frag).hdr_timestamp();
-				if (ts != next_timestamp_) {
-					std::ostringstream str;
-					str << "Timestamp does not match expected: ts=" << static_cast<double>(ts)
-						<< ", expected=" << static_cast<double>(next_timestamp_);
-					TLOG_WARNING("DTCDataVerifier") << str.str() << TLOG_ENDL;
+				if (ts != next_timestamp_)
+				{
+					TLOG(TLVL_WARNING) << "Timestamp does not match expected: ts=" << static_cast<double>(ts)
+									   << ", expected=" << static_cast<double>(next_timestamp_);
 				}
 				next_timestamp_ = ts + 1;
 			}
 			break;
-			case FragmentType::MU2E:
-			{
+			case FragmentType::MU2E: {
 				auto mfrag = static_cast<mu2eFragment>(frag);
-				for (size_t ii = 0; ii < mfrag.hdr_block_count(); ++ii) {
+				for (size_t ii = 0; ii < mfrag.hdr_block_count(); ++ii)
+				{
 					auto ptr = const_cast<mu2eFragment::Header::data_t*>(mfrag.dataAt(ii));
 
 					auto dp = DTCLib::DTC_DataPacket(reinterpret_cast<void*>(ptr));
 					auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
 					auto ts = dhp.GetTimestamp().GetTimestamp(true);
 
-					if (ts != next_timestamp_ && ts != next_timestamp_ - BLOCK_COUNT_MAX) {
-						std::ostringstream str;
-						str << "Block " << static_cast<double>(ii)
-							<< ": Timestamp does not match expected: ts=" << static_cast<double>(ts)
-							<< ", expected=" << static_cast<double>(next_timestamp_);
-						TLOG_WARNING("DTCDataVerifier") << str.str() << TLOG_ENDL;
+					if (ts != next_timestamp_ && ts != next_timestamp_ - BLOCK_COUNT_MAX)
+					{
+						TLOG(TLVL_WARNING) << "Block " << static_cast<double>(ii)
+										   << ": Timestamp does not match expected: ts=" << static_cast<double>(ts)
+										   << ", expected=" << static_cast<double>(next_timestamp_);
 					}
 					next_timestamp_ = ts + 1;
 				}
-				if (mfrag.hdr_block_count() != BLOCK_COUNT_MAX) {
-					TLOG_WARNING("DTCDataVerifier") << "There were " << mfrag.hdr_block_count()
-													<< " DataBlocks, mu2eFragment capacity is " << BLOCK_COUNT_MAX << TLOG_ENDL;
+				if (mfrag.hdr_block_count() != BLOCK_COUNT_MAX)
+				{
+					TLOG(TLVL_WARNING) << "There were " << mfrag.hdr_block_count()
+									   << " DataBlocks, mu2eFragment capacity is " << BLOCK_COUNT_MAX;
 				}
 			}
 			break;
 			case FragmentType::EMPTY:
-				TLOG_INFO("DTCDataVerifier") << "Not processing Empty Fragment" << TLOG_ENDL;
+				TLOG(TLVL_INFO) << "Not processing Empty Fragment";
 				break;
-			default:
-			{
+			default: {
 				std::ostringstream str;
 				str << "Error in DTCDataVerifier: unknown fragment type supplied (" << fragmentTypeToString(fragtype) << ")";
 				throw cet::exception(str.str());

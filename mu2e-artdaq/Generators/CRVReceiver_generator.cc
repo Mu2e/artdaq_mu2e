@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "trace.h"
+#define TRACE_NAME "CRVReceiver"
 
 #include "canvas/Utilities/Exception.h"
 #include "cetlib_except/exception.h"
@@ -80,8 +81,8 @@ private:
 	// For Debugging:
 	bool print_packets_;
 
-  std::set<artdaq::Fragment::sequence_id_t> seen_sequence_ids_{};
-  size_t sequence_id_list_max_size_{1000};
+	std::set<artdaq::Fragment::sequence_id_t> seen_sequence_ids_{};
+	size_t sequence_id_list_max_size_{1000};
 };
 }  // namespace mu2e
 
@@ -93,7 +94,7 @@ mu2e::CRVReceiver::CRVReceiver(fhicl::ParameterSet const& ps)
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, true);
 	mode_ = theInterface_->ReadSimMode();
 
-	TLOG_DEBUG("CRVReceiver") << "CRVReceiver Initialized with mode " << mode_ << TLOG_ENDL;
+	TLOG(TLVL_DEBUG) << "CRVReceiver Initialized with mode " << mode_;
 
 	char* file_c = getenv("DTCLIB_SIM_FILE");
 
@@ -117,11 +118,11 @@ mu2e::CRVReceiver::CRVReceiver(fhicl::ParameterSet const& ps)
 
 void mu2e::CRVReceiver::readSimFile_(std::string sim_file)
 {
-	TLOG_INFO("CRVReceiver") << "Starting read of simulation file " << sim_file << "."
-							 << " Please wait to start the run until finished." << TLOG_ENDL;
+	TLOG(TLVL_INFO) << "Starting read of simulation file " << sim_file << "."
+					<< " Please wait to start the run until finished.";
 	theInterface_->WriteSimFileToDTC(sim_file, true);
 	simFileRead_ = true;
-	TLOG_INFO("CRVReceiver") << "Done reading simulation file into DTC memory." << TLOG_ENDL;
+	TLOG(TLVL_INFO) << "Done reading simulation file into DTC memory.";
 }
 
 mu2e::CRVReceiver::~CRVReceiver()
@@ -140,15 +141,18 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
-	if(requests_ == nullptr) {
+	if (requests_ == nullptr)
+	{
 		requests_ = GetRequestBuffer();
 	}
-	if(requests_ == nullptr) { 
+	if (requests_ == nullptr)
+	{
 		TLOG(TLVL_ERROR) << "Request Buffer pointer is null! Returning false!";
 		return false;
 	}
 
-	while(!should_stop() && !requests_->WaitForRequests(100)) {
+	while (!should_stop() && !requests_->WaitForRequests(100))
+	{
 	}
 	auto reqs = requests_->GetAndClearRequests();
 	requests_->reset();
@@ -158,105 +162,111 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		return false;
 	}
 
-	for(auto& req : reqs) {
-	  if(seen_sequence_ids_.count(req.first)) {
-	    continue;
-	  } else {
-	    seen_sequence_ids_.insert(req.first);
-	    if(seen_sequence_ids_.size() > sequence_id_list_max_size_) {
-	      seen_sequence_ids_.erase(seen_sequence_ids_.begin());
-	  }
-	  }
-
-	  TLOG(TLVL_DEBUG) << "Requesting CRV data for Event Window Tag " << req.second;
-	std::vector<DTCLib::DTC_DataBlock> data;
-	DTCLib::DTC_Timestamp ts(detectorEmulatorMode_ ? 0 : req.second);
-
-	theCFO_->SendRequestForTimestamp(ts);
-
-	auto before_read = std::chrono::steady_clock::now();
-	int retryCount = 5;
-	while (data.size() == 0 && retryCount >= 0)
+	for (auto& req : reqs)
 	{
-		try
+		if (seen_sequence_ids_.count(req.first))
 		{
-			TLOG(30) << "Calling theInterface->GetData(ts)";
-			data = theInterface_->GetData(ts);
-			TLOG(30) << "Done calling theInterface->GetData(ts)";
+			continue;
 		}
-		catch (std::exception const& ex)
+		else
 		{
-			TLOG_ERROR("CRVReceiver") << "There was an error in the DTC Library: " << ex.what();
+			seen_sequence_ids_.insert(req.first);
+			if (seen_sequence_ids_.size() > sequence_id_list_max_size_)
+			{
+				seen_sequence_ids_.erase(seen_sequence_ids_.begin());
+			}
 		}
-		retryCount--;
-	}
-	if (retryCount < 0 && data.size() == 0)
-	{
-		return false;
-	}
-	auto after_read = std::chrono::steady_clock::now();
 
-	auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
-	DTCLib::DTC_Timestamp out_ts = first.GetTimestamp();
-	if (out_ts.GetTimestamp(true) != req.second && !detectorEmulatorMode_ ) {
-		TLOG(TLVL_TRACE) << "Requested timestamp " << req.second << ", received data with timestamp " << out_ts.GetTimestamp(true);
-	}
+		TLOG(TLVL_DEBUG) << "Requesting CRV data for Event Window Tag " << req.second;
+		std::vector<DTCLib::DTC_DataBlock> data;
+		DTCLib::DTC_Timestamp ts(detectorEmulatorMode_ ? 0 : req.second);
 
-	int packetCount = first.GetPacketCount() + 1;
-	if (print_packets_)
-	{
-		std::cout << first.toJSON() << std::endl;
-		for (int ii = 0; ii < first.GetPacketCount(); ++ii)
+		theCFO_->SendRequestForTimestamp(ts);
+
+		auto before_read = std::chrono::steady_clock::now();
+		int retryCount = 5;
+		while (data.size() == 0 && retryCount >= 0)
 		{
-			std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON()
-					  << std::endl;
+			try
+			{
+				TLOG(TLVL_TRACE + 25) << "Calling theInterface->GetData(ts)";
+				data = theInterface_->GetData(ts);
+				TLOG(TLVL_TRACE + 25) << "Done calling theInterface->GetData(ts)";
+			}
+			catch (std::exception const& ex)
+			{
+				TLOG(TLVL_ERROR) << "There was an error in the DTC Library: " << ex.what();
+			}
+			retryCount--;
 		}
-	}
+		if (retryCount < 0 && data.size() == 0)
+		{
+			return false;
+		}
+		auto after_read = std::chrono::steady_clock::now();
 
-	for (size_t i = 1; i < data.size(); ++i)
-	{
-		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-		packetCount += packet.GetPacketCount() + 1;
+		auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
+		DTCLib::DTC_Timestamp out_ts = first.GetTimestamp();
+		if (out_ts.GetTimestamp(true) != req.second && !detectorEmulatorMode_)
+		{
+			TLOG(TLVL_TRACE) << "Requested timestamp " << req.second << ", received data with timestamp " << out_ts.GetTimestamp(true);
+		}
+
+		int packetCount = first.GetPacketCount() + 1;
 		if (print_packets_)
 		{
-			std::cout << packet.toJSON() << std::endl;
-			for (int ii = 0; ii < packet.GetPacketCount(); ++ii)
+			std::cout << first.toJSON() << std::endl;
+			for (int ii = 0; ii < first.GetPacketCount(); ++ii)
 			{
-				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON()
+				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON()
 						  << std::endl;
 			}
 		}
-	}
 
-	//auto after_print = std::chrono::steady_clock::now();
-	frags.emplace_back(new artdaq::Fragment(packetCount * sizeof(packet_t) / sizeof(artdaq::RawDataType), req.first, fragment_ids_[0], fragment_type_, req.second));
+		for (size_t i = 1; i < data.size(); ++i)
+		{
+			auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
+			packetCount += packet.GetPacketCount() + 1;
+			if (print_packets_)
+			{
+				std::cout << packet.toJSON() << std::endl;
+				for (int ii = 0; ii < packet.GetPacketCount(); ++ii)
+				{
+					std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON()
+							  << std::endl;
+				}
+			}
+		}
 
-	TLOG(14) << "Copying DTC packets into DTCFragment";
-	size_t packetsProcessed = 0;
-	packet_t* dataBegin = reinterpret_cast<packet_t*>(frags.back()->dataBegin());
-	for (size_t i = 0; i < data.size(); ++i)
-	{
-		auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-		memcpy((void*)(dataBegin + packetsProcessed), data[i].blockPointer,
-			   (1 + packet.GetPacketCount()) * sizeof(packet_t));
-		packetsProcessed += 1 + packet.GetPacketCount();
-	}
+		//auto after_print = std::chrono::steady_clock::now();
+		frags.emplace_back(new artdaq::Fragment(packetCount * sizeof(packet_t) / sizeof(artdaq::RawDataType), req.first, fragment_ids_[0], fragment_type_, req.second));
 
-	auto after_copy = std::chrono::steady_clock::now();
+		TLOG(TLVL_TRACE + 10) << "Copying DTC packets into DTCFragment";
+		size_t packetsProcessed = 0;
+		packet_t* dataBegin = reinterpret_cast<packet_t*>(frags.back()->dataBegin());
+		for (size_t i = 0; i < data.size(); ++i)
+		{
+			auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
+			memcpy((void*)(dataBegin + packetsProcessed), data[i].blockPointer,
+				   (1 + packet.GetPacketCount()) * sizeof(packet_t));
+			packetsProcessed += 1 + packet.GetPacketCount();
+		}
 
-	TLOG(TLVL_DEBUG) << "Incrementing event counter";
-	ev_counter_inc();
+		auto after_copy = std::chrono::steady_clock::now();
 
-	TLOG(TLVL_DEBUG) << "Reporting Metrics";
-	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
+		TLOG(TLVL_DEBUG) << "Incrementing event counter";
+		ev_counter_inc();
 
-	double hw_timestamp_rate = 1 / hwTime;
-	double hw_data_rate = frags.back()->sizeBytes() / hwTime;
+		TLOG(TLVL_DEBUG) << "Reporting Metrics";
+		auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
-	metricMan->sendMetric("DTC Read Time", artdaq::TimeUtils::GetElapsedTime(after_read, after_copy), "s", 3, artdaq::MetricMode::Average);
-	metricMan->sendMetric("Fragment Prep Time", artdaq::TimeUtils::GetElapsedTime(before_read, after_read), "s", 3, artdaq::MetricMode::Average);
-	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
-	metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, artdaq::MetricMode::Average);
+		double hw_timestamp_rate = 1 / hwTime;
+		double hw_data_rate = frags.back()->sizeBytes() / hwTime;
+
+		metricMan->sendMetric("DTC Read Time", artdaq::TimeUtils::GetElapsedTime(after_read, after_copy), "s", 3, artdaq::MetricMode::Average);
+		metricMan->sendMetric("Fragment Prep Time", artdaq::TimeUtils::GetElapsedTime(before_read, after_read), "s", 3, artdaq::MetricMode::Average);
+		metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
+		metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, artdaq::MetricMode::Average);
 	}
 	TLOG(TLVL_DEBUG) << "Returning true";
 

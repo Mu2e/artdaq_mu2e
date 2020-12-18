@@ -1,5 +1,5 @@
-#define TRACE_NAME "OfflineFragmentReader"
 #include "artdaq/DAQdata/Globals.hh"
+#define TRACE_NAME "OfflineFragmentReader"
 
 #include "artdaq/ArtModules/ArtdaqSharedMemoryService.h"
 #include "artdaq/ArtModules/ArtdaqFragmentNamingService.h"
@@ -157,7 +157,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		    {
 		      if (evtHeader_ != nullptr)
 			{
-			  TLOG_INFO("OfflineFragmentReader") << "Received EndOfData Message. The remaining  "
+			  TLOG(TLVL_INFO) << "Received EndOfData Message. The remaining  "
 							     << currentFragment_.sizeRemaining() << " blocks from DAQ event "
 							     << evtHeader_->sequence_id << " will be lost.";
 			}
@@ -166,12 +166,12 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		    }
 		  else if(eventData.size() == 0)
 		    {
-		      TLOG_INFO("OfflineFragmentReader") << "Did not receive an event from Shared Memory, returning false" << TLOG_ENDL;
+		      TLOG(TLVL_INFO) << "Did not receive an event from Shared Memory, returning false" ;
 		      shutdownMsgReceived_ = true;
 		      return false;
 		    } else {
 			art::ServiceHandle<ArtdaqFragmentNamingServiceInterface> names;
-		    TLOG_INFO("OfflineFragmentReader") << "Received event of unknown type from shared memory, ignoring";
+		    TLOG(TLVL_INFO) << "Received event of unknown type from shared memory, ignoring";
 			for(auto& frags : eventData) {
 				TLOG(TLVL_DEBUG) << "Fragment Type: " << static_cast<int>(frags.first) << " (" << names->GetInstanceNameForType(frags.first) << ") has " << frags.second->size() << " Fragments.";
 			}
@@ -179,7 +179,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		    continue;
 		  }
 		}
-		TLOG_DEBUG("OfflineFragmentReader") << "Got Event!" << TLOG_ENDL;
+		TLOG(TLVL_DEBUG) << "Got Event!" ;
 
 		// We return false, indicating we're done reading, if:
 		//   1) we did not obtain an event, because we timed out and were
@@ -191,14 +191,14 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 		// fragment and that fragment is marked as EndRun or EndSubrun we'll create
 		// the special principals for that.
 
-		TLOG_DEBUG("OfflineFragmentReader") << "Iterating through Fragment types";
+		TLOG(TLVL_DEBUG) << "Iterating through Fragment types";
 		for (auto const& fragments : eventData)
 		{
 			// Remove uninteresting fragments -- do not store
 			if (fragments.first == artdaq::Fragment::EmptyFragmentType) continue;
 
 			assert(fragments.second->size() == 1ull);
-			TLOG_DEBUG("OfflineFragmentReader") << "Creating CurrentFragment using Fragment of type " << fragments.first;
+			TLOG(TLVL_DEBUG) << "Creating CurrentFragment using Fragment of type " << fragments.first;
 			currentFragment_ = CurrentFragment{std::move(fragments.second->front()), debugEventNumberMode_};
 			break;
 		}
@@ -215,7 +215,7 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 	try
 	{
 		auto ts = currentFragment_.getCurrentTimestamp();
-		TLOG_DEBUG("OfflineFragmentReader") << "Updating Run/Subrun/Event IDs, Current timestamp is " << ts;
+		TLOG(TLVL_DEBUG) << "Updating Run/Subrun/Event IDs, Current timestamp is " << ts;
 		idHandler_.update(*evtHeader_, ts);  // See note in mu2e::detail::EventIDHandler::update()
 		evtHeader_->timestamp = ts;
 
@@ -234,10 +234,10 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			outSR = pMaker_.makeSubRunPrincipal(idHandler_.run(), idHandler_.subRun(), currentTime);
 		}
 
-		TLOG_DEBUG("OfflineFragmentReader") << "Creating event principal for event " << idHandler_.event();
+		TLOG(TLVL_DEBUG) << "Creating event principal for event " << idHandler_.event();
 		outE = pMaker_.makeEventPrincipal(idHandler_.run(), idHandler_.subRun(), idHandler_.event(), currentTime);
 
-		TLOG_DEBUG("OfflineFragmentReader") << "Putting artdaq RawEventHeader into event";
+		TLOG(TLVL_DEBUG) << "Putting artdaq RawEventHeader into event";
 		auto artHdrPtr = std::make_unique<artdaq::detail::RawEventHeader>();
 		if (evtHeader_ != nullptr)
 		{
@@ -245,13 +245,13 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			put_product_in_principal(std::move(artHdrPtr), *outE, daq_module_label, "RawEventHeader");
 		}
 
-		TLOG_DEBUG("OfflineFragmentReader") << "Extracting Mu2e Event Header from CurrentFragment";
+		TLOG(TLVL_DEBUG) << "Extracting Mu2e Event Header from CurrentFragment";
 		auto mu2eHeader = currentFragment_.makeMu2eEventHeader();
-		TLOG_DEBUG("OfflineFragmentReader") << "Putting Mu2e Event Header into Mu2e Event";
+		TLOG(TLVL_DEBUG) << "Putting Mu2e Event Header into Mu2e Event";
 		put_product_in_principal(std::move(mu2eHeader), *outE, daq_module_label, header_instance_name());
 
-		TLOG_DEBUG("OfflineFragmentReader") << "Getting Tracker, Calorimeter, and Crv Fragments from CurrentFragment";
-		TLOG_TRACE("OfflineFragmentReader") << "This event has "
+		TLOG(TLVL_DEBUG) << "Getting Tracker, Calorimeter, and Crv Fragments from CurrentFragment";
+		TLOG(TLVL_TRACE) << "This event has "
 											<< currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
 											<< (readTrkFragments_ ? "Tracker Fragments, " : "Tracker Fragments (ignored), ")
 											<< currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter)
@@ -261,25 +261,25 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 		if (readTrkFragments_)
 		{
-			TLOG_TRACE("OfflineFragmentReader") << "Extracting Tracker Fragments from CurrentFragment";
+			TLOG(TLVL_TRACE) << "Extracting Tracker Fragments from CurrentFragment";
 			put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Tracker), *outE,
 									 daq_module_label, trk_instance_name());
 		}
 		if (readCaloFragments_)
 		{
-			TLOG_TRACE("OfflineFragmentReader") << "Extracting Calorimeter Fragments from CurrentFragment";
+			TLOG(TLVL_TRACE) << "Extracting Calorimeter Fragments from CurrentFragment";
 			put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_Calorimeter), *outE,
 									 daq_module_label, calo_instance_name());
 		}
 		if (readCrvFragments_)
 		{
-			TLOG_TRACE("OfflineFragmentReader") << "Extracting Crv Fragments from CurrentFragment";
+			TLOG(TLVL_TRACE) << "Extracting Crv Fragments from CurrentFragment";
 			put_product_in_principal(currentFragment_.extractFragmentsFromBlock(DTCLib::DTC_Subsystem_CRV), *outE,
 									 daq_module_label, crv_instance_name());
 		}
-		TLOG_TRACE("OfflineFragmentReader") << "Advancing to next block";
+		TLOG(TLVL_TRACE) << "Advancing to next block";
 		currentFragment_.advanceOneBlock();
-		TLOG_DEBUG("OfflineFragmentReader") << "Done extracting Tracker, Calorimeter, and Crv Fragments from CurrentFragment";
+		TLOG(TLVL_DEBUG) << "Done extracting Tracker, Calorimeter, and Crv Fragments from CurrentFragment";
 
 		return true;
 	}

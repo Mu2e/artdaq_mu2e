@@ -1,6 +1,6 @@
 
-#define TRACE_NAME "Mu2eReceiver"
 #include "artdaq/DAQdata/Globals.hh"
+#define TRACE_NAME (app_name + "_Mu2eReceiver").c_str();
 
 #include "mu2e-artdaq/Generators/Mu2eReceiver.hh"
 
@@ -41,13 +41,10 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 	// mode_ can still be overridden by environment!
 	theInterface_ = new DTCLib::DTC(mode_, ps.get<int>("dtc_id", -1), ps.get<unsigned>("roc_mask", 0x1), "", false, ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
 	fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
-	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, cfoConfig.get<bool>("use_dtc_cfo_emulator", true), cfoConfig.get<size_t>("debug_packet_count", 0)
-		, DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")), cfoConfig.get<bool>("sticky_debug_type", false), cfoConfig.get<bool>("quiet", false), cfoConfig.get<bool>("asyncRR", false), cfoConfig.get<bool>("force_no_debug_mode", false), cfoConfig.get<bool>("useCFODRP", false)
-	);
+	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, cfoConfig.get<bool>("use_dtc_cfo_emulator", true), cfoConfig.get<size_t>("debug_packet_count", 0), DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")), cfoConfig.get<bool>("sticky_debug_type", false), cfoConfig.get<bool>("quiet", false), cfoConfig.get<bool>("asyncRR", false), cfoConfig.get<bool>("force_no_debug_mode", false), cfoConfig.get<bool>("useCFODRP", false));
 	mode_ = theInterface_->ReadSimMode();
 
-	TLOG_INFO("Mu2eReceiver") << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion()
-							  << TLOG_ENDL;
+	TLOG(TLVL_INFO) << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion();
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
@@ -80,11 +77,11 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 
 void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 {
-	TLOG_INFO("Mu2eReceiver") << "Starting read of simulation file " << sim_file << "."
-							  << " Please wait to start the run until finished." << TLOG_ENDL;
+	TLOG(TLVL_INFO) << "Starting read of simulation file " << sim_file << "."
+							  << " Please wait to start the run until finished.";
 	theInterface_->WriteSimFileToDTC(sim_file, true, true);
 	simFileRead_ = true;
-	TLOG_INFO("Mu2eReceiver") << "Done reading simulation file into DTC memory." << TLOG_ENDL;
+	TLOG(TLVL_INFO) << "Done reading simulation file into DTC memory.";
 }
 
 mu2e::Mu2eReceiver::~Mu2eReceiver()
@@ -117,19 +114,19 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		int mod = ev_counter() % nSkip_;
 		if (mod == board_id_ || (mod == 0 && board_id_ == nSkip_))
 		{
-			// TLOG_DEBUG("Mu2eReceiver") << "Sending Data  Fragment for sequence id " << ev_counter() << " (board_id " <<
-			// std::to_string(board_id_) << ")" << TLOG_ENDL;
+			// TLOG(TLVL_DEBUG) << "Sending Data  Fragment for sequence id " << ev_counter() << " (board_id " <<
+			// std::to_string(board_id_) << ")" ;
 		}
 		else
 		{
-			// TLOG_DEBUG("Mu2eReceiver") << "Sending Empty Fragment for sequence id " << ev_counter() << " (board_id " <<
-			// std::to_string(board_id_) << ")" << TLOG_ENDL;
+			// TLOG(TLVL_DEBUG) << "Sending Empty Fragment for sequence id " << ev_counter() << " (board_id " <<
+			// std::to_string(board_id_) << ")" ;
 			return sendEmpty_(frags);
 		}
 	}
 
 	_startProcTimer();
-	TLOG(10) << "mu2eReceiver::getNext: Starting CFO thread";
+	TLOG(TLVL_TRACE +5) << "mu2eReceiver::getNext: Starting CFO thread";
 	uint64_t z = 0;
 	DTCLib::DTC_Timestamp zero(z);
 	if (mode_ != 0)
@@ -144,7 +141,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 #endif
 	}
 
-	TLOG(10) << "mu2eReceiver::getNext: Initializing mu2eFragment metadata";
+	TLOG(TLVL_TRACE +5) << "mu2eReceiver::getNext: Initializing mu2eFragment metadata";
 	mu2eFragment::Metadata metadata;
 	metadata.sim_mode = static_cast<int>(mode_);
 	metadata.run_number = run_number();
@@ -152,17 +149,17 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	// And use it, along with the artdaq::Fragment header information
 	// (fragment id, sequence id, and user type) to create a fragment
-	TLOG(10) << "mu2eReceiver::getNext: Creating new mu2eFragment!";
+	TLOG(TLVL_TRACE +5) << "mu2eReceiver::getNext: Creating new mu2eFragment!";
 	frags.emplace_back(new artdaq::Fragment(0, ev_counter(), fragment_ids_[0], fragment_type_, metadata));
 	// Now we make an instance of the overlay to put the data into...
-	TLOG(10) << "mu2eReceiver::getNext: Making mu2eFragmentWriter";
+	TLOG(TLVL_TRACE +5) << "mu2eReceiver::getNext: Making mu2eFragmentWriter";
 	mu2eFragmentWriter newfrag(*frags.back());
 
-	TLOG(10) << "mu2eReceiver::getNext: Reserving space for 16 * 201 * BLOCK_COUNT_MAX bytes";
+	TLOG(TLVL_TRACE +5) << "mu2eReceiver::getNext: Reserving space for 16 * 201 * BLOCK_COUNT_MAX bytes";
 	newfrag.addSpace(mu2e::BLOCK_COUNT_MAX * 16 * 201);
 
 	// Get data from Mu2eReceiver
-	TLOG(10) << "mu2eReceiver::getNext: Starting DTCFragment Loop";
+	TLOG(TLVL_TRACE +5) << "mu2eReceiver::getNext: Starting DTCFragment Loop";
 	theInterface_->GetDevice()->ResetDeviceTime();
 	size_t totalSize = 0;
 	bool first = true;
@@ -173,7 +170,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			break;
 		}
 
-		TLOG(10) << "Getting DTC Data for block " << newfrag.hdr_block_count() << "/" << mu2e::BLOCK_COUNT_MAX
+		TLOG(TLVL_TRACE +5) << "Getting DTC Data for block " << newfrag.hdr_block_count() << "/" << mu2e::BLOCK_COUNT_MAX
 				 << ", sz=" << totalSize;
 		std::vector<DTCLib::DTC_DataBlock> data;
 		int retryCount = 5;
@@ -181,13 +178,13 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		{
 			try
 			{
-				TLOG(30) << "Calling theInterface->GetData(zero)";
+				TLOG(TLVL_TRACE +10) << "Calling theInterface->GetData(zero)";
 				data = theInterface_->GetData(zero);
-				TLOG(30) << "Done calling theInterface->GetData(zero)";
+				TLOG(TLVL_TRACE +10) << "Done calling theInterface->GetData(zero)";
 			}
 			catch (std::exception const& ex)
 			{
-				TLOG_ERROR("Mu2eReceiver") << "There was an error in the DTC Library: " << ex.what();
+				TLOG(TLVL_ERROR) << "There was an error in the DTC Library: " << ex.what();
 			}
 			retryCount--;
 			// if (data.size() == 0){usleep(10000);}
@@ -195,7 +192,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		if (retryCount < 0 && data.size() == 0)
 		{
 			TLOG(TLVL_DEBUG) << "Retry count exceeded. Something is very wrong indeed";
-			TLOG_ERROR("Mu2eReceiver") << "Had an error with block " << newfrag.hdr_block_count() << " of event "
+			TLOG(TLVL_ERROR) << "Had an error with block " << newfrag.hdr_block_count() << " of event "
 									   << ev_counter();
 			if (newfrag.hdr_block_count() == 0)
 			{
@@ -205,7 +202,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			break;
 		}
 
-		TLOG(11) << "Allocating space in Mu2eFragment for DTC packets";
+		TLOG(TLVL_TRACE +6) << "Allocating space in Mu2eFragment for DTC packets";
 		totalSize = 0;
 		for (size_t i = 0; i < data.size(); ++i)
 		{
@@ -213,7 +210,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		}
 
 		int64_t diff = totalSize + newfrag.dataEndBytes() - newfrag.dataSize();
-		TLOG(12) << "diff=" << diff << ", totalSize=" << totalSize << ", dataSize=" << newfrag.dataEndBytes()
+		TLOG(TLVL_TRACE +7) << "diff=" << diff << ", totalSize=" << totalSize << ", dataSize=" << newfrag.dataEndBytes()
 				 << ", fragSize=" << newfrag.dataSize();
 		if (diff > 0)
 		{
@@ -221,21 +218,20 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			auto remaining = 1.0 - (newfrag.hdr_block_count() / static_cast<double>(BLOCK_COUNT_MAX));
 
 			auto newSize = static_cast<size_t>(currSize * remaining);
-			TLOG(13) << "mu2eReceiver::getNext: " << totalSize << " + " << newfrag.dataEndBytes() << " > "
+			TLOG(TLVL_TRACE +8) << "mu2eReceiver::getNext: " << totalSize << " + " << newfrag.dataEndBytes() << " > "
 					 << newfrag.dataSize() << ", allocating space for " << newSize + diff << " more bytes";
 			newfrag.addSpace(diff + newSize);
 		}
 
-		TLOG(14) << "Copying DTC packets into Mu2eFragment";
+		TLOG(TLVL_TRACE +9) << "Copying DTC packets into Mu2eFragment";
 		// auto offset = newfrag.dataBegin() + newfrag.blockSizeBytes();
 		size_t offset = newfrag.dataEndBytes();
 		for (size_t i = 0; i < data.size(); ++i)
 		{
 			auto dp = DTCLib::DTC_DataPacket(data[i].blockPointer);
 			auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
-			TLOG(16) << "Placing DataBlock with timestamp "
-					 << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment"
-					 << TLOG_ENDL;
+			TLOG(TLVL_TRACE +12) << "Placing DataBlock with timestamp "
+					 << static_cast<double>(dhp.GetTimestamp().GetTimestamp(true)) << " into Mu2eFragment";
 
 			auto fragment_timestamp = dhp.GetTimestamp().GetTimestamp(true);
 			if (fragment_timestamp > highest_timestamp_seen_)
@@ -265,23 +261,23 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 				size += data[++i].byteSize;
 			}
 
-			TLOG(15) << "Copying data from " << begin << " to "
+			TLOG(TLVL_TRACE +11) << "Copying data from " << begin << " to "
 					 << reinterpret_cast<void*>(newfrag.dataAtBytes(offset)) << " (sz=" << size << ")";
 			// memcpy(reinterpret_cast<void*>(offset + intraBlockOffset), data[i].blockPointer, data[i].byteSize);
 			memcpy(newfrag.dataAtBytes(offset), begin, size);
-			TLOG(15) << "Done with copy";
+			TLOG(TLVL_TRACE +11) << "Done with copy";
 			//std::copy(begin, reinterpret_cast<const uint8_t*>(begin) + size, newfrag.dataAtBytes(offset));
 			if (rawOutput_) rawOutputStream_.write((char*)begin, size);
 			offset += size;
 		}
 
-		TLOG(16) << "Ending SubEvt " << newfrag.hdr_block_count();
+		TLOG(TLVL_TRACE +12) << "Ending SubEvt " << newfrag.hdr_block_count();
 		newfrag.endSubEvt(offset - newfrag.dataEndBytes());
 	}
-	TLOG(10) << "Incrementing event counter";
+	TLOG(TLVL_TRACE +5) << "Incrementing event counter";
 	ev_counter_inc();
 
-	TLOG(10) << "Reporting Metrics";
+	TLOG(TLVL_TRACE +5) << "Reporting Metrics";
 	timestamps_read_ += newfrag.hdr_block_count();
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
@@ -296,7 +292,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
 	metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, artdaq::MetricMode::Average);
 
-	TLOG(10) << "Returning true";
+	TLOG(TLVL_TRACE +5) << "Returning true";
 	return true;
 }
 

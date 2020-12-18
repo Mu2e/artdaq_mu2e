@@ -37,14 +37,14 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 		// current data block.
 		try
 		{
-			TLOG(9) << "Getting first block header";
+			TLOG(TLVL_TRACE + 4) << "Getting first block header";
 			DTCLib::DTC_DataPacket const dataPacket{data};
 			DTCLib::DTC_DataHeaderPacket const headerPacket{dataPacket};
 			auto byteCount = headerPacket.GetByteCount();
 
 			if (headerPacket.GetSubsystem() == subsystem)
 			{
-				TLOG(9) << "Checking subsequent blocks to see if they are from the same ROC";
+				TLOG(TLVL_TRACE + 4) << "Checking subsequent blocks to see if they are from the same ROC";
 				while (data + byteCount < end)
 				{
 					try
@@ -55,7 +55,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 						// Collapse multiple blocks from the same DTC/ROC into one Fragment
 						if (newHeaderPacket.GetSubsystem() == subsystem && newHeaderPacket.GetID() == headerPacket.GetID() && newHeaderPacket.GetRingID() == headerPacket.GetRingID() && newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
 						{
-							TLOG(9) << "Adding " << newHeaderPacket.GetByteCount() << " bytes to current block size (" << byteCount << "), as this block is from the same ROC as previous";
+							TLOG(TLVL_TRACE + 4) << "Adding " << newHeaderPacket.GetByteCount() << " bytes to current block size (" << byteCount << "), as this block is from the same ROC as previous";
 							byteCount += newHeaderPacket.GetByteCount();
 						}
 						else
@@ -65,7 +65,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 					}
 					catch (...)
 					{
-						TLOG_ERROR("CurrentFragment") << "There may be data corruption in the Fragment. Aborting search for same-ROC blocks";
+						TLOG(TLVL_ERROR) << "There may be data corruption in the Fragment. Aborting search for same-ROC blocks";
 						break;
 					}
 				}
@@ -90,7 +90,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 		}
 	}
 	if (data <= end) { return result; }
-	TLOG_ERROR("CurrentFragment") << "ma::CurrentFragment::extractFragmentsFromBlock: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+	TLOG(TLVL_ERROR) << "ma::CurrentFragment::extractFragmentsFromBlock: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
 	throw art::Exception{art::errors::DataCorruption, "CurrentFragment::extractFragmentsFromBlock"}
 		<< "The data pointer has shot past the 'end' pointer.";
 }
@@ -140,7 +140,7 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 	auto const begin = current_;
 	auto const end = reinterpret_cast<char const*>(current_ + reader_->blockSize(processedSuperBlocks()));
 	auto data = reinterpret_cast<char const*>(begin);
-	TLOG(10) << "data is " << (void*)data << ", end is " << (void*)end;
+	TLOG(TLVL_TRACE + 5) << "data is " << (void*)data << ", end is " << (void*)end;
 
 	while (data < end)
 	{
@@ -167,7 +167,7 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 	}
 
 	if (data <= end) { return result; }
-	TLOG_ERROR("CurrentFragment") << "ma::CurrentFragment::getFragmentCount: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
+	TLOG(TLVL_ERROR) << "ma::CurrentFragment::getFragmentCount: The data pointer has shot past the 'end' pointer. data=" << std::hex << (void*)data << ", end=" << std::hex << (void*)end;
 	throw art::Exception{art::errors::DataCorruption, "CurrentFragment::getFragmentCount"}
 		<< "The data pointer has shot past the 'end' pointer.";
 }
