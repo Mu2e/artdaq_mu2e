@@ -1,6 +1,6 @@
 
 #include "artdaq/DAQdata/Globals.hh"
-#define TRACE_NAME (app_name + "_Mu2eReceiver").c_str();
+#define TRACE_NAME (app_name + "_Mu2eReceiver").c_str()
 
 #include "mu2e-artdaq/Generators/Mu2eReceiver.hh"
 
