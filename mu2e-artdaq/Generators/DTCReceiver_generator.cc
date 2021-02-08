@@ -122,11 +122,11 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 	std::vector<DTCLib::DTC_DataBlock> data;
 	uint64_t z = 0;
-	DTCLib::DTC_Timestamp zero(z);
+	DTCLib::DTC_EventWindowTag zero(z);
 
 	if (mode_ != 0)
 	{
-		theCFO_->SendRequestForTimestamp(DTCLib::DTC_Timestamp(ev_counter()));
+		theCFO_->SendRequestForTimestamp(DTCLib::DTC_EventWindowTag(ev_counter()));
 	}
 
 	auto before_read = std::chrono::steady_clock::now();
@@ -152,7 +152,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	auto after_read = std::chrono::steady_clock::now();
 
 	auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
-	DTCLib::DTC_Timestamp ts = first.GetTimestamp();
+	DTCLib::DTC_EventWindowTag ts = first.GetTimestamp();
 	int packetCount = first.GetPacketCount() + 1;
 	if (print_packets_)
 	{

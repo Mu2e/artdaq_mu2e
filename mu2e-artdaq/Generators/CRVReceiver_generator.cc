@@ -179,7 +179,7 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 		TLOG(TLVL_DEBUG) << "Requesting CRV data for Event Window Tag " << req.second;
 		std::vector<DTCLib::DTC_DataBlock> data;
-		DTCLib::DTC_Timestamp ts(detectorEmulatorMode_ ? 0 : req.second);
+		DTCLib::DTC_EventWindowTag ts(detectorEmulatorMode_ ? 0 : req.second);
 
 		theCFO_->SendRequestForTimestamp(ts);
 
@@ -206,7 +206,7 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		auto after_read = std::chrono::steady_clock::now();
 
 		auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
-		DTCLib::DTC_Timestamp out_ts = first.GetTimestamp();
+		DTCLib::DTC_EventWindowTag out_ts = first.GetTimestamp();
 		if (out_ts.GetTimestamp(true) != req.second && !detectorEmulatorMode_)
 		{
 			TLOG(TLVL_TRACE) << "Requested timestamp " << req.second << ", received data with timestamp " << out_ts.GetTimestamp(true);

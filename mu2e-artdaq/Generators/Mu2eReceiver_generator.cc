@@ -128,15 +128,15 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	_startProcTimer();
 	TLOG(TLVL_TRACE +5) << "mu2eReceiver::getNext: Starting CFO thread";
 	uint64_t z = 0;
-	DTCLib::DTC_Timestamp zero(z);
+	DTCLib::DTC_EventWindowTag zero(z);
 	if (mode_ != 0)
 	{
 #if 0
 		//theInterface_->ReleaseAllBuffers();
 		TLOG(TLVL_DEBUG) << "Sending requests for " << mu2e::BLOCK_COUNT_MAX << " timestamps, starting at " << mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1);
-		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)));
+		theCFO_->SendRequestsForRange(mu2e::BLOCK_COUNT_MAX, DTCLib::DTC_EventWindowTag(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)));
 #else
-		theCFO_->SendRequestsForRange(-1, DTCLib::DTC_Timestamp(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)), true, request_delay_, 1, heartbeats_after_);
+		theCFO_->SendRequestsForRange(-1, DTCLib::DTC_EventWindowTag(mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1)), true, request_delay_, 1, heartbeats_after_);
 
 #endif
 	}
