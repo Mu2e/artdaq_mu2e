@@ -172,7 +172,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 		TLOG(TLVL_TRACE +5) << "Getting DTC Data for block " << newfrag.hdr_block_count() << "/" << mu2e::BLOCK_COUNT_MAX
 				 << ", sz=" << totalSize;
-		std::vector<DTCLib::DTC_DataBlock> data;
+		std::vector<std::unique_ptr<DTCLib::DTC_Event>> data;
 		int retryCount = 5;
 		while (data.size() == 0 && retryCount >= 0)
 		{

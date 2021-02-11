@@ -120,7 +120,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 	// Now we make an instance of the overlay to put the data into...
 
-	std::vector<DTCLib::DTC_DataBlock> data;
+	std::vector<std::unique_ptr<DTCLib::DTC_Event>> data;
 	uint64_t z = 0;
 	DTCLib::DTC_EventWindowTag zero(z);
 
@@ -150,7 +150,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		return false;
 	}
 	auto after_read = std::chrono::steady_clock::now();
-
+#if 0 // Need to update
 	auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
 	DTCLib::DTC_EventWindowTag ts = first.GetTimestamp();
 	int packetCount = first.GetPacketCount() + 1;
@@ -206,7 +206,7 @@ bool mu2e::DTCReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	}
 
 	auto after_copy = std::chrono::steady_clock::now();
-
+#endif
 	TLOG(TLVL_TRACE + 20) << "Incrementing event counter";
 	ev_counter_inc();
 

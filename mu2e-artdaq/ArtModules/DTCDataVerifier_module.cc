@@ -109,7 +109,7 @@ void mu2e::DTCDataVerifier::analyze(art::Event const& e)
 
 					auto dp = DTCLib::DTC_DataPacket(reinterpret_cast<void*>(ptr));
 					auto dhp = DTCLib::DTC_DataHeaderPacket(dp);
-					auto ts = dhp.GetTimestamp().GetTimestamp(true);
+					auto ts = dhp.GetEventWindowTag().GetEventWindowTag(true);
 
 					if (ts != next_timestamp_ && ts != next_timestamp_ - BLOCK_COUNT_MAX)
 					{

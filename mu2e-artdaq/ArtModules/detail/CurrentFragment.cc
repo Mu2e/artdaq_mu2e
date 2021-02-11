@@ -53,7 +53,7 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 						DTCLib::DTC_DataHeaderPacket const newHeaderPacket{newDataPacket};
 
 						// Collapse multiple blocks from the same DTC/ROC into one Fragment
-						if (newHeaderPacket.GetSubsystem() == subsystem && newHeaderPacket.GetID() == headerPacket.GetID() && newHeaderPacket.GetRingID() == headerPacket.GetRingID() && newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
+						if (newHeaderPacket.GetSubsystem() == subsystem && newHeaderPacket.GetID() == headerPacket.GetID() && newHeaderPacket.GetLinkID() == headerPacket.GetLinkID() && newHeaderPacket.GetHopCount() == headerPacket.GetHopCount())
 						{
 							TLOG(TLVL_TRACE + 4) << "Adding " << newHeaderPacket.GetByteCount() << " bytes to current block size (" << byteCount << "), as this block is from the same ROC as previous";
 							byteCount += newHeaderPacket.GetByteCount();
@@ -174,7 +174,7 @@ size_t CurrentFragment::getFragmentCount(DTCLib::DTC_Subsystem const subsystem)
 
   uint64_t CurrentFragment::getBlockTimestamp_(DTCLib::DTC_DataHeaderPacket const& pkt)
   {
-		uint64_t result = pkt.GetTimestamp().GetTimestamp(true);
+		uint64_t result = pkt.GetEventWindowTag().GetEventWindowTag(true);
 		if(first_block_timestamp_ == -1) {
 		  first_block_timestamp_ = result;
 		}
