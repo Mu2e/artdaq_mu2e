@@ -75,9 +75,8 @@ private:
 	std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
 
 	// State
-	size_t packets_read_;
-  size_t highest_timestamp_seen_{0};
-  size_t timestamp_loops_{0}; // For playback mode, so that we continually generate unique timestamps
+	size_t highest_timestamp_seen_{0};
+	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
 	DTCLib::DTC_SimMode mode_;
 	uint8_t board_id_;
 	bool simFileRead_;

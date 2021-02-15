@@ -68,7 +68,8 @@ private:
 	std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
 
 	// State
-	size_t packets_read_;
+	size_t highest_timestamp_seen_{0};
+	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
 	DTCLib::DTC_SimMode mode_;
 	uint8_t board_id_;
 	bool simFileRead_;
@@ -87,7 +88,11 @@ private:
 }  // namespace mu2e
 
 mu2e::CRVReceiver::CRVReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType(ps.get<std::string>("fragment_type", "CRV"))), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, packets_read_(0), mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), print_packets_(ps.get<bool>("debug_print", false))
+	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType(ps.get<std::string>("fragment_type", "CRV")))
+	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
+	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
+	, print_packets_(ps.get<bool>("debug_print", false))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = new DTCLib::DTC(mode_, -1, 1, "", false, ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
@@ -178,7 +183,7 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		}
 
 		TLOG(TLVL_DEBUG) << "Requesting CRV data for Event Window Tag " << req.second;
-		std::vector<DTCLib::DTC_DataBlock> data;
+		std::vector<std::unique_ptr<DTCLib::DTC_Event>> data;
 		DTCLib::DTC_EventWindowTag ts(detectorEmulatorMode_ ? 0 : req.second);
 
 		theCFO_->SendRequestForTimestamp(ts);
@@ -205,55 +210,68 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		}
 		auto after_read = std::chrono::steady_clock::now();
 
-		auto first = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[0].blockPointer));
-		DTCLib::DTC_EventWindowTag out_ts = first.GetTimestamp();
-		if (out_ts.GetTimestamp(true) != req.second && !detectorEmulatorMode_)
+		DTCLib::DTC_EventWindowTag out_ts = data[0]->GetEventWindowTag();
+		if (out_ts.GetEventWindowTag(true) != req.second && !detectorEmulatorMode_)
 		{
-			TLOG(TLVL_TRACE) << "Requested timestamp " << req.second << ", received data with timestamp " << out_ts.GetTimestamp(true);
+			TLOG(TLVL_TRACE) << "Requested timestamp " << req.second << ", received data with timestamp " << out_ts.GetEventWindowTag(true);
 		}
 
-		int packetCount = first.GetPacketCount() + 1;
 		if (print_packets_)
 		{
-			std::cout << first.toJSON() << std::endl;
-			for (int ii = 0; ii < first.GetPacketCount(); ++ii)
+			for (auto& evt : data)
 			{
-				std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[0].blockPointer) + ((ii + 1) * 16)).toJSON()
-						  << std::endl;
-			}
-		}
-
-		for (size_t i = 1; i < data.size(); ++i)
-		{
-			auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-			packetCount += packet.GetPacketCount() + 1;
-			if (print_packets_)
-			{
-				std::cout << packet.toJSON() << std::endl;
-				for (int ii = 0; ii < packet.GetPacketCount(); ++ii)
+				for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
 				{
-					std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)data[i].blockPointer) + ((ii + 1) * 16)).toJSON()
-							  << std::endl;
+					auto subevt = evt->GetSubEvent(se);
+					for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
+					{
+						auto block = subevt->GetDataBlock(bl);
+						auto first = block->GetHeader();
+						TLOG(TLVL_INFO) << first.toJSON();
+						for (int ii = 0; ii < first.GetPacketCount(); ++ii)
+						{
+							std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON()
+									  << std::endl;
+						}
+					}
 				}
 			}
 		}
 
-		//auto after_print = std::chrono::steady_clock::now();
-		frags.emplace_back(new artdaq::Fragment(packetCount * sizeof(packet_t) / sizeof(artdaq::RawDataType), req.first, fragment_ids_[0], fragment_type_, req.second));
-
-		TLOG(TLVL_TRACE + 10) << "Copying DTC packets into DTCFragment";
-		size_t packetsProcessed = 0;
-		packet_t* dataBegin = reinterpret_cast<packet_t*>(frags.back()->dataBegin());
-		for (size_t i = 0; i < data.size(); ++i)
+		size_t total_size = 0;
+		for (auto& evt : data)
 		{
-			auto packet = DTCLib::DTC_DataHeaderPacket(DTCLib::DTC_DataPacket(data[i].blockPointer));
-			memcpy((void*)(dataBegin + packetsProcessed), data[i].blockPointer,
-				   (1 + packet.GetPacketCount()) * sizeof(packet_t));
-			packetsProcessed += 1 + packet.GetPacketCount();
+			total_size += evt->GetEventByteCount();
 		}
 
-		auto after_copy = std::chrono::steady_clock::now();
+		//auto after_print = std::chrono::steady_clock::now();
 
+		auto fragment_timestamp = ts.GetEventWindowTag(true);
+		if (fragment_timestamp < highest_timestamp_seen_)
+		{
+			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+		}
+		else if (fragment_timestamp > highest_timestamp_seen_)
+		{
+			highest_timestamp_seen_ = fragment_timestamp;
+		}
+		else
+		{
+			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+			timestamp_loops_++;
+		}
+
+		frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], fragment_type_, fragment_timestamp));
+		frags.back()->resize(total_size / sizeof(artdaq::RawDataType));
+
+		TLOG(TLVL_TRACE + 10) << "Copying DTC packets into DTCFragment with timestamp " << ts.GetEventWindowTag(true);
+		uint8_t* dataBegin = reinterpret_cast<uint8_t*>(frags.back()->dataBegin());
+		for (auto& evt : data)
+		{
+			memcpy(dataBegin, evt->GetRawBufferPointer(), evt->GetEventByteCount());
+			dataBegin += evt->GetEventByteCount();
+		}
+		auto after_copy = std::chrono::steady_clock::now();
 		TLOG(TLVL_DEBUG) << "Incrementing event counter";
 		ev_counter_inc();
 
