@@ -18,9 +18,8 @@ bindir      fq_dir      bin
 #
 product				version		optional
 artdaq				v3_09_05
-mu2e_artdaq_core	v1_05_06
 mongodb				v4_0_8c
-offline				v09_11_01
+offline				v09_11_02
 cetbuildtools		v7_17_01	-	only_for_build
 end_product_list
 
@@ -30,10 +29,9 @@ end_product_list
 # -nq- means there is no qualifier
 # a "-" means the dependent product is not required by the parent and will not be setup
 
-qualifier		artdaq			mu2e_artdaq_core	mongodb		offline				notes
-e20:s105:debug	e20:s105:debug	e20:s105:debug		e20:debug	e20:s105:debug:trig	--std=c++17
-e20:s105:prof	e20:s105:prof	e20:s105:prof		e20:prof	e20:s105:prof:trig	--std=c++17
-
+qualifier			artdaq				mongodb			offline					notes
+e20:s105:debug		e20:s105:debug		e20:debug		e20:s105:debug:trig		--std=c++17
+e20:s105:prof		e20:s105:prof		e20:prof		e20:s105:prof:trig		--std=c++17
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:

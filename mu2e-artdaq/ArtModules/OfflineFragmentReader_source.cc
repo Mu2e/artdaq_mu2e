@@ -218,7 +218,9 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 	try
 	{
-		auto ts = currentFragment_.getCurrentTimestamp();
+		TLOG(TLVL_DEBUG) << "Extracting Mu2e Event Header from CurrentFragment";
+		auto mu2eHeader = currentFragment_.makeMu2eEventHeader();
+		auto ts = mu2eHeader->EventWindowTag;
 		TLOG(TLVL_DEBUG) << "Updating Run/Subrun/Event IDs, Current timestamp is " << ts;
 		idHandler_.update(*evtHeader_, ts);  // See note in mu2e::detail::EventIDHandler::update()
 		evtHeader_->timestamp = ts;
@@ -249,8 +251,6 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 			put_product_in_principal(std::move(artHdrPtr), *outE, daq_module_label, "RawEventHeader");
 		}
 
-		TLOG(TLVL_DEBUG) << "Extracting Mu2e Event Header from CurrentFragment";
-		auto mu2eHeader = currentFragment_.makeMu2eEventHeader();
 		TLOG(TLVL_DEBUG) << "Putting Mu2e Event Header into Mu2e Event";
 		put_product_in_principal(std::move(mu2eHeader), *outE, daq_module_label, header_instance_name());
 
