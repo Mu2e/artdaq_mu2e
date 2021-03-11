@@ -100,7 +100,7 @@ mu2e::OfflineFragmentReader::OfflineFragmentReader(fhicl::ParameterSet const& ps
 												   art::SourceHelper const& pm)
 	: pMaker_{pm}
 	, debugEventNumberMode_(ps.get<bool>("debug_event_number_mode", false))
-							      , evtHeader_(new artdaq::detail::RawEventHeader(0, 0, 0, 0, 0))
+	, evtHeader_(new artdaq::detail::RawEventHeader(0, 0, 0, 0, 0))
 	, readTrkFragments_(ps.get<bool>("readTrkFragments", true))
 	, readCaloFragments_(ps.get<bool>("readCaloFragments", true))
 	, readCrvFragments_(ps.get<bool>("readCrvFragments", false))
@@ -144,42 +144,46 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 	// Get new fragment if nothing is stored
 	if (currentFragment_.empty())
 	{
-	  std::unordered_map<artdaq::Fragment::type_t, std::unique_ptr<artdaq::Fragments>> eventData;
+		std::unordered_map<artdaq::Fragment::type_t, std::unique_ptr<artdaq::Fragments>> eventData;
 
-		while(eventData.count(mu2e::FragmentType::DTC) == 0 && eventData.count(mu2e::FragmentType::MU2E) == 0) {
-		 eventData = shm->ReceiveEvent(false);
+		while (eventData.count(mu2e::FragmentType::DTC) == 0 && eventData.count(mu2e::FragmentType::MU2E) == 0)
+		{
+			eventData = shm->ReceiveEvent(false);
 
-		  if (eventData.count(mu2e::FragmentType::DTC) > 0 || eventData.count(mu2e::FragmentType::MU2E) > 0)
-		    {
-		      evtHeader_ = shm->GetEventHeader();
-		    }
-		  else if (eventData.count(artdaq::Fragment::EndOfDataFragmentType) > 0)
-		    {
-		      if (evtHeader_ != nullptr)
+			if (eventData.count(mu2e::FragmentType::DTC) > 0 || eventData.count(mu2e::FragmentType::MU2E) > 0)
 			{
-			  TLOG(TLVL_INFO) << "Received EndOfData Message. The remaining  "
-							     << currentFragment_.sizeRemaining() << " blocks from DAQ event "
-							     << evtHeader_->sequence_id << " will be lost.";
+				evtHeader_ = shm->GetEventHeader();
 			}
-		      shutdownMsgReceived_ = true;
-		      return false;
-		    }
-		  else if(eventData.size() == 0)
-		    {
-		      TLOG(TLVL_INFO) << "Did not receive an event from Shared Memory, returning false" ;
-		      shutdownMsgReceived_ = true;
-		      return false;
-		    } else {
-			art::ServiceHandle<ArtdaqFragmentNamingServiceInterface> names;
-		    TLOG(TLVL_INFO) << "Received event of unknown type from shared memory, ignoring";
-			for(auto& frags : eventData) {
-				TLOG(TLVL_DEBUG) << "Fragment Type: " << static_cast<int>(frags.first) << " (" << names->GetInstanceNameForType(frags.first) << ") has " << frags.second->size() << " Fragments.";
+			else if (eventData.count(artdaq::Fragment::EndOfDataFragmentType) > 0)
+			{
+				if (evtHeader_ != nullptr)
+				{
+					TLOG(TLVL_INFO) << "Received EndOfData Message. The remaining  "
+									<< currentFragment_.sizeRemaining() << " blocks from DAQ event "
+									<< evtHeader_->sequence_id << " will be lost.";
+				}
+				shutdownMsgReceived_ = true;
+				return false;
 			}
-		    usleep(10000);
-		    continue;
-		  }
+			else if (eventData.size() == 0)
+			{
+				TLOG(TLVL_INFO) << "Did not receive an event from Shared Memory, returning false";
+				shutdownMsgReceived_ = true;
+				return false;
+			}
+			else
+			{
+				art::ServiceHandle<ArtdaqFragmentNamingServiceInterface> names;
+				TLOG(TLVL_INFO) << "Received event of unknown type from shared memory, ignoring";
+				for (auto& frags : eventData)
+				{
+					TLOG(TLVL_DEBUG) << "Fragment Type: " << static_cast<int>(frags.first) << " (" << names->GetInstanceNameForType(frags.first) << ") has " << frags.second->size() << " Fragments.";
+				}
+				usleep(10000);
+				continue;
+			}
 		}
-		TLOG(TLVL_DEBUG) << "Got Event!" ;
+		TLOG(TLVL_DEBUG) << "Got Event!";
 
 		// We return false, indicating we're done reading, if:
 		//   1) we did not obtain an event, because we timed out and were
@@ -252,12 +256,12 @@ bool mu2e::OfflineFragmentReader::readNext(art::RunPrincipal* const& inR, art::S
 
 		TLOG(TLVL_DEBUG) << "Getting Tracker, Calorimeter, and Crv Fragments from CurrentFragment";
 		TLOG(TLVL_TRACE) << "This event has "
-											<< currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
-											<< (readTrkFragments_ ? "Tracker Fragments, " : "Tracker Fragments (ignored), ")
-											<< currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter)
-											<< (readCaloFragments_ ? "Calorimeter Fragments, and " : "Calorimeter Fragments (ignored), and ")
-											<< currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_CRV)
-											<< (readCrvFragments_ ? "CRV Fragments." : "CRV Fragments (ignored).");
+						 << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Tracker)
+						 << (readTrkFragments_ ? "Tracker Fragments, " : "Tracker Fragments (ignored), ")
+						 << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_Calorimeter)
+						 << (readCaloFragments_ ? "Calorimeter Fragments, and " : "Calorimeter Fragments (ignored), and ")
+						 << currentFragment_.getFragmentCount(DTCLib::DTC_Subsystem_CRV)
+						 << (readCrvFragments_ ? "CRV Fragments." : "CRV Fragments (ignored).");
 
 		if (readTrkFragments_)
 		{

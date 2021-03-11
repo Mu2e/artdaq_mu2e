@@ -32,8 +32,8 @@ public:
 	/// Constructor
 	/// </summary>
 	/// <param name="f">Fragment to process</param>
-        /// <param name="debug_event_number_mode">Event Number Debug Mode (for testing with Detector Emulator files)</param>
-  CurrentFragment(artdaq::Fragment f, bool debug_event_number_mode);
+	/// <param name="debug_event_number_mode">Event Number Debug Mode (for testing with Detector Emulator files)</param>
+	CurrentFragment(artdaq::Fragment f, bool debug_event_number_mode);
 
 	/// <summary>
 	/// Get the count of blocks processed from the artdaq Fragment
@@ -46,8 +46,21 @@ public:
 	/// </summary>
 	void advanceOneBlock()
 	{
+		++block_count_;
+		extractDTCEvents();
+	}
+
+	void extractDTCEvents()
+	{
 		assert(reader_);
-		current_ = reinterpret_cast<const uint8_t*>(reader_->dataAt(++block_count_));
+		uint8_t const* ptr = reinterpret_cast<uint8_t const*>(reader_->dataAt(block_count_));
+		size_t offset = 0;
+		current_events_.clear();
+		while (offset < reader_->blockSize(block_count_))
+		{
+			current_events_.emplace_back(ptr + offset);
+			offset += current_events_.back().GetEventByteCount();
+		}
 	}
 
 	/// <summary>
@@ -86,18 +99,16 @@ public:
 	/// <returns>Number of Fragments in block</returns>
 	size_t getFragmentCount(DTCLib::DTC_Subsystem sub);
 
-  uint64_t getCurrentTimestamp();
-
 private:
 	std::unique_ptr<artdaq::Fragment const> fragment_{nullptr};
 	std::unique_ptr<mu2eFragment const> reader_{nullptr};
-	uint8_t const* current_{nullptr};
+	std::vector<DTCLib::DTC_Event> current_events_;
 	size_t block_count_;
-  int64_t first_block_timestamp_{-1};
+	int64_t first_block_timestamp_{-1};
 
-  uint64_t getBlockTimestamp_(DTCLib::DTC_DataHeaderPacket const& pkt);
+	uint64_t getBlockTimestamp_(DTCLib::DTC_DataHeaderPacket const& pkt);
 
-  bool debug_event_number_mode_;
+	bool debug_event_number_mode_;
 };
 
 }  // namespace detail
