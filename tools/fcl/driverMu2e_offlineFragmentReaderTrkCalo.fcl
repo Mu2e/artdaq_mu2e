@@ -17,7 +17,7 @@ fragment_receiver: {
   #raw_output_enable: true
   #raw_output_file: "mu2eReceiver.bin"
   load_sim_file: true
-  #sim_file: "/home/mu2edaq/data/simData/mediumPackets.bin"
+  sim_file: "/mu2e/DataFiles/gianipez/v09_11_01/DTC_packets.bin"
   # Parameters configuring the fragment generator's parent class
   # artdaq::CommandableFragmentGenerator
 
@@ -55,11 +55,28 @@ physics:
 
 }
 
+services: {
+      ArtdaqFragmentNamingServiceInterface: {
+         helper_plugin: "Mu2e"
+         service_provider: "ArtdaqFragmentNamingService"
+      }
+      ArtdaqSharedMemoryServiceInterface: {
+         service_provider: "ArtdaqSharedMemoryService"
+      }
+      ArtdaqTimeTrackerServiceInterface: {
+         dbOutput: {
+            filename: "/scratch/mu2e/otsdaq_trigger/OutputData/trigger_ots_trigger"
+            overwrite: true
+         }
+         service_provider: "Mu2eArtdaqTimeTrackerService"
+      }
+}
+
 outputs:
 {
   rootout:
   {
-    module_type: RootOutput
+    module_type: RootDAQOut
     fileName: "driver_TrkCalo.root"
     compressionLevel: 0
   }

@@ -19,7 +19,7 @@ bindir      fq_dir      bin
 product				version		optional
 artdaq				v3_09_05
 mongodb				v4_0_8c
-offline				v09_11_02
+offline				v09_11_01
 cetbuildtools		v7_17_01	-	only_for_build
 end_product_list
 
