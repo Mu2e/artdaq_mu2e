@@ -252,7 +252,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			auto begin = reinterpret_cast<const uint8_t*>(data[i]->GetRawBufferPointer());
 			auto size = data[i]->GetEventByteCount();
 
-			while (data[i + 1]->GetRawBufferPointer() == static_cast<const void*>(begin + size))
+			while (i < (data.size() - 1) && data[i + 1]->GetRawBufferPointer() == static_cast<const void*>(begin + size))
 			{
 				size += data[++i]->GetEventByteCount();
 			}
