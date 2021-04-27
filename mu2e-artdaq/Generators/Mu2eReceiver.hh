@@ -81,6 +81,7 @@ private:
 	size_t request_delay_;
 	size_t heartbeats_after_;
 
+	std::mutex library_lock_;
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
 

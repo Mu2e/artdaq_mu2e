@@ -39,6 +39,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 {
 	TLOG(TLVL_DEBUG) << "Mu2eReceiver_generator CONSTRUCTOR";
 	// mode_ can still be overridden by environment!
+	std::lock_guard<std::mutex> lk(library_lock_);
 	theInterface_ = new DTCLib::DTC(mode_, ps.get<int>("dtc_id", -1), ps.get<unsigned>("roc_mask", 0x1), "", false, ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
 	fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
 	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_, cfoConfig.get<bool>("use_dtc_cfo_emulator", true), cfoConfig.get<size_t>("debug_packet_count", 0), DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")), cfoConfig.get<bool>("sticky_debug_type", false), cfoConfig.get<bool>("quiet", false), cfoConfig.get<bool>("asyncRR", false), cfoConfig.get<bool>("force_no_debug_mode", false), cfoConfig.get<bool>("useCFODRP", false));
@@ -77,6 +78,7 @@ mu2e::Mu2eReceiver::Mu2eReceiver(fhicl::ParameterSet const& ps)
 
 void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 {
+	std::lock_guard<std::mutex> lk(library_lock_);
 	TLOG(TLVL_INFO) << "Starting read of simulation file " << sim_file << "."
 					<< " Please wait to start the run until finished.";
 	theInterface_->WriteSimFileToDTC(sim_file, true, true);
@@ -86,6 +88,7 @@ void mu2e::Mu2eReceiver::readSimFile_(std::string sim_file)
 
 mu2e::Mu2eReceiver::~Mu2eReceiver()
 {
+	std::lock_guard<std::mutex> lk(library_lock_);
 	rawOutputStream_.close();
 	delete theCFO_;
 	delete theInterface_;
@@ -93,6 +96,7 @@ mu2e::Mu2eReceiver::~Mu2eReceiver()
 
 void mu2e::Mu2eReceiver::stop()
 {
+	std::lock_guard<std::mutex> lk(library_lock_);
 	theInterface_->DisableDetectorEmulator();
 	theInterface_->DisableCFOEmulation();
 }
@@ -131,6 +135,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	DTCLib::DTC_EventWindowTag zero(z);
 	if (mode_ != 0)
 	{
+		std::lock_guard<std::mutex> lk(library_lock_);
 #if 0
 		//theInterface_->ReleaseAllBuffers();
 		TLOG(TLVL_DEBUG) << "Sending requests for " << mu2e::BLOCK_COUNT_MAX << " timestamps, starting at " << mu2e::BLOCK_COUNT_MAX * (ev_counter() - 1);
@@ -160,7 +165,10 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	// Get data from Mu2eReceiver
 	TLOG(TLVL_TRACE + 5) << "mu2eReceiver::getNext: Starting DTCFragment Loop";
-	theInterface_->GetDevice()->ResetDeviceTime();
+	{
+		std::lock_guard<std::mutex> lk(library_lock_);
+		theInterface_->GetDevice()->ResetDeviceTime();
+	}
 	size_t totalSize = 0;
 	bool first = true;
 	while (newfrag.hdr_block_count() < mu2e::BLOCK_COUNT_MAX)
@@ -178,6 +186,7 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		{
 			try
 			{
+				std::lock_guard<std::mutex> lk(library_lock_);
 				TLOG(TLVL_TRACE + 10) << "Calling theInterface->GetData(zero)";
 				data = theInterface_->GetData(zero);
 				TLOG(TLVL_TRACE + 10) << "Done calling theInterface->GetData(zero)";
@@ -275,6 +284,9 @@ bool mu2e::Mu2eReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	TLOG(TLVL_TRACE + 5) << "Reporting Metrics";
 	timestamps_read_ += newfrag.hdr_block_count();
+
+	
+	std::lock_guard<std::mutex> lk(library_lock_);
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
 	double processing_rate = newfrag.hdr_block_count() / _getProcTimerCount();
