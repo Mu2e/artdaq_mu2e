@@ -121,7 +121,9 @@ add_subdirectory(tools)
 add_subdirectory(ups)
 
 # doc - documentation
-add_subdirectory(doc)
+if( $ENV{OTS_DOXY} MATCHES "DOIT" )
+	add_subdirectory(doc)
+endif()
 
 # packaging utility
 include(UseCPack)
