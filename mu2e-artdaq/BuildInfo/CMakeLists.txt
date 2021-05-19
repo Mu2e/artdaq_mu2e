@@ -1,5 +1,3 @@
-# project name
-project(mu2e-artdaq_BuildInfo)
 
 # the utcDateTime variable is used by the GetPackageBuildInfo code
 # to report the build datetime
@@ -12,7 +10,10 @@ configure_file ( ${CMAKE_CURRENT_SOURCE_DIR}/GetPackageBuildInfo.cc.in
 art_make_library( LIBRARY_NAME mu2e-artdaq_BuildInfo
                   SOURCE
 		  ${CMAKE_CURRENT_BINARY_DIR}/GetPackageBuildInfo.cc
-                 )
+          LIBRARIES
+         artdaq_core::artdaq-core_BuildInfo
+         artdaq::BuildInfo
+          )
 
 install_headers()
 install_source()
