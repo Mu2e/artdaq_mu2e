@@ -59,6 +59,7 @@ public:
 		while (offset < reader_->blockSize(block_count_))
 		{
 			current_events_.emplace_back(ptr + offset);
+			current_events_.back().SetupEvent();
 			offset += current_events_.back().GetEventByteCount();
 		}
 	}
