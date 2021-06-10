@@ -64,9 +64,6 @@ private:
 	detail::EventIDHandler idHandler_{};
 	detail::CurrentFragment currentFragment_{};
 
-  artdaq::Fragment::timestamp_t highest_timestamp_seen_{0};
-  size_t loop_counter_{0};
-
 	std::shared_ptr<artdaq::detail::RawEventHeader> evtHeader_;
 
 	bool readTrkFragments_;
