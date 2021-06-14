@@ -7,6 +7,7 @@
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "mu2e-artdaq-core/Overlays/FragmentType.hh"
+#include "mu2e-artdaq-core/Overlays/Mu2eEventFragmentWriter.hh"
 
 #include <fstream>
 #include <iomanip>
