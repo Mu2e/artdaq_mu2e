@@ -227,8 +227,8 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 					{
 						auto block = subevt->GetDataBlock(bl);
 						auto first = block->GetHeader();
-						TLOG(TLVL_INFO) << first.toJSON();
-						for (int ii = 0; ii < first.GetPacketCount(); ++ii)
+						TLOG(TLVL_INFO) << first->toJSON();
+						for (int ii = 0; ii < first->GetPacketCount(); ++ii)
 						{
 							std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON()
 									  << std::endl;
