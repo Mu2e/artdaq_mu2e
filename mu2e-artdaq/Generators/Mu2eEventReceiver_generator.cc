@@ -19,7 +19,12 @@
 #define TRACE_NAME "Mu2eEventReceiver"
 
 mu2e::Mu2eEventReceiver::Mu2eEventReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType("DTC")), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), print_packets_(ps.get<bool>("debug_print", false))
+	: CommandableFragmentGenerator(ps)
+	, fragment_type_(toFragmentType("DTC"))
+	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
+	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
+	, print_packets_(ps.get<bool>("debug_print", false))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = new DTCLib::DTC(mode_, -1, 1, "", false, ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
@@ -93,8 +98,8 @@ mu2e::Mu2eEventReceiver::~Mu2eEventReceiver()
 	delete theCFO_;
 }
 
-bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags) {
-
+bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
+{
 	while (!simFileRead_ && !should_stop())
 	{
 		usleep(5000);
