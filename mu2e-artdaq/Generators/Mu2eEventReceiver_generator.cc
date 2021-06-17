@@ -178,12 +178,6 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		}
 	}
 
-	size_t total_size = 0;
-	for (auto& evt : data)
-	{
-		total_size += evt->GetEventByteCount();
-	}
-
 	//auto after_print = std::chrono::steady_clock::now();
 
 	auto fragment_timestamp = ts.GetEventWindowTag(true);
@@ -201,6 +195,7 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		timestamp_loops_++;
 	}
 
+	TLOG(TLVL_TRACE + 20) << "Creating Mu2eEventFragment";
 	frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], fragment_type_, fragment_timestamp));
 	Mu2eEventFragmentWriter evtfrag(*frags.back(), ts.GetEventWindowTag(true), data[0]->GetHeader()->evb_mode);
 	evtfrag.fill_event(data, fragment_timestamp);
