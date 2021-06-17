@@ -1,1 +1,1 @@
-cet_script(DTCDump.fcl)
+install_fhicl()
