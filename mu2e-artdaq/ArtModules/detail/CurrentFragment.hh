@@ -78,7 +78,8 @@ public:
 	/// Get the number of blocks remaining in the artdaq Fragment
 	/// </summary>
 	/// <returns></returns>
-	size_t sizeRemaining() { return reader_->hdr_block_count() - block_count_; }
+        size_t sizeRemaining() { if(!reader_) return 0;
+	  return reader_->hdr_block_count() - block_count_; }
 
 	/// <summary>
 	/// Retrieve the subsystem fragments from the current block

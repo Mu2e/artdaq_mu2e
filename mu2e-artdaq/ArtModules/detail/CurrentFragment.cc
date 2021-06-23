@@ -3,6 +3,7 @@
 #define TRACE_NAME "CurrentFragment"
 
 #include "mu2e-artdaq/ArtModules/detail/CurrentFragment.hh"
+#include "mu2e-artdaq-core/Overlays/FragmentType.hh"
 #include "canvas/Utilities/Exception.h"
 #include "dtcInterfaceLib/DTC_Packets.h"
 
@@ -70,11 +71,19 @@ std::unique_ptr<artdaq::Fragments> CurrentFragment::extractFragmentsFromBlock(DT
 					auto const wordCount = byteCount / sizeof(artdaq::RawDataType);
 					auto const fragmentSize = (byteCount % sizeof(artdaq::RawDataType) == 0) ? wordCount : wordCount + 1;
 
-					result->push_back(*artdaq::Fragment::dataFrag(getBlockTimestamp_(headerPacket),
+					auto fragPtr = artdaq::Fragment::dataFrag(getBlockTimestamp_(headerPacket),
 																  headerPacket.GetEVBMode(),  // Returns evbMode (see mu2e-docdb 4914)
 																  reinterpret_cast<artdaq::RawDataType const*>(blockStart), fragmentSize,
-																  fragment_->timestamp())
-										   .get());
+										  fragment_->timestamp());
+					artdaq::Fragment::type_t fragment_type = mu2e::detail::FragmentType::INVALID;
+					switch(subsystem) {
+					case DTCLib::DTC_Subsystem_Tracker: fragment_type = mu2e::detail::FragmentType::TRK; break;
+					case DTCLib::DTC_Subsystem_Calorimeter: fragment_type = mu2e::detail::FragmentType::CAL; break;
+					case DTCLib::DTC_Subsystem_CRV: fragment_type = mu2e::detail::FragmentType::CRV; break;
+					default: break; // Use INVALID from above
+					}
+					fragPtr->setUserType(fragment_type);
+					result->push_back(*fragPtr.get());
 				}
 			}
 		}
