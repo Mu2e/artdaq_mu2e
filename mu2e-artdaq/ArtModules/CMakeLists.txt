@@ -46,11 +46,13 @@ cet_make_library(LIBRARY_NAME mu2e_artdaq_ArtModules_detail
 
 simple_plugin(OfflineFragmentReader "source"
   mu2e_artdaq_ArtModules_detail
+  art_Framework_Services_Registry
 )
 
 simple_plugin(Mu2eArtdaqTimeTrackerService "service"
 	     artdaq::DAQdata
-         art::Framework_Principal
+         art_Framework_Principal
+         art_Utilities
               ${TBB}
               ${SQLITE3}
           )

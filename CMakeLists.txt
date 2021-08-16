@@ -61,10 +61,7 @@ find_ups_product( sqlite )
 #find_ups_product( heppdt v3_04_01f )
 #find_ups_product( xerces_c v3_1_4a )
 #find_ups_root( v5_34_00 )
-#find_ups_boost( v1_50_0 filesystem
-#                        program_options
-#                        unit_test_framework
-# )
+find_ups_boost( v1_50_0)
 
 # have to make sure cmake doesn't select the system libraries
 # define libsigc
