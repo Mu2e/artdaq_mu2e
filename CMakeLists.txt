@@ -9,18 +9,15 @@
 # use cmake 3.17 or later
 cmake_minimum_required (VERSION 3.17)
 
-find_package(cetbuildtools)
-project(mu2e_artdaq VERSION 1.04.03)
+find_package(cetmodules)
+set(CET_CETBUILDTOOLS_COMPAT TRUE)
+include(Compatibility)
+set(CET_WARN_DEPRECATED)
 
-# cetbuildtools contains our cmake modules
-SET ( CETBUILDTOOLS_VERSION $ENV{CETBUILDTOOLS_VERSION} )
-IF (NOT CETBUILDTOOLS_VERSION)
-    MESSAGE (FATAL_ERROR "ERROR: setup cetbuildtools to get the cmake modules")
-ENDIF()
+project(mu2e_artdaq VERSION 1.04.04)
+
 
 set(CMAKE_MODULE_PATH
-        $ENV{ART_DIR}/Modules
-        $ENV{CETBUILDTOOLS_DIR}/Modules
         $ENV{ARTDAQ_UTILITIES_DIR}/Modules
         ${CMAKE_MODULE_PATH})
 
@@ -109,13 +106,9 @@ add_subdirectory(test)
 # tools
 add_subdirectory(tools)
 
-# ups - table and config files
-add_subdirectory(ups)
-
 # doc - documentation
 if( $ENV{OTS_DOXY} MATCHES "DOIT" )
 	add_subdirectory(doc)
 endif()
 
-# packaging utility
-include(UseCPack)
+cet_cmake_config()
