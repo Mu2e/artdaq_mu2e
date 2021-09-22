@@ -1,5 +1,5 @@
 
-simple_plugin(SingleNode "transfer"
+basic_plugin(SingleNode "transfer"
 	artdaq::TransferPlugins
   artdaq_TransferPlugins_Shmem_transfer
 )

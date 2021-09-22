@@ -36,7 +36,7 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
 #  cet_add_compiler_flags(-fsanitize=address)
 #endif()
 
-cet_report_compiler_flags()
+#cet_report_compiler_flags()
 
 # these are minimum required versions, not the actual product versions
 #find_ups_product( pcie_linux_kernel_module v1_04_00 )
@@ -48,7 +48,7 @@ find_ups_product( mu2e_artdaq_core v0_00_01 )
 find_ups_product( art v1_10_00 )
 #find_ups_product( fhiclcpp v2_16_00 )
 #find_ups_product( messagefacility v1_10_00 )
-#find_ups_product( TRACE v3_03_00 )
+find_ups_product( TRACE v3_03_00 )
 #find_ups_product( hep_concurrency )
 find_ups_product( sqlite )
 #find_ups_product( cetlib v1_03_00 )
