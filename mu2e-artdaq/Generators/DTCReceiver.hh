@@ -57,7 +57,7 @@ private:
 
 	void stop() override {}
 
-	void readSimFile_(std::string sim_file);
+	void readSimFile_(std::string sim_file, bool skipVerify);
 
 	// Like "getNext_", "fragmentIDs_" is a mandatory override; it
 	// returns a vector of the fragment IDs an instance of this class

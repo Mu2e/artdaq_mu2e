@@ -67,7 +67,7 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 	if (sim_file.size() > 0)
 	{
 		simFileRead_ = false;
-		std::thread reader(&mu2e::DTCReceiver::readSimFile_, this, sim_file);
+		std::thread reader(&mu2e::DTCReceiver::readSimFile_, this, sim_file, ps.get<bool>("skip_verify",false));
 		reader.detach();
 	}
 	else
@@ -76,11 +76,11 @@ mu2e::DTCReceiver::DTCReceiver(fhicl::ParameterSet const& ps)
 	}
 }
 
-void mu2e::DTCReceiver::readSimFile_(std::string sim_file)
+void mu2e::DTCReceiver::readSimFile_(std::string sim_file, bool skipVerify)
 {
 	TLOG(TLVL_INFO) << "Starting read of simulation file " << sim_file << "."
 					<< " Please wait to start the run until finished.";
-	theInterface_->WriteSimFileToDTC(sim_file, true);
+	theInterface_->WriteSimFileToDTC(sim_file, true, false,"", skipVerify);
 	simFileRead_ = true;
 	TLOG(TLVL_INFO) << "Done reading simulation file into DTC memory.";
 }
