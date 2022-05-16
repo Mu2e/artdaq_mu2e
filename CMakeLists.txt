@@ -14,7 +14,7 @@ set(CET_CETBUILDTOOLS_COMPAT TRUE)
 include(Compatibility)
 set(CET_WARN_DEPRECATED)
 
-project(mu2e_artdaq VERSION 1.04.06)
+project(mu2e_artdaq VERSION 1.04.07)
 
 
 set(CMAKE_MODULE_PATH

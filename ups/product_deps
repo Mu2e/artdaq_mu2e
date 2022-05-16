@@ -17,10 +17,10 @@ bindir      fq_dir      bin
 
 #
 product				version		optional
-artdaq				v3_11_01
+artdaq				v3_11_02
 mongodb				v4_0_8c
-mu2e_artdaq_core	v1_06_09
-cetmodules			v2_26_00	-	only_for_build
+mu2e_artdaq_core	v1_07_01
+cetmodules			v3_08_00	-	only_for_build
 end_product_list
 
 # e6  - with gcc 4.9.1 and -std=c++1y
@@ -30,6 +30,9 @@ end_product_list
 # a "-" means the dependent product is not required by the parent and will not be setup
 
 qualifier			artdaq				mongodb			mu2e_artdaq_core					notes
+e20:s116:debug		e20:s116:debug		e20:debug		e20:s116:debug		--std=c++17
+e20:s116:prof		e20:s116:prof		e20:prof		e20:s116:prof		--std=c++17
+
 e20:s114:debug		e20:s114:debug		e20:debug		e20:s114:debug		--std=c++17
 e20:s114:prof		e20:s114:prof		e20:prof		e20:s114:prof		--std=c++17
 end_qualifier_list
