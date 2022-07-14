@@ -1,8 +1,8 @@
 # ======================================================================
-#  mu2e_artdaq main build file
+#  artdaq_mu2e main build file
 #
 #  cd .../path/to/build/directory
-#  source .../path/to/mu2e-artdaq/ups/setup_for_development
+#  source .../path/to/artdaq-mu2e/ups/setup_for_development
 #  buildtool
 # ======================================================================
 
@@ -14,7 +14,7 @@ set(CET_CETBUILDTOOLS_COMPAT TRUE)
 include(Compatibility)
 set(CET_WARN_DEPRECATED)
 
-project(mu2e_artdaq VERSION 1.04.07)
+project(artdaq_mu2e VERSION 1.04.07)
 
 
 set(CMAKE_MODULE_PATH
@@ -98,7 +98,7 @@ include(BuildPlugins)
 include(CetTest)
 
 # source
-add_subdirectory(mu2e-artdaq)
+add_subdirectory(artdaq-mu2e)
 
 # testing
 add_subdirectory(test)

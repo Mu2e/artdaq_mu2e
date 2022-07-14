@@ -15,11 +15,11 @@ incdir      product_dir include
 libdir      fq_dir      lib
 bindir      fq_dir      bin
 
-#
+# 2022-07-14 P.Murat : no mu2e_artdaq_core	v1_07_01 -q e20:prof:s116 on CVMFS
 product				version		optional
 artdaq				v3_11_02
 mongodb				v4_0_8c
-mu2e_artdaq_core	v1_07_01
+mu2e_artdaq_core	v1_06_11
 cetmodules			v3_08_00	-	only_for_build
 end_product_list
 
