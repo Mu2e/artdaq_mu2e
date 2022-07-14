@@ -1,0 +1,79 @@
+#!/bin/sh
+# This file (iptables_forward) was created by Ron Rechenmacher <ron@fnal.gov> on
+# Nov  6, 2015. "TERMS AND CONDITIONS" governing this file are in the README
+# or COPYING file. If you do not have such a file, one can be obtained by
+# contacting Ron or Fermi Lab in Batavia IL, 60510, phone: 630-840-3000.
+# $RCSfile: .emacs.gnu,v $
+# rev="$Revision: 1.0 $$Date: 2015/11/06 12:00:00 $";
+
+USAGE="\
+usage: `basename $0`               # show current filter table FORWARD chain
+       `basename $0` hostname [D]  # add [or delete] hostname
+       `basename $0` w.x.y.z/m -c hostname # ip_spec/mask with associated hostname
+Note: hostname may be associated with multiple IP addresses
+examples:
+`basename $0` | grep mirrors.fedoraproject.org && op1=D op2= || op1= op2=D
+`basename $0`
+`basename $0` mirrors.fedoraproject.org \$op1
+`basename $0`
+`basename $0` mirrors.fedoraproject.org \$op2
+`basename $0`
+"
+VUSAGE=""
+
+# Process script arguments and options
+op1chr='rest=`expr "$op" : "[^-]\(.*\)"`; test -n "$rest" && set -- "-$rest" "$@"'
+op1arg='rest=`expr "$op" : "[^-]\(.*\)"`; test -n "$rest" && set -- "$rest"  "$@"'
+reqarg='test -z "${1+1}" &&echo opt -$op requires arg. &&echo "$USAGE" &&exit'
+args= do_help= opt_v=0
+while [ -n "${1-}" ];do
+    if expr "x${1-}" : 'x-' >/dev/null;then
+        op=`expr "x$1" : 'x-\(.*\)'`; shift   # done with $1
+        leq=`expr "x$op" : 'x-[^=]*\(=\)'` lev=`expr "x$op" : 'x-[^=]*=\(.*\)'`
+        test -n "$leq"&&eval "set -- \"\$lev\" \"\$@\""&&op=`expr "x$op" : 'x\([^=]*\)'`
+        case "$op" in
+        \?*|h*)     eval $op1chr; do_help=1;;
+        v*)         eval $op1chr; opt_v=`expr $opt_v + 1`;;
+        x*)         eval $op1chr; test $opt_v -ge 1 && set -xv || set -x;;
+        c*)         eval $op1arg; comment=$1;      shift;;
+        -comment)   eval $reqarg; comment=$1;      shift;;
+        esac
+    else
+        aa=`echo "$1" | sed -e"s/'/'\"'\"'/g"` args="$args '$aa'"; shift
+    fi
+done
+eval "set -- $args \"\$@\""; unset args aa
+test $# -gt 2 && echo 'Too many arguments. $#='$# && do_help=1
+test -n "${do_help-}" && { echo "$USAGE";test $opt_v -ge 1 && echo "$VUSAGE"; exit; }
+host_spec=$1 del_op=$2
+set -u
+
+test $# -eq 0 && { iptables -t filter -n -L FORWARD; exit; }
+
+after_num=`iptables -t filter -L FORWARD --line-numbers | awk '/anywhere *state RELATED,ESTABLISHED/{print$1;exit}'`
+test -z "$after_num" && { echo "Error - can't find state match"; return; }
+INSERT_B4_NUM=`expr $after_num + 1`
+
+iptables_forward()
+{ host=$1 delete=${2-}
+  expr "$host" : '[^.]*\.[^.]' >/dev/null || { echo "Must be FQDN (for use in comment)"; return; }
+  if [ -z "$delete" ];then
+    nsout=`nslookup $host` || return
+    for ip in `echo "$nsout" | sed -n '/Address: [1-9]/{s/Address: //;p}'`;do
+      iptables -t filter -I FORWARD $INSERT_B4_NUM --destination $ip -j LOG_ACCEPT -m comment --comment $host
+      : echo -- "-A FORWARD -d $ip/32 -m comment --comment \"$host\" -j LOG_ACCEPT"
+    done
+  else
+    iptables -t filter -n -L FORWARD | grep "/\* $host \*/" | awk '{print$5}' | while read ip;do
+      iptables -t filter -D FORWARD   --destination $ip -j LOG_ACCEPT -m comment --comment $host
+    done
+  fi
+}
+
+# test for 111.122.133.144/24 format and make sure comment is set
+if expr "$host_spec" : '[^/]*/' >/dev/null;then
+  test -z "${comment-}" && { echo Must set comment with w.x.y.z/m format; exit; }
+  iptables -t filter -I FORWARD $INSERT_B4_NUM --destination $host_spec -j LOG_ACCEPT -m comment --comment $comment
+else
+  iptables_forward $host_spec $del_op
+fi
