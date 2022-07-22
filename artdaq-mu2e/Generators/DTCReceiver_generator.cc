@@ -7,6 +7,7 @@
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
+#include "artdaq/DAQdata/Globals.hh"
 
 #include <fstream>
 #include <iomanip>

@@ -23,6 +23,7 @@
 #include "dtcInterfaceLib/DTC_Types.h"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 #include "artdaq-core-mu2e/Overlays/DTCFragment.hh"
+#include "artdaq/DAQdata/Globals.hh"
 
 namespace mu2e {
 class CRVReceiver : public artdaq::CommandableFragmentGenerator

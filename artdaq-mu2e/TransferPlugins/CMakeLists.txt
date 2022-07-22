@@ -1,8 +1,8 @@
 
-basic_plugin(SingleNode "transfer"
-             artdaq::TransferPlugins
-             artdaq_TransferPlugins_Shmem_transfer
-)
+include(artdaq::transfer)
+
+cet_build_plugin(SingleNode artdaq::transfer LIBRARIES REG
+  artdaq::TransferPlugins_Shmem_transfer)
 
 install_headers()
 install_source()

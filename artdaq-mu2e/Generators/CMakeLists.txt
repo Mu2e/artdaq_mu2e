@@ -1,25 +1,16 @@
-basic_plugin(DTCReceiver "generator"
-  artdaq::Generators
-  artdaq_core_mu2e::artdaq-core-mu2e_Overlays
-  canvas
+
+include(artdaq::commandableGenerator)
+
+cet_build_plugin(DTCReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
   )
 
-basic_plugin(Mu2eReceiver "generator"
-  artdaq::Generators
-  artdaq_core_mu2e::artdaq-core-mu2e_Overlays
-  canvas
+cet_build_plugin(Mu2eReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
   )
   
-basic_plugin(Mu2eEventReceiver "generator"
-  artdaq::Generators
-  artdaq_core_mu2e::artdaq-core-mu2e_Overlays
-  canvas
+cet_build_plugin(Mu2eEventReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
   )
 
-  basic_plugin(CRVReceiver "generator"
-  artdaq::Generators
-  artdaq_core_mu2e::artdaq-core-mu2e_Overlays
-  canvas
+  cet_build_plugin(CRVReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
   )
 
 #get_cmake_property(_variableNames VARIABLES)

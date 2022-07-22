@@ -1,7 +1,7 @@
 #include "artdaq/DAQdata/Globals.hh"
 #define TRACE_NAME "OfflineFragmentReader"
 
-#include "artdaq/ArtModules/ArtdaqSharedMemoryService.h"
+#include "artdaq/ArtModules/ArtdaqSharedMemoryServiceInterface.h"
 #include "artdaq/ArtModules/ArtdaqFragmentNamingService.h"
 #include "art/Framework/Core/InputSourceMacros.h"
 #include "art/Framework/IO/Sources/Source.h"

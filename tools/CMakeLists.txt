@@ -1,4 +1,4 @@
-cet_script( iptables_forward )
+cet_script(ALWAYS_COPY iptables_forward )
 
 
 # Install FCL files needed for configuring the system

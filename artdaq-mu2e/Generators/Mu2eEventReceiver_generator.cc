@@ -8,6 +8,7 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 #include "artdaq-core-mu2e/Overlays/Mu2eEventFragmentWriter.hh"
+#include "artdaq/DAQdata/Globals.hh"
 
 #include <fstream>
 #include <iomanip>

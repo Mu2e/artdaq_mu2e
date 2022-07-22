@@ -1,1 +1,3 @@
-#add_subdirectory(Generators)
+include(CetTest)
+
+add_subdirectory(Generators)
