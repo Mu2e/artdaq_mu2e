@@ -27,8 +27,8 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
 
 #cet_report_compiler_flags()
 
-find_package(artdaq 3.12.00 REQUIRED)
-find_package(artdaq_core_mu2e 1.08.00 REQUIRED)
+find_package(artdaq 3.12.00 REQUIRED EXPORT)
+find_package(artdaq_core_mu2e 1.08.00 REQUIRED EXPORT)
 
 include(BuildPlugins)
 
