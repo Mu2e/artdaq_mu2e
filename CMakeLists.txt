@@ -8,9 +8,9 @@
 
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
-find_package(cetmodules 3.16.00 REQUIRED)
+find_package(cetmodules 3.19.02 REQUIRED)
 
-project(artdaq_mu2e VERSION 1.05.00)
+project(artdaq_mu2e VERSION 1.05.01)
 
 include(CetCMakeEnv)
 cet_cmake_env()
