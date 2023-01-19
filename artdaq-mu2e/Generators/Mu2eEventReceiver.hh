@@ -53,7 +53,7 @@ private:
 
 	void stopNoMutex() override {}
 
-	void stop() override {}
+	void stop() override;
 
 	void readSimFile_(std::string sim_file);
 
@@ -78,22 +78,16 @@ private:
 	DTCLib::DTC_SimMode mode_;
 	uint8_t board_id_;
 	bool simFileRead_;
+	bool rawOutput_{false};
+	std::string rawOutputFile_{""};
+	std::ofstream rawOutputStream_;
+	bool print_packets_;
+	size_t heartbeats_after_{16};
 
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
 
 	// For Debugging:
-	bool print_packets_;
-
-	//    //    std::pair<std::vector<std::string>::const_iterator, uint64_t> next_point_;
-	//    //    std::atomic<bool> should_stop_;
-	//    //    std::independent_bits_engine<std::minstd_rand, 2, V172xFragment::adc_type> twoBits_;
-	//
-	//    // Root Input
-	//    int64_t gen_from_file_;
-	//    TFile * file_;
-	//    TTree *eventTree_;
-	//    art::Wrapper< std::vector<artdaq::Fragment> >* wrapper_;
 };
 }  // namespace mu2e
 

@@ -1,11 +1,5 @@
 
 include(artdaq::commandableGenerator)
-
-cet_build_plugin(DTCReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
-  )
-
-cet_build_plugin(Mu2eReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
-  )
   
 cet_build_plugin(Mu2eEventReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
   )
