@@ -75,6 +75,7 @@ private:
 	uint8_t board_id_;
 	bool simFileRead_;
 	bool detectorEmulatorMode_{false};
+	bool noRequestMode_{false};
 
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
@@ -89,11 +90,7 @@ private:
 }  // namespace mu2e
 
 mu2e::CRVReceiver::CRVReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType(ps.get<std::string>("fragment_type", "CRV")))
-	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
-	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
-	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
-	, print_packets_(ps.get<bool>("debug_print", false))
+	: CommandableFragmentGenerator(ps), fragment_type_(toFragmentType(ps.get<std::string>("fragment_type", "CRV"))), fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled"))), board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0))), noRequestMode_(ps.get<bool>("no_request_mode", false)), print_packets_(ps.get<bool>("debug_print", false))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = new DTCLib::DTC(mode_, -1, 1, "", false, ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
@@ -147,21 +144,29 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
-	if (requests_ == nullptr)
+	std::map<artdaq::Fragment::sequence_id_t, artdaq::Fragment::timestamp_t> reqs;
+	if (noRequestMode_)
 	{
-		requests_ = GetRequestBuffer();
+		reqs[highest_timestamp_seen_ + 1] = highest_timestamp_seen_ + 1;
 	}
-	if (requests_ == nullptr)
+	else
 	{
-		TLOG(TLVL_ERROR) << "Request Buffer pointer is null! Returning false!";
-		return false;
-	}
+		if (requests_ == nullptr)
+		{
+			requests_ = GetRequestBuffer();
+		}
+		if (requests_ == nullptr)
+		{
+			TLOG(TLVL_ERROR) << "Request Buffer pointer is null! Returning false!";
+			return false;
+		}
 
 	while (!should_stop() && !requests_->WaitForRequests(100))
 	{
 	}
-	auto reqs = requests_->GetAndClearRequests();
+	reqs = requests_->GetAndClearRequests();
 	requests_->reset();
+	}
 
 	if (should_stop())
 	{
@@ -245,7 +250,7 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 			total_size += evt->GetEventByteCount();
 		}
 
-		//auto after_print = std::chrono::steady_clock::now();
+		// auto after_print = std::chrono::steady_clock::now();
 
 		auto fragment_timestamp = ts.GetEventWindowTag(true);
 		if (fragment_timestamp < highest_timestamp_seen_)
