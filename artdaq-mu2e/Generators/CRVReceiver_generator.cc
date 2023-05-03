@@ -161,7 +161,7 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 	{
 	}
 	auto reqs = requests_->GetAndClearRequests();
-	requests_->reset();
+	//requests_->reset();
 
 	if (should_stop())
 	{
@@ -247,22 +247,23 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 
 		//auto after_print = std::chrono::steady_clock::now();
 
-		auto fragment_timestamp = ts.GetEventWindowTag(true);
-		if (fragment_timestamp < highest_timestamp_seen_)
-		{
-			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-		}
-		else if (fragment_timestamp > highest_timestamp_seen_)
-		{
-			highest_timestamp_seen_ = fragment_timestamp;
-		}
-		else
-		{
-			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-			timestamp_loops_++;
-		}
-
-		frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], fragment_type_, fragment_timestamp));
+		// auto fragment_timestamp = ts.GetEventWindowTag(true);
+		// if (fragment_timestamp < highest_timestamp_seen_)
+		// {
+		// 	fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+		// }
+		// else if (fragment_timestamp > highest_timestamp_seen_)
+		// {
+		// 	highest_timestamp_seen_ = fragment_timestamp;
+		// }
+		// else
+		// {
+		// 	fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+		// 	timestamp_loops_++;
+		// }
+		
+		//frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], fragment_type_, fragment_timestamp));
+		frags.emplace_back(new artdaq::Fragment(req.first, fragment_ids_[0], fragment_type_, req.second));
 		frags.back()->resize(total_size / sizeof(artdaq::RawDataType));
 
 		TLOG(TLVL_TRACE + 10) << "Copying DTC packets into DTCFragment with timestamp " << ts.GetEventWindowTag(true);
@@ -273,7 +274,7 @@ bool mu2e::CRVReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags)
 			dataBegin += evt->GetEventByteCount();
 		}
 		auto after_copy = std::chrono::steady_clock::now();
-		TLOG(TLVL_DEBUG) << "Incrementing event counter";
+		TLOG(TLVL_DEBUG) << "Incrementing event counter, frags.size() is now " << frags.size();
 		ev_counter_inc();
 
 		TLOG(TLVL_DEBUG) << "Reporting Metrics";
