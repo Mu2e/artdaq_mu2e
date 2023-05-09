@@ -49,7 +49,7 @@ private:
 
 	bool getNext_(artdaq::FragmentPtrs& output) override;
 
-	void start() override {}
+	void start() override;
 
 	void stopNoMutex() override {}
 

@@ -80,7 +80,6 @@ mu2e::Mu2eEventReceiver::Mu2eEventReceiver(fhicl::ParameterSet const& ps)
 		simFileRead_ = true;
 	}
 
-	if (rawOutput_) rawOutputStream_.open(rawOutputFile_, std::ios::out | std::ios::app | std::ios::binary);
 }
 
 void mu2e::Mu2eEventReceiver::readSimFile_(std::string sim_file)
@@ -94,15 +93,27 @@ void mu2e::Mu2eEventReceiver::readSimFile_(std::string sim_file)
 
 mu2e::Mu2eEventReceiver::~Mu2eEventReceiver()
 {
-	rawOutputStream_.close();
 	delete theInterface_;
 	delete theCFO_;
 }
 
 void mu2e::Mu2eEventReceiver::stop()
 {
+	rawOutputStream_.close();
 	theInterface_->DisableDetectorEmulator();
 	theInterface_->DisableCFOEmulation();
+}
+
+void mu2e::Mu2eEventReceiver::start()
+{
+	if (rawOutput_) {
+		std::string fileName = rawOutputFile_;
+		if(fileName.find(".bin") != std::string::npos) {
+			std::string timestr = "_" + std::to_string(time(0));
+			fileName.insert(fileName.find(".bin"), timestr);
+		}
+		rawOutputStream_.open(fileName, std::ios::out | std::ios::app | std::ios::binary);
+		}
 }
 
 bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
