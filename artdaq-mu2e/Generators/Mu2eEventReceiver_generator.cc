@@ -123,6 +123,7 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	if (mode_ != 0)
 	{
+		TLOG(TLVL_INFO) << "Sending request for timestamp " << ev_counter();
 		theCFO_->SendRequestForTimestamp(DTCLib::DTC_EventWindowTag(ev_counter()), heartbeats_after_);
 	}
 
@@ -134,7 +135,7 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		{
 			TLOG(TLVL_TRACE + 25) << "Calling theInterface->GetData(zero)";
 			data = theInterface_->GetData(zero);
-			TLOG(TLVL_TRACE + 25) << "Done calling theInterface->GetData(zero)";
+			TLOG(TLVL_TRACE + 25) << "Done calling theInterface->GetData(zero) data.size()=" << data.size() << ", retryCount=" << retryCount;
 		}
 		catch (std::exception const& ex)
 		{
@@ -144,7 +145,8 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	}
 	if (retryCount < 0 && data.size() == 0)
 	{
-		return false;
+		// Return true if no data in external CFO mode, otherwise false
+		return mode_ == 0;
 	}
 	auto after_read = std::chrono::steady_clock::now();
 
@@ -164,7 +166,7 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 					TLOG(TLVL_INFO) << first->toJSON();
 					for (int ii = 0; ii < first->GetPacketCount(); ++ii)
 					{
-						std::cout << "\t" << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON()
+						TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON()
 								  << std::endl;
 					}
 				}
