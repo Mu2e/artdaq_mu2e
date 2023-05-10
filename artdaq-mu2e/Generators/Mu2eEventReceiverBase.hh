@@ -22,8 +22,6 @@
 #include "artdaq-core/Data/Fragment.hh"
 #include "artdaq/Generators/CommandableFragmentGenerator.hh"
 #include "fhiclcpp/fwd.h"
-#include "artdaq-core-mu2e/Overlays/Mu2eEventFragment.hh"
-#include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 
 #include <atomic>
 #include <vector>
@@ -32,22 +30,16 @@
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 namespace mu2e {
-class Mu2eEventReceiver : public artdaq::CommandableFragmentGenerator
+class Mu2eEventReceiverBase : public artdaq::CommandableFragmentGenerator
 {
 public:
-	explicit Mu2eEventReceiver(fhicl::ParameterSet const& ps);
-	virtual ~Mu2eEventReceiver();
+	explicit Mu2eEventReceiverBase(fhicl::ParameterSet const& ps);
+	virtual ~Mu2eEventReceiverBase();
 
 	DTCLib::DTC_SimMode GetMode() { return mode_; }
 
-	FragmentType GetFragmentType() { return fragment_type_; }
-
-private:
-	// The "getNext_" function is used to implement user-specific
-	// functionality; it's a mandatory override of the pure virtual
-	// getNext_ function declared in CommandableFragmentGenerator
-
-	bool getNext_(artdaq::FragmentPtrs& output) override;
+protected:
+	bool getNextDTCFragment(artdaq::FragmentPtrs& output, DTCLib::DTC_EventWindowTag ts);
 
 	void start() override;
 
@@ -57,18 +49,16 @@ private:
 
 	void readSimFile_(std::string sim_file);
 
+	size_t getCurrentSequenceID();
+
+
 	// Like "getNext_", "fragmentIDs_" is a mandatory override; it
 	// returns a vector of the fragment IDs an instance of this class
-	// is responsible for (in the case of Mu2eEventReceiver, this is just
+	// is responsible for (in the case of Mu2eEventReceiverBase, this is just
 	// the fragment_id_ variable declared in the parent
 	// CommandableFragmentGenerator class)
 
 	std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_() { return fragment_ids_; }
-
-	// FHiCL-configurable variables. Note that the C++ variable names
-	// are the FHiCL variable names with a "_" appended
-
-	FragmentType const fragment_type_;  // Type of fragment (see FragmentType.hh)
 
 	std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
 
@@ -76,13 +66,16 @@ private:
 	size_t highest_timestamp_seen_{0};
 	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
 	DTCLib::DTC_SimMode mode_;
-	uint8_t board_id_;
 	bool simFileRead_;
 	bool rawOutput_{false};
 	std::string rawOutputFile_{""};
 	std::ofstream rawOutputStream_;
 	bool print_packets_;
 	size_t heartbeats_after_{16};
+
+	size_t dtc_offset_{0};
+	size_t n_dtcs_{1};
+	size_t first_timestamp_seen_{0};
 
 	DTCLib::DTC* theInterface_;
 	DTCLib::DTCSoftwareCFO* theCFO_;
