@@ -125,7 +125,7 @@ void mu2e::DTCEventDump::analyze(art::Event const& evt)
 	for (const auto& frag : fragments)
 	{
 		DTCEventFragment bb(frag);
-		auto evt = bb.get_data();
+		auto evt = bb.getData();
 		TLOG(TLVL_DEBUG) << "Event " << evt.GetEventWindowTag().GetEventWindowTag(true) << " has size " << evt.GetEventByteCount() << " (fragment size " << frag.sizeBytes()<< ")";
 
 		if(output_file_) {
