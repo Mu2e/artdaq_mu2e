@@ -9,17 +9,36 @@ fragment_receiver: {
 
    # Parameters defining and configuring the fragment generator to be used
    		    
-   generator: DTCReceiver 
+   generator: CRVReceiver 
    sim_mode: 1
-   ring_0_roc_count: 1
-   ring_0_timing_enabled: false
-   debug_print: true
+   raw_output_enable: false
+   raw_output_file: "/tmp/Mu2eReceiver.bin"
+   debug_print: false
+   null_heartbeats_after_requests: 16
+   dtc_position_in_chain: 0
+   n_dtcs_in_chain: 1
+   dtc_id: -1
+   roc_mask: 0x1
+   dtc_fw_version: ""
+   skip_dtc_init: false
+   simulator_memory_file_name: mu2esim_driver.bin
+   cfo_config: {
+     use_dtc_cfo_emulator: true
+     debug_packet_count: 0
+     debug_type: 2
+     sticky_debug_type: false
+     quiet: false
+     asyncRR: false
+     force_no_debug_mode: false
+     useCFODRP: false
+   }
+   load_sim_file: false
+   sim_file: "" # Overridden by $DTCLIB_SIM_FILE
 
    # Parameters configuring the fragment generator's parent class
    # artdaq::CommandableFragmentGenerator
 
    fragment_id: 0
-   board_id: 0
 }  		  
 
 event_builder: {
@@ -39,18 +58,16 @@ physics:
 {
   analyzers:
   {
-#    dtcDump:
-#    {
-#      module_type: DTCDump
-#      raw_data_label: daq
-#      frag_type: @local::fragment_receiver.fragment_type
-#      num_packets_to_show: 2 # DataHeaderPacket and up to num_packets_to_show - 1 DataPackets
-#    }
+    dtcDump:
+    {
+      module_type: DTCEventDump
+      raw_output_file: "DTCEventDump.bin" # Will have timestamp inserted
+      raw_output_in_detector_emulator_format: false
+    }
   }
 
-#  a1: [ dtcDump ]
+  a1: [ dtcDump ]
   e1: [ out1, rootout ]
-#  end_paths: [ a1 ]
 }
 
 outputs:
