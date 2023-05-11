@@ -189,15 +189,16 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 		timestamp_loops_++;
 	}
 
-	TLOG(TLVL_TRACE + 20) << "Creating Fragment";
 	if (data.size() == 1)
 	{
+		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
 		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(data[0]->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), data[0]->GetRawBufferPointer(), data[0]->GetEventByteCount());
 	}
 	else
 	{
+		TLOG(TLVL_TRACE + 20) << "Creating ContainerFragment, sz=" << data.size();
 		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0]));
 		frags.back()->setTimestamp(fragment_timestamp);
 		artdaq::ContainerFragmentLoader cfl(*frags.back());
@@ -205,6 +206,7 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 
 		for (auto& evt : data)
 		{
+			TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
 			artdaq::Fragment frag(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp);
 			frag.resizeBytes(evt->GetEventByteCount());
 			memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
