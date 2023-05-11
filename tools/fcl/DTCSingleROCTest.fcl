@@ -1,6 +1,0 @@
-
-ring_0_roc_count: 1
-ring_0_timing_enabled: false
-ring_0_roc_emulator_enabled: false
-debug_print: false
-sim_mode: "Disabled"

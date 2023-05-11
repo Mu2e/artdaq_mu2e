@@ -1,0 +1,21 @@
+######################################################################
+# The ART code
+######################################################################
+
+physics:
+{
+  analyzers:
+  {
+    dtcDump:
+    {
+      module_type: DTCEventDump
+      raw_output_file: "DTCEventDump.bin" # Will have timestamp inserted
+      raw_output_in_detector_emulator_format: false
+    }
+  }
+
+  a1: [ dtcDump ]
+}
+
+process_name: DTCEventDump
+
