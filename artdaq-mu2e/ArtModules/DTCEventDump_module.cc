@@ -126,7 +126,13 @@ void mu2e::DTCEventDump::analyze(art::Event const& evt)
 	{
 		DTCEventFragment bb(frag);
 		auto evt = bb.getData();
-		TLOG(TLVL_DEBUG) << "Event " << evt.GetEventWindowTag().GetEventWindowTag(true) << " has size " << evt.GetEventByteCount() << " (fragment size " << frag.sizeBytes()<< ")";
+		TLOG(TLVL_DEBUG) << "Event " << evt.GetEventWindowTag().GetEventWindowTag(true) << " has size " << evt.GetEventByteCount() << " (fragment size " << frag.sizeBytes()<< ") with " 
+                                 << evt.GetSubsystemDataBlocks(DTCLib::DTC_Subsystem_Tracker).size() << " Traker, "
+                                 << evt.GetSubsystemDataBlocks(DTCLib::DTC_Subsystem_Calorimeter).size() << " Calorimeter, "
+                                 << evt.GetSubsystemDataBlocks(DTCLib::DTC_Subsystem_CRV).size() << " CRV, " 
+                                 << evt.GetSubsystemDataBlocks(DTCLib::DTC_Subsystem_STM).size() << " STM, " 
+                                 << evt.GetSubsystemDataBlocks(DTCLib::DTC_Subsystem_ExtMon).size() << " ExtMon, " 
+                                 << evt.GetSubsystemDataBlocks(DTCLib::DTC_Subsystem_Other).size() << " Others subevents."; 
 
 		if(output_file_) {
 		
