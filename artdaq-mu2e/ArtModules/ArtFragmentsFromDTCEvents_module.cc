@@ -63,7 +63,7 @@ private:
 
 // ======================================================================
 
-void art::ArtFragmentsFromDTCEvents::beginRun(art::Run& Run) {}
+void art::ArtFragmentsFromDTCEvents::beginRun(art::Run& ) {}
 
 art::ArtFragmentsFromDTCEvents::ArtFragmentsFromDTCEvents(const art::EDProducer::Table<Config>& config) :
   art::EDProducer{config}, diagLevel_(config().diagLevel()),
