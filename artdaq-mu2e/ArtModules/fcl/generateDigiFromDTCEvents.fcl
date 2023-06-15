@@ -1,0 +1,63 @@
+# Run StrawAndCaloDigisFromFragments module to convert artdaq::Fragment collections
+# into TRK and CAL digi collections.
+# Usage: mu2e -c DAQ/test/generateDigiFromFragment.fcl -s <input art files> -n '-1'
+#
+#
+# Contact person G. Pezzullo
+
+process_name : DTCEventsToFrags
+
+source : {
+   module_type : RootInput
+   fileNames   : @nil
+
+   # firstEvent  : 500
+   maxEvents   : -1
+#   inputCommands: ["keep *",
+#                   "drop *Mu2eEventHeader*_*_*_*"]
+}
+
+physics : {
+
+   producers : {
+       genFrags : {
+	   module_type : ArtFragmentsFromDTCEvents
+	   diagLevel   : 10
+	   makeCaloFrag : 1
+	   makeTrkFrag  : 1
+	   makeCRVFrag  : 0
+	   makeSTMFrag  : 0
+
+       }
+       
+   }
+
+   analyzers  : {
+   }
+
+   t1 : [ genFrags ] #,  makeSD , CaloHitMaker ] #, CaloClusterFast]
+e1 : [dump, outfile]
+
+   trigger_paths  : [t1]
+   end_paths      : [e1]
+#     end_paths      : []
+
+}
+
+outputs:  {
+   outfile :  {
+      module_type   :   RootOutput
+      fileName      :   "digis_from_dtcevts_debug.art"
+
+      outputCommands: [
+         "drop *_*_*_*",
+         "keep *_*_*_*"
+      ]
+   }
+    dump: { module_type: FileDumperOutput
+wantProductFriendlyClassName: true
+	onlyIfPresent: true }
+}
+
+services.TFileService.fileName : "generateDigiFromDTCEvts_test.root"
+services.scheduler.wantSummary: true
