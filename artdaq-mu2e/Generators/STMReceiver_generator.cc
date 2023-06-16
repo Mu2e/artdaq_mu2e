@@ -1,55 +1,72 @@
-#include "artdaq-mu2e/Generators/STMReceiver.hh"
+#include "artdaq-mu2e/Generators/Mu2eEventReceiverBase.hh"
 
-#include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
 #include "artdaq/Generators/GeneratorMacros.hh"
-#include "canvas/Utilities/Exception.h"
-#include "cetlib_except/exception.h"
-#include "dtcInterfaceLib/DTC_Types.h"
-#include "fhiclcpp/ParameterSet.h"
+
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
-#include "artdaq/DAQdata/Globals.hh"
+#include "artdaq-core-mu2e/Overlays/STMFragment.hh"
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
-
-#include <unistd.h>
 #include "trace.h"
 #define TRACE_NAME "STMReceiver"
 
+
+namespace mu2e {
+class STMReceiver : public mu2e::Mu2eEventReceiverBase
+{
+public:
+	explicit STMReceiver(fhicl::ParameterSet const& ps);
+	virtual ~STMReceiver();
+
+private:
+	// The "getNext_" function is used to implement user-specific
+	// functionality; it's a mandatory override of the pure virtual
+	// getNext_ function declared in CommandableFragmentGenerator
+
+	bool getNext_(artdaq::FragmentPtrs& output) override;
+
+	std::set<artdaq::Fragment::sequence_id_t> seen_sequence_ids_{};
+	size_t sequence_id_list_max_size_{1000};
+
+  // STM-specific stuff
+        bool fromInputFile_{false};
+        std::ifstream inputFileStream_;
+        bool toOutputFile_{false};
+        std::ofstream outputFileStream_;
+};
+}  // namespace mu2e
+
 mu2e::STMReceiver::STMReceiver(fhicl::ParameterSet const& ps)
-	: CommandableFragmentGenerator(ps)
-	, fragment_type_(toFragmentType("STM"))
-	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
-	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
+	: Mu2eEventReceiverBase(ps)
         , fromInputFile_(ps.get<bool>("from_input_file", false))
-	, rawOutput_(ps.get<bool>("raw_output_enable", false))
-	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
+        , toOutputFile_(ps.get<bool>("to_output_file", false))
 {
 
-	if (rawOutput_) { rawOutputStream_.open(rawOutputFile_, std::ios::out | std::ios::binary); }
+	TLOG(TLVL_DEBUG) << "STMReceiver Initialized with mode " << mode_;
 
 	if (fromInputFile_) {
 	  auto input_file = ps.get<std::string>("input_file", "");
 	  inputFileStream_.open(input_file, std::ios::in | std::ios::binary); 
 	}
-}
 
+	if (toOutputFile_) {
+	  auto output_file = ps.get<std::string>("output_file", "");
+	  outputFileStream_.open(output_file, std::ios::out | std::ios::binary); 
+	}
+}
 
 mu2e::STMReceiver::~STMReceiver()
 {
-        inputFileStream_.close();
-	rawOutputStream_.close();
+  if (fromInputFile_) {
+    inputFileStream_.close();
+  }
+
+  if (toOutputFile_) {
+    outputFileStream_.close();
+  }
 }
 
-void mu2e::STMReceiver::stop()
-{
-}
-
-bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs& frags)
-{
-	while (!fromInputFile_ && !should_stop())
+bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs& frags) 
+{ 
+	while (!simFileRead_ && !should_stop())
 	{
 		usleep(5000);
 	}
@@ -59,36 +76,23 @@ bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		return false;
 	}
 
+
 	STMFragment::STMDataPacket data[1];
 	if (fromInputFile_) {
-	  TLOG(TLVL_DEBUG) << "Reading input file...";
 	  inputFileStream_.read(reinterpret_cast<char *>(&data), sizeof(STMFragment::STMDataPacket));
-	  TLOG(TLVL_DEBUG) << std::hex << "data = " << data;
-	  TLOG(TLVL_DEBUG) << "Creating STMFragment...";
+	  TLOG(TLVL_DEBUG) << std::hex << "What's in data[0]? " << data[0];
+
 	  double fragment_timestamp = 0;
-	  frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], fragment_type_, fragment_timestamp));
-	  uint16_t* dataBegin = reinterpret_cast<uint16_t*>(frags.back()->dataBegin());
-	  for (auto& evt : data) {
-	    TLOG(TLVL_DEBUG) << std::hex << "evt = " << evt;
-	    memcpy(dataBegin, &evt, sizeof(evt));
-	    dataBegin += sizeof(evt);
-	  }
+	  frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], FragmentType::STM, fragment_timestamp));
+	  frags.back()->resizeBytes(sizeof(data[0]));
+	  memcpy(frags.back()->dataBegin(), &data[0], sizeof(data[0]));
 	}
 
-	if (rawOutput_)	{
-	  for (auto& evt : data) {
-	    TLOG(TLVL_DEBUG) << "Writing to raw output...";
-	    TLOG(TLVL_DEBUG) << std::hex << "evt = " << evt;
-	    rawOutputStream_.write(reinterpret_cast<char*>(&evt), sizeof(STMFragment::STMDataPacket));
-	  }
+	if (toOutputFile_) {
+	  outputFileStream_.write(reinterpret_cast<char *>(&data), sizeof(data[0]));
 	}
 
-	TLOG(TLVL_DEBUG) << "Incrementing event counter, frags.size() is now " << frags.size();
-	ev_counter_inc();
-
-
-	TLOG(TLVL_TRACE + 20) << "Returning true";
-
+	ev_counter_inc(); // increment event counter
 	return true;
 }
 

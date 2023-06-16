@@ -16,8 +16,9 @@ cet_build_plugin(Mu2eEventReceiver artdaq::commandableGenerator LIBRARIES REG ar
 
   cet_build_plugin(CRVReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::Mu2eReceiverBase)
 
-cet_build_plugin(STMReceiver artdaq::commandableGenerator LIBRARIES REG canvas::canvas artdaq_core_mu2e::Overlays artdaq::DAQdata
-  )
+  cet_build_plugin(STMReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::Mu2eReceiverBase)
+
+
 
 #get_cmake_property(_variableNames VARIABLES)
 #foreach (_variableName ${_variableNames})
