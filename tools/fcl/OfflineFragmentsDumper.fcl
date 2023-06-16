@@ -1,0 +1,19 @@
+######################################################################
+# The ART code
+######################################################################
+
+physics:
+{
+  analyzers:
+  {
+    offlineDump:
+    {
+      module_type: OfflineFragmentsDumper
+    }
+  }
+
+  a1: [ offlineDump ]
+}
+
+process_name: OfflineFragmentsDump
+
