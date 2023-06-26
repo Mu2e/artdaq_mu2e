@@ -77,19 +77,38 @@ bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	}
 
 
-	STMFragment::STMDataPacket data[1];
+	//STMFragment::STMDataPacket data[1]; //Andy's implementation
+	STMFragment::STM_tHdr tHdr;
+	STMFragment::STM_sHdr sHdr;
+	uint16_t data[0x50000]; //read this from fhicl::ps. This acts as a buffer for the adc data.
+	uint16_t data_size = 0;
 	if (fromInputFile_) {
-	  inputFileStream_.read(reinterpret_cast<char *>(&data), sizeof(STMFragment::STMDataPacket));
-	  TLOG(TLVL_DEBUG) << std::hex << "What's in data[0]? " << data[0];
-
+	  inputFileStream_.read(reinterpret_cast<char *>(&tHdr), sw_tHdr_size_bytes);	  
+	  inputFileStream_.read(reinterpret_cast<char *>(&sHdr), sw_sHdr_size_bytes);
+	  data_size = sHdr.sliceSize();
+	  inputFileStream_.read(reinterpret_cast<char *>(&data[0]), data_size);
+	  
 	  double fragment_timestamp = 0;
 	  frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], FragmentType::STM, fragment_timestamp));
-	  frags.back()->resizeBytes(sizeof(data[0]));
-	  memcpy(frags.back()->dataBegin(), &data[0], sizeof(data[0]));
+	  // Next two lines define an inefficient buffer implementation.
+	  //frags.back()->resizeBytes(0x50000);
+	  //memcpy(frags.back()->dataBegin(), &data[0], 0x50000);
+	  
+	  frags.back()->resizeBytes(data_size);
+	  memcpy(frags.back()->dataBegin(), &tHdr, sw_tHdr_size_bytes);
+	  memcpy(frags.back()->dataBegin(), &sHdr, sw_sHdr_size_bytes);
+	  memcpy(frags.back()->dataBegin(), &data[0], data_size);
 	}
 
+	// Andy's implementation
+	//if (toOutputFile_) {
+	// outputFileStream_.write(reinterpret_cast<char *>(&data), sizeof(data[0]));
+	//}
+
 	if (toOutputFile_) {
-	  outputFileStream_.write(reinterpret_cast<char *>(&data), sizeof(data[0]));
+	  outputFileStream_.write(reinterpret_cast<char *>(&tHdr), sw_tHdr_size_bytes);
+	  outputFileStream_.write(reinterpret_cast<char *>(&sHdr), sw_sHdr_size_bytes);
+	  outputFileStream_.write(reinterpret_cast<char *>(&data), data_size);
 	}
 
 	ev_counter_inc(); // increment event counter

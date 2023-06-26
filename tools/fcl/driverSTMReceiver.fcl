@@ -2,7 +2,7 @@
 #  about the FHiCL language, please look at
 #  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
 
-events_to_generate: 2
+events_to_generate: 1 #Was 2
 run_number: 101
 debug_cout: true
 transition_timeout: 30
@@ -14,7 +14,7 @@ fragment_receiver: {
    generator: STMReceiver 
    sim_mode: Disabled # F
    raw_output_enable: false # true
-   raw_output_file: "stmReceiver.bin" # "Mu2eReceiver.bin"
+   raw_output_file: "Mu2eReceiver.bin"
    debug_print: false
    null_heartbeats_after_requests: 16
    dtc_position_in_chain: 0
@@ -35,7 +35,7 @@ fragment_receiver: {
      useCFODRP: false
    }
    load_sim_file: false # true
-#   sim_file: "DTC_packets.bin" # Overridden by $DTCLIB_SIM_FILE
+   sim_file: "DTC_packets.bin" # Overridden by $DTCLIB_SIM_FILE
 
    from_input_file : true
    input_file: "/scratch/mu2e/mu2estm_mu2e_work_area/InputData/raw.mu2e.STM_ELBE_2022.LaBrRaw.101032_00000000.dat"
