@@ -87,16 +87,19 @@ bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	  inputFileStream_.read(reinterpret_cast<char *>(&sHdr), sw_sHdr_size_bytes);
 	  data_size = sHdr.sliceSize();
 	  inputFileStream_.read(reinterpret_cast<char *>(&data[0]), data_size);
-	  
+
 	  double fragment_timestamp = 0;
 	  frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], FragmentType::STM, fragment_timestamp));
 	  // Next two lines define an inefficient buffer implementation.
 	  //frags.back()->resizeBytes(0x50000);
 	  //memcpy(frags.back()->dataBegin(), &data[0], 0x50000);
 	  
-	  frags.back()->resizeBytes(data_size);
-	  memcpy(frags.back()->dataBegin(), &tHdr, sw_tHdr_size_bytes);
-	  memcpy(frags.back()->dataBegin(), &sHdr, sw_sHdr_size_bytes);
+	  frags.back()->resizeBytes(sw_tHdr_size_bytes + sw_sHdr_size_bytes + data_size);
+	  uint8_t* dataBegin = reinterpret_cast<uint8_t*>(frags.back()->dataBegin());
+	  memcpy(dataBegin, &tHdr, sw_tHdr_size_bytes);
+	  dataBegin += sw_tHdr_size_bytes;
+	  memcpy(dataBegin, &sHdr, sw_sHdr_size_bytes);
+	  dataBegin += sw_sHdr_size_bytes;
 	  memcpy(frags.back()->dataBegin(), &data[0], data_size);
 	}
 
