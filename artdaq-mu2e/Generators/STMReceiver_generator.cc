@@ -76,6 +76,12 @@ bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		return false;
 	}
 
+	if (fromInputFile_) {
+	  if (inputFileStream_.eof()) { // if we reached the end of the file, then stop
+	    return false;
+	  }
+	}
+
 
 	//STMFragment::STMDataPacket data[1]; //Andy's implementation
 	STMFragment::STM_tHdr tHdr;
