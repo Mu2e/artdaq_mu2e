@@ -62,14 +62,11 @@ private:
 	bool toOutputFile_{false};
 	std::ofstream outputFileStream_;
 
-	std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_() { return fragment_ids_; }
-
 	// FHiCL-configurable variables. Note that the C++ variable names
 	// are the FHiCL variable names with a "_" appended
 
 	FragmentType fragment_type_{FragmentType::STM};  // Type of fragment (see FragmentType.hh)
 
-	std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
 	
 };
 }  // namespace mu2e
