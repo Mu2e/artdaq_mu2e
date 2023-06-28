@@ -51,32 +51,26 @@ private:
 
 	void stopNoMutex() override {}
 
-	void stop() override;
+	void stop() override {}
+		
+	std::set<artdaq::Fragment::sequence_id_t> seen_sequence_ids_{};
+	size_t sequence_id_list_max_size_{1000};
 
-	// Like "getNext_", "fragmentIDs_" is a mandatory override; it
-	// returns a vector of the fragment IDs an instance of this class
-	// is responsible for (in the case of STMReceiver, this is just
-	// the fragment_id_ variable declared in the parent
-	// CommandableFragmentGenerator class)
+	// STM-specific stuff
+	bool fromInputFile_{false};
+	std::ifstream inputFileStream_;
+	bool toOutputFile_{false};
+	std::ofstream outputFileStream_;
 
 	std::vector<artdaq::Fragment::fragment_id_t> fragmentIDs_() { return fragment_ids_; }
 
 	// FHiCL-configurable variables. Note that the C++ variable names
 	// are the FHiCL variable names with a "_" appended
 
-	FragmentType const fragment_type_;  // Type of fragment (see FragmentType.hh)
+	FragmentType fragment_type_{FragmentType::STM};  // Type of fragment (see FragmentType.hh)
 
 	std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
-
-	// State
-	size_t highest_timestamp_seen_{0};
-	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
-	uint8_t board_id_;
-        bool fromInputFile_{false};
-        std::ifstream inputFileStream_;
-	bool rawOutput_{false};
-	std::string rawOutputFile_{""};
-	std::ofstream rawOutputStream_;
+	
 };
 }  // namespace mu2e
 
