@@ -1,0 +1,24 @@
+# -*- mode:tcl -*- 
+
+physics: {
+    analyzers:   {
+	RawEventDump: { module_type: RawEventDump
+	    raw_data_label: daq
+	    verbosity     : 100
+	} 
+    } 
+
+    a1: [ RawEventDump ]
+    e1: [ out1 ]
+    end_paths: [ a1, e1 ]
+}
+
+outputs: {
+    out1:  {
+	module_type: FileDumperOutput
+	wantProductFriendlyClassName: true
+	onlyIfPresent: true
+    }
+}
+
+process_name: rawEventDump

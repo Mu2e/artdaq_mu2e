@@ -1,0 +1,18 @@
+#+startup:fold
+# ------------------------------------------------------------------------------
+* debugging artdaq (DTC readers)                                             
+#+begin_src                                                                  
+mu2etrk@mu2edaq09:~/test_stand/pasha_015>artdaqDriver --help
+06-05 15:37:09.408500                      MetricManager     INFO MetricManager(): MetricManager CONSTRUCTOR
+artdaqDriver <-c <config>> <other-options> [<source-file>]+:
+  -c [ --config ] arg   Configuration
+  -h [ --help ]         produce help message
+
+The artdaqDriver executable runs a Fragment Generator and an art process, acting as a "unit integration" test for a data source
+Sample FHiCL configuration for this application: 
+#+end_src 
+* dump events in hex:                                                        
+#+begin_src                                                                  
+mu2e -c srcs/artdaq_mu2e/artdaq-mu2e/ArtModules/fcl/rawEventDump.fcl -s <your_file>
+#+end_src
+# ------------------------------------------------------------------------------
