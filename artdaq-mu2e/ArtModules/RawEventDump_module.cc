@@ -108,7 +108,7 @@ void artdaq::RawEventDump::analyze(art::Event const& e) {
 		    << " (hdr=" << frag.headerSizeBytes()
 		    << ", data=" << frag.dataSizeBytes()
 		    << ", meta (calculated)=" << (frag.sizeBytes() - frag.headerSizeBytes() - frag.dataSizeBytes())
-		    << ")";
+		    << ")" << std::endl;
 	  
 	  if (verbosity_ > 2) {
 //-----------------------------------------------------------------------------
