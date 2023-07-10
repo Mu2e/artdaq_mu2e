@@ -24,6 +24,10 @@ cet_build_plugin(DTCDump art::module LIBRARIES REG
  artdaq_core_mu2e::Overlays
 )
 
+cet_build_plugin(RawEventDump art::module LIBRARIES REG
+ artdaq_core_mu2e::Overlays
+)
+
 cet_build_plugin(Mu2eArtdaqBuildInfo art::module LIBRARIES REG
   artdaq_mu2e::artdaq-mu2e_BuildInfo
 )
