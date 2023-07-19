@@ -16,8 +16,8 @@ libdir      fq_dir      lib
 bindir      fq_dir      bin
 
 product				version		optional
-artdaq				v3_12_04
-artdaq_core_mu2e	v1_09_01
+artdaq				v3_12_05
+artdaq_core_mu2e	v1_09_02
 cetmodules			v3_21_02	-	only_for_build
 end_product_list
 
