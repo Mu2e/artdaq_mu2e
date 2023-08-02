@@ -2,7 +2,7 @@
 #  about the FHiCL language, please look at
 #  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
 
-events_to_generate: 1 #Was 2
+events_to_generate: 2 # was 1 #Was 2
 run_number: 101
 debug_cout: true
 transition_timeout: 30
