@@ -1,3 +1,6 @@
+// This file implements the basic data readout functionality on top of Mu2eEventReceiverBase. 
+// It can be used as an exmaple for developing more specific functionality.
+
 #include "artdaq-mu2e/Generators/Mu2eEventReceiverBase.hh"
 
 #include "artdaq/Generators/GeneratorMacros.hh"
