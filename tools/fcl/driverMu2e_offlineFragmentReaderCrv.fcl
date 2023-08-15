@@ -1,0 +1,108 @@
+# FHiCL document used to run the "driver" executable. To learn more
+#  about the FHiCL language, please look at
+#  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
+
+events_to_generate: 10
+run_number: 101
+
+fragment_receiver: {
+
+  # Parameters defining and configuring the fragment generator to be used
+
+  generator: CRVReceiver
+  ring_0_roc_count: 1
+  ring_0_timing_enabled: false
+  debug_print: true
+  verbose: true
+  raw_output_enable: true
+  #raw_output_file: "mu2eReceiver.bin"
+  load_sim_file: true
+  #use e.g. export DTCLIB_SIM_FILE=DTC_packets_Crv.bin to set input binary file
+  #or use sim_file variable below
+  #sim_file: "DTC_packets_Crv.bin"
+  # Parameters configuring the fragment generator's parent class
+  # artdaq::CommandableFragmentGenerator
+  no_request_mode: true
+  no_request_mode_first_timestamp: 0x407
+
+  fragment_id: 2
+  board_id: 32
+}
+
+event_builder: {
+  expected_fragments_per_event: 1
+  use_art: true
+  print_event_store_stats: false
+  verbose: false
+  events_expected_in_SimpleQueueReader: @local::events_to_generate
+  max_fragment_size_bytes: 0x200000
+#  buffer_count: 16
+  buffer_count: 100
+  init_fragment_count: 0
+}
+
+######################################################################
+# The ART code
+######################################################################
+
+physics:
+{
+
+  analyzers:
+  {
+    a1:
+    {
+      module_type: OfflineFragmentsDumper
+    }
+    a2:
+    {
+     module_type: DTCEventDump
+    }
+  }
+
+  #t1: [a1]
+  t1: [a2, rootout]
+
+}
+
+services: {
+      ArtdaqFragmentNamingServiceInterface: {
+         helper_plugin: "Mu2e"
+         service_provider: "ArtdaqFragmentNamingService"
+      }
+      ArtdaqSharedMemoryServiceInterface: {
+         service_provider: "ArtdaqSharedMemoryService"
+      }
+}
+
+outputs:
+{
+  rootout:
+  {
+    module_type: RootDAQOut
+    fileName: "driver_Crv.root"
+    compressionLevel: 501
+  }
+  out1:
+  {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+  }
+}
+
+source: {
+  module_type: ArtdaqInput
+}
+
+#source:
+#{
+#  module_type: OfflineFragmentReader
+#  waiting_time: 900
+#  resume_after_timeout: true
+#  readTrkFragments: false
+#  readCaloFragments: false
+#  readCrvFragments: true
+#  debug_event_number_mode: true
+#}
+
+process_name: Driver

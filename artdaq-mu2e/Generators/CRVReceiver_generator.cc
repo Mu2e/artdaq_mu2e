@@ -24,13 +24,19 @@ private:
 
 	std::set<artdaq::Fragment::sequence_id_t> seen_sequence_ids_{};
 	size_t sequence_id_list_max_size_{1000};
+
+        bool noRequestMode_{false};
+        size_t noRequestModeFirstTimestamp_{0};
 };
 }  // namespace mu2e
 
 mu2e::CRVReceiver::CRVReceiver(fhicl::ParameterSet const& ps)
 	: Mu2eEventReceiverBase(ps)
+        , noRequestMode_(ps.get<bool>("no_request_mode", false))
+        , noRequestModeFirstTimestamp_(ps.get<size_t>("no_request_mode_first_timestamp",0))
 {
 
+	highest_timestamp_seen_ = noRequestModeFirstTimestamp_;
 	TLOG(TLVL_DEBUG) << "CRVReceiver Initialized with mode " << mode_;
 }
 
@@ -45,21 +51,30 @@ bool mu2e::CRVReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
-	if (requests_ == nullptr)
+	std::map<artdaq::Fragment::sequence_id_t, artdaq::Fragment::timestamp_t> reqs;
+	if (noRequestMode_)
 	{
-		requests_ = GetRequestBuffer();
+		std::cout << "DEBUG highest_timestamp_seen_=" << highest_timestamp_seen_ << std::endl;
+		reqs[highest_timestamp_seen_ + 1] = highest_timestamp_seen_ + 1;
 	}
-	if (requests_ == nullptr)
+	else
 	{
-		TLOG(TLVL_ERROR) << "Request Buffer pointer is null! Returning false!";
-		return false;
-	}
+		if (requests_ == nullptr)
+		{
+			requests_ = GetRequestBuffer();
+		}
+		if (requests_ == nullptr)
+		{
+			TLOG(TLVL_ERROR) << "Request Buffer pointer is null! Returning false!";
+			return false;
+		}
 
-	while (!should_stop() && !requests_->WaitForRequests(100))
-	{
+		while (!should_stop() && !requests_->WaitForRequests(100))
+		{
+		}
+		reqs = requests_->GetAndClearRequests();
+		//requests_->reset();
 	}
-	auto reqs = requests_->GetAndClearRequests();
-	//requests_->reset();
 
 	if (should_stop())
 	{
