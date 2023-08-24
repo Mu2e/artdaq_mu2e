@@ -5,6 +5,7 @@
 #include "art/Framework/Principal/Run.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "TRACE/tracemf.h"
 #include "artdaq/DAQdata/Globals.hh"
 #define TRACE_NAME "DTCEventVerifier"
 
@@ -28,8 +29,9 @@ namespace mu2e {
   {
   public:
     struct Config {
-      fhicl::Atom<int>  diagLevel   {fhicl::Name("diagLevel"), fhicl::Comment("diagnostic level")};
-      fhicl::Atom<int>  nDTCs       {fhicl::Name("nDTCs")    , fhicl::Comment("N DTCs used")};
+      fhicl::Atom<int>  diagLevel     {fhicl::Name("diagLevel")     , fhicl::Comment("diagnostic level")};
+      fhicl::Atom<int>  nDTCs         {fhicl::Name("nDTCs")         , fhicl::Comment("N DTCs used")};
+      fhicl::Atom<int>  metrics_level {fhicl::Name("metrics_level") , fhicl::Comment("Metrics reporting level"), 1};
     };
 
     explicit DTCEventVerifier(const art::EDFilter::Table<Config>& config);
@@ -41,6 +43,7 @@ namespace mu2e {
   private:
     std::set<int> dtcs_;
     int           diagLevel_;
+    int           metrics_reporting_level_;
     int           nDTCs_;
     bool          isFirstEvent_;
   };
@@ -102,13 +105,21 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
     }
   
   
-  if (diagLevel_ > 10) 
+  if (diagLevel_ > 0) 
     {
-      std::cout << "[ArtFragmentsFromDTCEvents::produce] Found nHandlesnFragments  " 
+      std::cout << "[ArtFragmentsFromDTCEvents::produce] Found nFragments  " 
 		<< fragments.size() <<std::endl;
     }
-  
+  if (metricMan != nullptr)
+    {
+      std::ostringstream oss;
+      oss << "Found nFragments=  " << fragments.size();
+      metricMan->sendMetric("nFragments", oss.str(), "xml_string",
+			    metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+    }
+
   evtHeader->initErrorChecks();
+
   for (const auto &frag : fragments) 
     {
     mu2e::DTCEventFragment bb(frag);
@@ -140,9 +151,30 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
       
 	if ( subEvtWTag != evtWTag) { evtHeader->ewt_check = 0; } //different EWT in a subEvent
 	
+	if (metricMan != nullptr && diagLevel_ > 10)
+	  {
+	    std::ostringstream oss;
+	    oss << "SubEvent: "     << &subEvt - &data.GetSubEvents()[0] 
+		<< ", DTC_ID = "    << dtcID 
+		<< ", EWT_CHECK = " << ( (subEvtWTag != evtWTag) ? 0 : 1)
+		<< ", DTC_CHECK = " << ( ((dtcs_.insert(dtcID).second) && (!isFirstEvent_)) ? 0 : 1);
+	    metricMan->sendMetric("SubEventSnapshot", oss.str(), "xml_string",
+				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	  }
+	
 	//if (subHeader->dtc_mac == dtcHeader->dtc_mac){ evtDTC_ID = dtcID;}
       }//end loop over the subevents
     
+    if (metricMan != nullptr)
+      {
+	std::ostringstream oss;
+	oss << "Fragment: " << &frag - &fragments[0]
+	    << ", EWT_CHECK = " << evtHeader->ewt_check 
+	    << ", DTCs = "      << evtNDTCs << "/" << nDTCs_
+	    << ", DTC_CHECK = " << evtHeader->dtc_check;
+	metricMan->sendMetric("FragmentSnapshot", oss.str(), "xml_string",
+			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+      }
     //check that the evtWTag == dtc_ID
     //FIX ME!
     // if (isFirstEvent_){
@@ -153,7 +185,13 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
     // }
     
     }
-  
+  // if (metricMan != nullptr) 
+  //   {
+  //     std::ostringstream oss;
+  //     metricMan->sendMEtric("SubEventsPassed", subEvtsPassed, "Events", metrics_reporting_level_, 
+  // 			    artdaq::MetricMode::LastPoint);
+  //     TLOG(TLVL_DEBUG) << "Event " << evt.event() << ": total subEvents = " << nSubEvents << oss.str();
+  //   }
   bool condition = evtHeader->ewt_check && evtHeader->dtc_check;
   //change the state of isFirstEvent_
   if (isFirstEvent_) { isFirstEvent_ = false;}
