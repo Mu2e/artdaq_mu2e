@@ -112,9 +112,7 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
     }
   if (metricMan != nullptr)
     {
-      std::ostringstream oss;
-      oss << "Found nFragments=  " << fragments.size();
-      metricMan->sendMetric("nFragments", oss.str(), "xml_string",
+      metricMan->sendMetric("nFragments", fragments.size(), "Fragments",
 			    metrics_reporting_level_, artdaq::MetricMode::LastPoint);
     }
 
@@ -153,13 +151,15 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
 	
 	if (metricMan != nullptr && diagLevel_ > 10)
 	  {
-	    std::ostringstream oss;
-	    oss << "SubEvent: "     << &subEvt - &data.GetSubEvents()[0] 
-		<< ", DTC_ID = "    << dtcID 
-		<< ", EWT_CHECK = " << ( (subEvtWTag != evtWTag) ? 0 : 1)
-		<< ", DTC_CHECK = " << ( ((dtcs_.insert(dtcID).second) && (!isFirstEvent_)) ? 0 : 1);
-	    metricMan->sendMetric("SubEventSnapshot", oss.str(), "xml_string",
+	    metricMan->sendMetric("SubEventID"      , int(&subEvt - &data.GetSubEvents()[0]), "SubEvent",
 				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	    metricMan->sendMetric("SubEventDTCID"   ,dtcID , "SubEvent",
+				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	    metricMan->sendMetric("SubEventEWTCHECK", ( (subEvtWTag != evtWTag) ? 0 : 1), "SubEvent",
+				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	    metricMan->sendMetric("SubEventDTCCHECK", ( ((dtcs_.insert(dtcID).second) && (!isFirstEvent_)) ? 0 : 1), "SubEvent",
+				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+
 	  }
 	
 	//if (subHeader->dtc_mac == dtcHeader->dtc_mac){ evtDTC_ID = dtcID;}
@@ -167,14 +167,16 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
     
     if (metricMan != nullptr)
       {
-	std::ostringstream oss;
-	oss << "Fragment: " << &frag - &fragments[0]
-	    << ", EWT_CHECK = " << evtHeader->ewt_check 
-	    << ", DTCs = "      << evtNDTCs << "/" << nDTCs_
-	    << ", DTC_CHECK = " << evtHeader->dtc_check;
-	metricMan->sendMetric("FragmentSnapshot", oss.str(), "xml_string",
+	metricMan->sendMetric("FragmentID"      , int(&frag - &fragments[0]), "Fragment",
 			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
-      }
+	metricMan->sendMetric("FragmentEWTCHECK", evtHeader->ewt_check, "Fragment",
+			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	metricMan->sendMetric("FragmentDTCsFRAC", float(evtNDTCs/nDTCs_) , "Fragment",
+			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	metricMan->sendMetric("FragmentDTCCHECK", evtHeader->dtc_check, "Fragment",
+			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+  
+    }
     //check that the evtWTag == dtc_ID
     //FIX ME!
     // if (isFirstEvent_){
