@@ -118,73 +118,76 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
 
   evtHeader->initErrorChecks();
 
+  size_t index_frag(0);
   for (const auto &frag : fragments) 
     {
-    mu2e::DTCEventFragment bb(frag);
-    auto  data = bb.getData();
-    const DTCLib::DTC_EventHeader*   dtcHeader = data.GetHeader();    
-    const DTCLib::DTC_EventWindowTag evtWTag   = data.GetEventWindowTag();
-    if (isFirstEvent_){
-      evtHeader->ewt    = evtWTag.GetEventWindowTag(true);
-      // evtHeader->mode   = ;
-      // evtHeader->rfmTDC = ;
-      // evtHeader->flags  = ;
-    }
+      mu2e::DTCEventFragment bb(frag);
+      auto  data = bb.getData();
+      const DTCLib::DTC_EventHeader*   dtcHeader = data.GetHeader();    
+      const DTCLib::DTC_EventWindowTag evtWTag   = data.GetEventWindowTag();
+      if (isFirstEvent_){
+	evtHeader->ewt    = evtWTag.GetEventWindowTag(true);
+	// evtHeader->mode   = ;
+	// evtHeader->rfmTDC = ;
+	// evtHeader->flags  = ;
+      }
 
-    int evtNDTCs = dtcHeader->num_dtcs;
-    //check with the nDTCs from the config
-    if (evtNDTCs != nDTCs_) {	evtHeader->dtc_check = 0;}
+      int evtNDTCs = dtcHeader->num_dtcs;
+      //check with the nDTCs from the config
+      if (evtNDTCs != nDTCs_) {	evtHeader->dtc_check = 0;}
 
-    //uint8_t evtDTC_ID(0);
-    for(const auto& subEvt: data.GetSubEvents())
-      {
-	//	const DTCLib::DTC_SubEventHeader* subHeader = subEvt.GetHeader();    
-	uint8_t dtcID = subEvt.GetDTCID();
+      //uint8_t evtDTC_ID(0);
+      size_t index_subEvt(0);
+      for(const auto& subEvt: data.GetSubEvents())
+	{
+	  //	const DTCLib::DTC_SubEventHeader* subHeader = subEvt.GetHeader();    
+	  uint8_t dtcID = subEvt.GetDTCID();
       
-	if(dtcs_.insert(dtcID).second) 
-	  {
-	    if (!isFirstEvent_) { evtHeader->dtc_check = 0;} // dtcID wasn't in set
-	  } 
-	DTCLib::DTC_EventWindowTag subEvtWTag = subEvt.GetEventWindowTag();
+	  if(dtcs_.insert(dtcID).second) 
+	    {
+	      if (!isFirstEvent_) { evtHeader->dtc_check = 0;} // dtcID wasn't in set
+	    } 
+	  DTCLib::DTC_EventWindowTag subEvtWTag = subEvt.GetEventWindowTag();
       
-	if ( subEvtWTag != evtWTag) { evtHeader->ewt_check = 0; } //different EWT in a subEvent
+	  if ( subEvtWTag != evtWTag) { evtHeader->ewt_check = 0; } //different EWT in a subEvent
 	
-	if (metricMan != nullptr && diagLevel_ > 10)
-	  {
-	    metricMan->sendMetric("SubEventID"      , int(&subEvt - &data.GetSubEvents()[0]), "SubEvent",
-				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
-	    metricMan->sendMetric("SubEventDTCID"   ,dtcID , "SubEvent",
-				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
-	    metricMan->sendMetric("SubEventEWTCHECK", ( (subEvtWTag != evtWTag) ? 0 : 1), "SubEvent",
-				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
-	    metricMan->sendMetric("SubEventDTCCHECK", ( ((dtcs_.insert(dtcID).second) && (!isFirstEvent_)) ? 0 : 1), "SubEvent",
-				 metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	  if (metricMan != nullptr && diagLevel_ > 10)
+	    {
+	      metricMan->sendMetric("SubEventID"      , index_subEvt, "SubEvent",
+				    metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	      metricMan->sendMetric("SubEventDTCID"   ,dtcID , "SubEvent",
+				    metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	      metricMan->sendMetric("SubEventEWTCHECK", ( (subEvtWTag != evtWTag) ? 0 : 1), "SubEvent",
+				    metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	      metricMan->sendMetric("SubEventDTCCHECK", ( ((dtcs_.insert(dtcID).second) && (!isFirstEvent_)) ? 0 : 1), "SubEvent",
+				    metrics_reporting_level_, artdaq::MetricMode::LastPoint);
 
-	  }
-	
-	//if (subHeader->dtc_mac == dtcHeader->dtc_mac){ evtDTC_ID = dtcID;}
-      }//end loop over the subevents
+	    }
+	  ++index_subEvt;
+	  //if (subHeader->dtc_mac == dtcHeader->dtc_mac){ evtDTC_ID = dtcID;}
+	}//end loop over the subevents
     
-    if (metricMan != nullptr)
-      {
-	metricMan->sendMetric("FragmentID"      , int(&frag - &fragments[0]), "Fragment",
-			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
-	metricMan->sendMetric("FragmentEWTCHECK", evtHeader->ewt_check, "Fragment",
-			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
-	metricMan->sendMetric("FragmentDTCsFRAC", float(evtNDTCs/nDTCs_) , "Fragment",
-			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
-	metricMan->sendMetric("FragmentDTCCHECK", evtHeader->dtc_check, "Fragment",
-			     metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+      if (metricMan != nullptr)
+	{
+	  metricMan->sendMetric("FragmentID"      , index_frag, "Fragment",
+				metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	  metricMan->sendMetric("FragmentEWTCHECK", evtHeader->ewt_check, "Fragment",
+				metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	  metricMan->sendMetric("FragmentDTCsFRAC", float(evtNDTCs/nDTCs_) , "Fragment",
+				metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	  metricMan->sendMetric("FragmentDTCCHECK", evtHeader->dtc_check, "Fragment",
+				metrics_reporting_level_, artdaq::MetricMode::LastPoint);
   
-    }
-    //check that the evtWTag == dtc_ID
-    //FIX ME!
-    // if (isFirstEvent_){
-    //   refDTCID_ = evtDTC_ID;
-    //   refEvtWTag_ = evtWTag;
-    // }else{
-    //   if ((evtWTag - refEvtTag) % nDTCs_ != 0) { header->rnr_check = 0;}    
-    // }
+	}
+      ++index_frag;
+      //check that the evtWTag == dtc_ID
+      //FIX ME!
+      // if (isFirstEvent_){
+      //   refDTCID_ = evtDTC_ID;
+      //   refEvtWTag_ = evtWTag;
+      // }else{
+      //   if ((evtWTag - refEvtTag) % nDTCs_ != 0) { header->rnr_check = 0;}    
+      // }
     
     }
   // if (metricMan != nullptr) 
