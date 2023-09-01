@@ -11,6 +11,7 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	: CommandableFragmentGenerator(ps)
 	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
 	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, skip_dtc_init_(ps.get<bool>("skip_dtc_init", false))
 	, rawOutput_(ps.get<bool>("raw_output_enable", false))
 	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
 	, print_packets_(ps.get<bool>("debug_print", false))
@@ -19,28 +20,32 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
 {
 	// mode_ can still be overridden by environment!
-	theInterface_ = new DTCLib::DTC(mode_,
+	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
 									ps.get<int>("dtc_id", -1),
 									ps.get<unsigned>("roc_mask", 0x1),
 									ps.get<std::string>("dtc_fw_version", ""),
-									ps.get<bool>("skip_dtc_init", false),
+									skip_dtc_init_,
 									ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
 
-	fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
-	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_,
-										 cfoConfig.get<bool>("use_dtc_cfo_emulator", true),
-										 cfoConfig.get<size_t>("debug_packet_count", 0),
-										 DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")),
-										 cfoConfig.get<bool>("sticky_debug_type", false),
-										 cfoConfig.get<bool>("quiet", false),
-										 cfoConfig.get<bool>("asyncRR", false),
-										 cfoConfig.get<bool>("force_no_debug_mode", false),
-										 cfoConfig.get<bool>("useCFODRP", false));
 	mode_ = theInterface_->ReadSimMode();
-
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiverBase Initialized with mode " << mode_;
-
-	TLOG(TLVL_INFO) << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion();
+	
+	//if in simulation mode, setup CFO
+	if (mode_ != 0)
+	{
+		fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
+		theCFO_ = std::make_unique<DTCLib::DTCSoftwareCFO>(theInterface_.get(),
+											cfoConfig.get<bool>("use_dtc_cfo_emulator", true),
+											cfoConfig.get<size_t>("debug_packet_count", 0),
+											DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")),
+											cfoConfig.get<bool>("sticky_debug_type", false),
+											cfoConfig.get<bool>("quiet", false),
+											cfoConfig.get<bool>("asyncRR", false),
+											cfoConfig.get<bool>("force_no_debug_mode", false),
+											cfoConfig.get<bool>("useCFODRP", false));
+	}
+	
+	if(skip_dtc_init_) return; //skip any control of DTC 
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
@@ -69,6 +74,7 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 		simFileRead_ = true;
 	}
 }
+mu2e::Mu2eEventReceiverBase::~Mu2eEventReceiverBase() {}
 
 void mu2e::Mu2eEventReceiverBase::readSimFile_(std::string sim_file)
 {
@@ -79,15 +85,12 @@ void mu2e::Mu2eEventReceiverBase::readSimFile_(std::string sim_file)
 	TLOG(TLVL_INFO) << "Done reading simulation file into DTC memory.";
 }
 
-mu2e::Mu2eEventReceiverBase::~Mu2eEventReceiverBase()
-{
-	delete theInterface_;
-	delete theCFO_;
-}
-
 void mu2e::Mu2eEventReceiverBase::stop()
 {
 	rawOutputStream_.close();
+	
+	if(skip_dtc_init_) return; //skip any control of DTC
+
 	theInterface_->DisableDetectorEmulator();
 	theInterface_->DisableCFOEmulation();
 }

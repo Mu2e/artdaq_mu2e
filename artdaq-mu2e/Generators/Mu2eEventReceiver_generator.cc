@@ -27,7 +27,6 @@ private:
 
 mu2e::Mu2eEventReceiver::Mu2eEventReceiver(fhicl::ParameterSet const& ps)
 	: Mu2eEventReceiverBase(ps)
-
 {
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiver Initialized with mode " << mode_;
 }
@@ -60,9 +59,11 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	return getNextDTCFragment(frags, zero);
 }
 
-DTCLib::DTC_EventWindowTag mu2e::Mu2eEventReceiver::getCurrentEventWindowTag() {
-	if(first_timestamp_seen_ > 0) {
-	return DTCLib::DTC_EventWindowTag(getCurrentSequenceID() + first_timestamp_seen_);
+DTCLib::DTC_EventWindowTag mu2e::Mu2eEventReceiver::getCurrentEventWindowTag()
+{
+	if(first_timestamp_seen_ > 0) 
+	{
+		return DTCLib::DTC_EventWindowTag(getCurrentSequenceID() + first_timestamp_seen_);
 	}
 
 	return DTCLib::DTC_EventWindowTag(uint64_t(0));
