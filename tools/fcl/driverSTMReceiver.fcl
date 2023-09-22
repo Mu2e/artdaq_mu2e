@@ -2,7 +2,7 @@
 #  about the FHiCL language, please look at
 #  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
 
-events_to_generate: 1 #Was 2
+events_to_generate: 2# PP: was 3
 run_number: 101
 debug_cout: true
 transition_timeout: 30
@@ -38,16 +38,16 @@ fragment_receiver: {
    sim_file: "DTC_packets.bin" # Overridden by $DTCLIB_SIM_FILE
 
    from_input_file : true
-   input_file: "/scratch/mu2e/mu2estm_mu2e_work_area/InputData/raw.mu2e.STM_ELBE_2022.LaBrRaw.101032_00000000.dat"
+   input_file: "/scratch/mu2e/mu2estm_mu2e_vst/InputData/raw.mu2e.STM_ELBE_2022.LaBrRaw.101032_00000000.dat"
    to_output_file : true
-   output_file : "stmReceiver.bin"
+   output_file : "/scratch/mu2e/mu2estm_mu2e_vst/OutputData/stmReceiver.bin"
 
    # Parameters configuring the fragment generator's parent class
    # artdaq::CommandableFragmentGenerator
 
    fragment_id: 0
    board_id: 0
-   max_fragment_size_bytes: 0x100000
+   max_fragment_size_bytes: 0x10000000
 }  		  
 
 event_builder: {
@@ -59,7 +59,7 @@ event_builder: {
   events_expected_in_SimpleQueueReader: @local::events_to_generate
   init_fragment_count: 0
   buffer_count: 1
-   max_fragment_size_bytes: 0x100000
+   max_fragment_size_bytes: 0x10000000
 }
 
 ######################################################################

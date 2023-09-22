@@ -25,6 +25,9 @@
 #include "artdaq-core-mu2e/Overlays/STMFragment.hh"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 
+//#include "artdaq-mu2e/Generators/STMUtils/UDPsocket.hh"
+#include "STMDAQ-TestBeam/utils/UDPsocket.hh"
+
 #include <atomic>
 #include <vector>
 
@@ -39,6 +42,15 @@ public:
 	virtual ~STMReceiver();
 
 	FragmentType GetFragmentType() { return fragment_type_; }
+  
+  // Receive counter
+  int recvCount = 0;
+  // Define receive buffer as array of packets                                                           
+  UDPsocket::packet *rcv_buffer;
+
+  // Define the return value of number of messages recieved                                              
+  int retval = 0;
+
 
 private:
 	// The "getNext_" function is used to implement user-specific
@@ -60,12 +72,22 @@ private:
 	bool fromInputFile_{false};
 	std::ifstream inputFileStream_;
 	bool toOutputFile_{false};
-	std::ofstream outputFileStream_;
+        std::ofstream outputFileStream_;
+
+  //void ingestTriggerHeader(STMFragment::STM_fw_tHdr __tHdr);
 
 	// FHiCL-configurable variables. Note that the C++ variable names
 	// are the FHiCL variable names with a "_" appended
 
 	FragmentType fragment_type_{FragmentType::STM};  // Type of fragment (see FragmentType.hh)
+
+  // Number of data channels (Maximum of 2: HPGe = 0, LaBr = 1)
+  static const uint chNum = 1;//2;
+
+  // Istance of UDP socket class
+  UDPsocket udp[chNum];
+  int sendSock[chNum];
+  int recvSock[chNum];
 
 	
 };
