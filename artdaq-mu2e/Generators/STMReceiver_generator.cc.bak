@@ -1,0 +1,168 @@
+#include "artdaq-mu2e/Generators/STMReceiver.hh"
+
+#include "artdaq-core/Utilities/SimpleLookupPolicy.hh"
+#include "artdaq/Generators/GeneratorMacros.hh"
+#include "canvas/Utilities/Exception.h"
+#include "cetlib_except/exception.h"
+#include "dtcInterfaceLib/DTC_Types.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "artdaq-core-mu2e/Overlays/FragmentType.hh"
+#include "artdaq/DAQdata/Globals.hh"
+
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+
+#include <unistd.h>
+#include "trace.h"
+#define TRACE_NAME "STMReceiver"
+
+mu2e::STMReceiver::STMReceiver(fhicl::ParameterSet const& ps)
+	: CommandableFragmentGenerator(ps)
+	, fragment_type_(toFragmentType("STM"))
+	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
+	, board_id_(static_cast<uint8_t>(ps.get<int>("board_id", 0)))
+        , fromInputFile_(ps.get<bool>("from_input_file", false))
+	, rawOutput_(ps.get<bool>("raw_output_enable", false))
+	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
+{
+
+	if (rawOutput_) { rawOutputStream_.open(rawOutputFile_, std::ios::out | std::ios::binary); }
+
+	if (fromInputFile_) {
+	  auto input_file = ps.get<std::string>("input_file", "");
+	  inputFileStream_.open(input_file, std::ios::in | std::ios::binary); 
+	}
+}
+
+
+mu2e::STMReceiver::~STMReceiver()
+{
+        inputFileStream_.close();
+	rawOutputStream_.close();
+}
+
+void mu2e::STMReceiver::stop()
+{
+}
+
+bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs& frags)
+{
+  std::cout << "AE: starting getNext_" << std::endl;
+  TLOG(TLVL_DEBUG) << "AE: starting getNext_" << std::endl;
+	while (!fromInputFile_ && !should_stop())
+	{
+		usleep(5000);
+	}
+
+	if (should_stop())
+	{
+		return false;
+	}
+
+	STMFragment::STMDataPacket data[1];
+	auto size_to_watch = sizeof(STMFragment::STMDataPacket);
+	std::cout << "AE: size_to_watch = " << size_to_watch << std::endl;
+	std::cout << "AE: sizeof(STMDataPacket) = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	std::cout << "AE: data = " << data << std::endl;
+	std::cout << "AE: sizeof(STMFragment::STMDataPacket) before if(fromInputFile_) = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	std::cout << "AE: sizeof(data) = " << std::dec << sizeof(data) << std::endl;
+	std::cout << "AE: sizeof(STMFragment::STMDataPacket) before if(fromInputFile_) = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	std::cout << "AE: data[0] = " << data[0];
+	std::cout << "AE: sizeof(STMFragment::STMDataPacket) before if(fromInputFile_) = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	std::cout << "AE: sizeof(data[0]) = " << std::dec << sizeof(data[0]) << std::endl;
+	std::cout << "AE: sizeof(STMFragment::STMDataPacket) before if(fromInputFile_) = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	std::cout << "AE: sizeof(char*) = " << std::dec << sizeof(char*) << std::endl;
+	std::cout << "AE: sizeof(STMFragment::STMDataPacket) before if(fromInputFile_) = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	if (fromInputFile_) {
+	  TLOG(TLVL_DEBUG) << "Reading input file...";
+	  std::cout << "Reading input file..." << std::endl;
+	  // Idea - start with while !EOF read sw_tHdr (36 words), then for sNum read sw_sHdr words
+	  //inputFileStream_.read(reinterpret_cast<char *>(&data), sizeof(STMFragment::STMDataPacket));
+	  std::cout << "AE: sizeof(STMFragment::STMDataPacket) before reading = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	  inputFileStream_.read(reinterpret_cast<char *>(&data), sizeof(STMFragment::STMDataPacket));
+	  TLOG(TLVL_DEBUG) << std::hex << "What's in data[0]? " << data[0];
+	  std::cout << "sizeof(data[0])? " << std::dec << sizeof(data[0]) << std::endl;;
+	  std::cout << "AE: sizeof(STMFragment::STMDataPacket) after reading = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	  std::cout << "What's in data[0]? " << std::setw(4) << std::setfill('0') << std::hex << data[0];
+	  std::cout << "sizeof(data[0])? " << std::dec << sizeof(data[0]) << std::endl;;
+	  std::cout << "AE: sizeof(STMFragment::STMDataPacket) after reading = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord0)? " << std::dec << sizeof(data[0].FixedHeaderWord0) << std::endl;;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord1)? " << std::dec << sizeof(data[0].FixedHeaderWord1) << std::endl;;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord2)? " << std::dec << sizeof(data[0].FixedHeaderWord2) << std::endl;;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord3)? " << std::dec << sizeof(data[0].FixedHeaderWord3) << std::endl;;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord4)? " << std::dec << sizeof(data[0].FixedHeaderWord4) << std::endl;;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord5)? " << std::dec << sizeof(data[0].FixedHeaderWord5) << std::endl;;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord6)? " << std::dec << sizeof(data[0].FixedHeaderWord6) << std::endl;;
+	  // std::cout << "sizeof(data[0].FixedHeaderWord7)? " << std::dec << sizeof(data[0].FixedHeaderWord7) << std::endl;;
+	  TLOG(TLVL_DEBUG) << "Creating STMFragment...";
+	  std::cout << "Creating STMFragment...";
+	  double fragment_timestamp = 0;
+	  frags.emplace_back(new artdaq::Fragment(ev_counter(), fragment_ids_[0], fragment_type_, fragment_timestamp));
+	  //	  std::cout << "HeaderSizeWords test: " << frags.back()->headerSizeWords() << std::endl;
+	  uint8_t* dataBegin = reinterpret_cast<uint8_t*>(frags.back()->dataBegin());
+	  size_t dataSize = frags.back()->dataSize();
+	  std::cout << "AE: dataBegin = " << dataBegin << ", sizeof = " << std::dec << sizeof(dataBegin) << std::endl;;
+	  std::cout << "AE: dataSize = " << dataSize <<std::endl;;
+	  for (auto& evt : data) {
+	    TLOG(TLVL_DEBUG) << std::hex << "What did we just put in fragment? evt = " << evt;
+	    std::cout << std::hex << "What did we just put in fragment? evt = " << evt;
+	    std::cout << "sizeof(evt) = " << std::dec << sizeof(evt) << std::endl;
+	    std::cout << "sizeof(data[0]) before memcpy() = " << std::dec << sizeof(data[0]) << std::endl;
+	    std::cout << "sizeof(evt) bfore memcpy() = " << std::dec << sizeof(evt) << std::endl;
+	    std::cout << "sizeof(evt) bfore memcpy() = " << std::dec << sizeof(evt) << std::endl;
+	    memcpy(dataBegin, &evt, sizeof(evt));
+	    std::cout << "memcpy() success" << std::endl;;
+	    std::cout << "sizeof(data[0]) after memcpy() = " << std::dec << sizeof(data[0]) << std::endl;
+	    std::cout << "sizeof(evt) after memcpy() = " << std::dec << sizeof(evt) << std::endl;
+	    std::cout << "*dataBegin = " << std::hex << *dataBegin << std::endl;
+	    std::cout << "*(dataBegin+1) = " << std::hex << *(dataBegin+1) << std::endl;
+	    dataBegin += sizeof(evt);
+	    // CRV:dataBegin += evt->GetEventByteCount();
+	  }
+	  dataSize = frags.back()->dataSize();
+	  std::cout << "AE: dataSize = " << dataSize <<std::endl;
+
+	  std::cout << "sizeof(data[0]) end of input file = " << std::dec << sizeof(data[0]) << std::endl;
+	}
+
+	std::cout << "sizeof(data[0]) before raw output = " << std::dec << sizeof(data[0]) << std::endl;
+	if (rawOutput_)	{
+	  std::cout << "Attempting to write to raw output..." << std::endl;
+	  //	  std::cout << "Do we still have data? " << data[0] << std::endl;
+	  std::cout << "sizeof(data[0]) = " << std::dec << sizeof(data[0]) << std::endl;
+	  std::cout << "AE: sizeof(STMFragment::STMDataPacket) before writing loop = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	  for (auto& evt : data) {
+	    std::cout << "Writing to raw output..." << std::endl;
+	    TLOG(TLVL_DEBUG) << "Writing to raw output...";
+	    //	    std::cout << std::hex << "What did we just write to raw output? evt = " << evt;
+	    //	    TLOG(TLVL_DEBUG) << std::hex << "What did we just write to raw output? evt = " << evt;
+	    std::cout << "sizeof(evt) = " << std::dec << sizeof(evt) << std::endl;
+	    std::cout << "AE: sizeof(STMFragment::STMDataPacket) before writing = " << std::dec << sizeof(STMFragment::STMDataPacket) << std::endl;
+	    rawOutputStream_.write(reinterpret_cast<char*>(&evt), sizeof(STMFragment::STMDataPacket));
+	    std::cout << "Did we write?" << std::endl;
+	  }
+	}
+
+	TLOG(TLVL_DEBUG) << "Incrementing event counter, frags.size() is now " << frags.size();
+	std::cout << "Incrementing event counter, frags.size() is now " << frags.size() << std::endl;
+
+	for (auto& frag : frags) {
+	  std::cout << "AE: frag->dataBegin() = " << frag->dataBegin() << std::endl;
+	  std::cout << "AE: (*frag->dataBegin()) = " << std::hex << (*frag->dataBegin()) << std::endl;
+	  std::cout << "AE: frag->dataSize() = " << std::dec << frag->dataSize() << std::endl;
+	  std::cout << "AE: frag = " << *frag << std::endl;
+	  //	  STMFragment stm_frag(frag->dataBegin(), frag->dataSizeBytes());	 
+	  //	  std::cout << "AE: stm_data = " << stm_frag.GetSTMData() << std::endl;
+	}
+	ev_counter_inc();
+
+
+	TLOG(TLVL_TRACE + 20) << "Returning true";
+	//	return false;
+	return true;
+}
+
+// The following macro is defined in artdaq's GeneratorMacros.hh header
+DEFINE_ARTDAQ_COMMANDABLE_GENERATOR(mu2e::STMReceiver)

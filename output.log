@@ -1,0 +1,5 @@
+05-04 22:21:43.830413                           MetricManager     INFO MetricManager(): MetricManager CONSTRUCTOR
+05-04 22:21:43.833721                        ExceptionHandler    ERROR ExceptionHandler(...): Exception caught in artdaqDriver
+05-04 22:21:43.833840                        ExceptionHandler    ERROR ExceptionHandler(...): cet::exception object caught:---- Can't locate or can't open specified file: BEGIN
+  srcs/artdaq_mu2e/tools/fcl/driverMu2e_offlineFragmentReaderStm.fcl => srcs/artdaq_mu2e/tools/fcl/driverMu2e_offlineFragmentReaderStm.fcl
+---- Can't locate or can't open specified file: END
