@@ -6,6 +6,7 @@ LIBRARIES PUBLIC
 artdaq::DAQdata
 canvas::canvas
 artdaq_core_mu2e::artdaq-core-mu2e_Overlays
+mu2e_pcie_utils::DTCInterface
 artdaq_plugin_types::CommandableFragmentGenerator
   )
 
