@@ -12,7 +12,6 @@
 #include "canvas/Utilities/Exception.h"
 
 #include "artdaq-core/Data/Fragment.hh"
-#include "dtcInterfaceLib/DTC_Packets.h"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 #include "artdaq-core-mu2e/Overlays/DTCEventFragment.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
