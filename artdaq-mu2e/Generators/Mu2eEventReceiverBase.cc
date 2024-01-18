@@ -51,7 +51,7 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	{
 		theInterface_->SetDetectorEmulatorInUse();
 		theInterface_->ResetDDR();
-		theInterface_->ResetDTC();
+		theInterface_->SoftReset();
 
 		char* file_c = getenv("DTCLIB_SIM_FILE");
 
