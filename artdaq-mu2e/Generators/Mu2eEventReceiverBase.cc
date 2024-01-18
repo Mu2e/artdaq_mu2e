@@ -27,7 +27,7 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 									skip_dtc_init_,
 									ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
 
-	mode_ = theInterface_->ReadSimMode();
+	mode_ = theInterface_->GetSimMode();
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiverBase Initialized with mode " << mode_;
 	
 	//if in simulation mode, setup CFO
@@ -51,7 +51,7 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	{
 		theInterface_->SetDetectorEmulatorInUse();
 		theInterface_->ResetDDR();
-		theInterface_->ResetDTC();
+		theInterface_->SoftReset();
 
 		char* file_c = getenv("DTCLIB_SIM_FILE");
 
