@@ -59,6 +59,148 @@ mu2e::DTCEventVerifier::DTCEventVerifier(const art::EDFilter::Table<Config>& con
 
 bool mu2e::DTCEventVerifier::filter(art::Event& event)
 {
+
+  	std::unique_ptr<mu2e::EventHeader> evtHeader(new mu2e::EventHeader);
+
+	artdaq::Fragments fragments;
+	artdaq::FragmentPtrs containerFragments;
+
+	std::vector<art::Handle<artdaq::Fragments> > fragmentHandles;
+	fragmentHandles = event.getMany<std::vector<artdaq::Fragment> >();
+
+	for (const auto& handle : fragmentHandles)
+	{
+		if (!handle.isValid() || handle->empty())
+		{
+			continue;
+		}
+
+		if (handle->front().type() == artdaq::Fragment::ContainerFragmentType)
+		{
+			for (const auto& cont : *handle)
+			{
+				artdaq::ContainerFragment contf(cont);
+				if (contf.fragment_type() != mu2e::FragmentType::DTCEVT)
+				{
+					break;
+				}
+
+				for (size_t ii = 0; ii < contf.block_count(); ++ii)
+				{
+					containerFragments.push_back(contf[ii]);
+					fragments.push_back(*containerFragments.back());
+				}
+			}
+		}
+		else
+		{
+			if (handle->front().type() == mu2e::FragmentType::DTCEVT)
+			{
+				for (auto frag : *handle)
+				{
+					fragments.emplace_back(frag);
+				}
+			}
+		}
+	}
+
+	if (diagLevel_ > 0)
+	{
+		std::cout << "[ArtFragmentsFromDTCEvents::produce] Found nFragments  "
+				  << fragments.size() << std::endl;
+	}
+	if (metricMan != nullptr)
+	{
+		metricMan->sendMetric("nFragments", fragments.size(), "Fragments",
+							  metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+	}
+
+	evtHeader->initErrorChecks();
+
+
+	std::stringstream ostr;
+  for (const auto& frag : fragments)
+  {
+    mu2e::DTCEventFragment bb(frag);
+    auto data = bb.getData();
+    auto event = &data;
+    ostr << "Event tag:\t" << "0x" << std::hex << std::setw(4) << std::setfill('0') << event->GetEventWindowTag().GetEventWindowTag(true) << std::endl;
+    // get the event and the relative sub events
+    DTCLib::DTC_EventHeader* eventHeader = event->GetHeader();
+    std::vector<DTCLib::DTC_SubEvent> subevents = event->GetSubEvents();
+
+    // print the event header
+    ostr << eventHeader->toJson() << std::endl
+      << "Subevents count: " << event->GetSubEventCount() << std::endl;
+
+    // iterate over the subevents
+    for (unsigned int i = 0; i < subevents.size(); ++i)
+    {
+      // print the subevents header
+      DTCLib::DTC_SubEvent subevent = subevents[i];
+      ostr << "Subevent [" << i << "]:" << std::endl;
+      ostr << subevent.GetHeader()->toJson() << std::endl;
+
+      // check if there is an error on the link
+      if (subevent.GetHeader()->link0_status > 0)
+      {
+        ostr << "Error: " << std::endl;
+        std::bitset<8> link0_status(subevent.GetHeader()->link0_status);
+        if (link0_status.test(0))
+        {
+          ostr << "ROC Timeout Error!" << std::endl;
+        }
+        if (link0_status.test(2))
+        {
+          ostr << "Packet sequence number Error!" << std::endl;
+        }
+        if (link0_status.test(3))
+        {
+          ostr << "CRC Error!" << std::endl;
+        }
+        if (link0_status.test(6))
+        {
+          ostr << "Fatal Error!" << std::endl;
+        }
+
+        continue;
+      }
+
+      // print the number of data blocks
+      ostr << "Number of Data Block: " << subevent.GetDataBlockCount() << std::endl;
+
+      // iterate over the data blocks
+      std::vector<DTCLib::DTC_DataBlock> dataBlocks = subevent.GetDataBlocks();
+      for (unsigned int j = 0; j < dataBlocks.size(); ++j)
+      {
+        ostr << "Data block [" << j << "]:" << std::endl;
+        // print the data block header
+        DTCLib::DTC_DataHeaderPacket* dataHeader = dataBlocks[j].GetHeader().get();
+        ostr << dataHeader->toJSON() << std::endl;
+
+        // print the data block payload
+        const void* dataPtr = dataBlocks[j].GetData();
+        ostr << "Data payload:" << std::endl;
+        for (int l = 0; l < dataHeader->GetByteCount() - 16; l += 2)
+        {
+          auto thisWord = reinterpret_cast<const uint16_t*>(dataPtr)[l];
+          ostr << "\t0x" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(thisWord) << std::endl;
+        }
+      }
+    }
+    ostr << std::endl
+		 << std::endl;
+  }
+
+
+
+
+
+
+
+  return true;
+
+  
   std::unique_ptr<mu2e::EventHeader> evtHeader(new mu2e::EventHeader);
 
   artdaq::Fragments fragments;
