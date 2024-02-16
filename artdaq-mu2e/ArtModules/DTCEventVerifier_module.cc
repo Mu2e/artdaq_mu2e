@@ -201,12 +201,12 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
   return true;
 
   
-  std::unique_ptr<mu2e::EventHeader> evtHeader(new mu2e::EventHeader);
+  // std::unique_ptr<mu2e::EventHeader> evtHeader(new mu2e::EventHeader);
 
-  artdaq::Fragments fragments;
-  artdaq::FragmentPtrs containerFragments;
+  // artdaq::Fragments fragments;
+  // artdaq::FragmentPtrs containerFragments;
 
-  std::vector<art::Handle<artdaq::Fragments> > fragmentHandles;
+  // std::vector<art::Handle<artdaq::Fragments> > fragmentHandles;
   fragmentHandles = event.getMany<std::vector<artdaq::Fragment> >();
 
   for (const auto& handle : fragmentHandles)
