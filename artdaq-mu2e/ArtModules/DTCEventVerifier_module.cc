@@ -30,7 +30,8 @@ namespace mu2e {
     struct Config {
       fhicl::Atom<int>  diagLevel     {fhicl::Name("diagLevel")     , fhicl::Comment("diagnostic level")};
       fhicl::Atom<int>  nDTCs         {fhicl::Name("nDTCs")         , fhicl::Comment("N DTCs used")};
-      fhicl::Atom<int>  metrics_level {fhicl::Name("metrics_level") , fhicl::Comment("Metrics reporting level"), 1};
+      fhicl::Atom<int>  metrics_level {fhicl::Name("metricsLevel" ) , fhicl::Comment("Metrics reporting level"), 1};
+      fhicl::Atom<bool> skipCheck     {fhicl::Name("skipCheck")     , fhicl::Comment("Skip check")};
     };
 
     explicit DTCEventVerifier(const art::EDFilter::Table<Config>& config);
@@ -44,6 +45,7 @@ namespace mu2e {
     int           diagLevel_;
     int           metrics_reporting_level_;
     int           nDTCs_;
+    bool          skipCheck_;
     bool          isFirstEvent_;
   };
 }  // namespace mu2e
@@ -52,6 +54,7 @@ mu2e::DTCEventVerifier::DTCEventVerifier(const art::EDFilter::Table<Config>& con
   : art::EDFilter{config}, 
     diagLevel_(config().diagLevel()),
     nDTCs_(config().nDTCs()),
+    skipCheck_(config().skipCheck()),
     isFirstEvent_(true)    
 {
   produces<mu2e::EventHeader>();
@@ -342,7 +345,7 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
   //change the state of isFirstEvent_
   if (isFirstEvent_) { isFirstEvent_ = false;}
   event.put(std::move(evtHeader));
-  return condition;
+  return (condition || skipCheck_);
 }
 
 
