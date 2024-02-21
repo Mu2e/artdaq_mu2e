@@ -18,6 +18,8 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
+        , throttle_usecs_(ps.get<size_t>("throttle_usecs", 1000000))// in units of us
+        , diagLevel_(ps.get<int>("diagLevel", 0))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,

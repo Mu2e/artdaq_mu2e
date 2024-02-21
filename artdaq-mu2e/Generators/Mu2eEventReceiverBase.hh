@@ -81,6 +81,10 @@ protected:
 	std::unique_ptr<DTCLib::DTC> theInterface_;
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
+        std::size_t const       throttle_usecs_;
+        std::condition_variable throttle_cv_;
+	std::mutex              throttle_mutex_;
+        int                     diagLevel_;
 };
 }  // namespace mu2e
 
