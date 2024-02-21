@@ -26,7 +26,7 @@ private:
 }  // namespace mu2e
 
 mu2e::Mu2eEventReceiver::Mu2eEventReceiver(fhicl::ParameterSet const& ps)
-	: Mu2eEventReceiverBase(ps)
+  : Mu2eEventReceiverBase(ps)
 {
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiver Initialized with mode " << mode_;
 }
@@ -42,6 +42,10 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
+	std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
+	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
+
+
 	if (should_stop())
 	{
 		return false;
@@ -52,7 +56,7 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	if (mode_ != 0)
 	{
-		TLOG(TLVL_INFO) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
+	        if (diagLevel_ >0) TLOG(TLVL_INFO) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
 
