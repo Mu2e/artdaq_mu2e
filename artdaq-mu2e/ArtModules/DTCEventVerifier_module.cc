@@ -200,6 +200,7 @@ bool mu2e::DTCEventVerifier::filter(art::Event& event)
 
 
 
+  event.put(std::move(evtHeader));
 
   return true;
 
