@@ -53,9 +53,6 @@ private:
 
 	void stop() override {}
 		
-	std::set<artdaq::Fragment::sequence_id_t> seen_sequence_ids_{};
-	size_t sequence_id_list_max_size_{1000};
-
 	// STM-specific stuff
 	bool fromInputFile_{false};
 	std::ifstream inputFileStream_;
