@@ -18,8 +18,9 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
-        , throttle_usecs_(ps.get<size_t>("throttle_usecs", 1000000))// in units of us
+        , request_rate_(ps.get<float>("request_rate", -1.))// Hz
         , diagLevel_(ps.get<int>("diagLevel", 0))
+        , frag_sent_(0)
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
@@ -31,7 +32,10 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 
 	mode_ = theInterface_->GetSimMode();
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiverBase Initialized with mode " << mode_;
-	
+
+	if(request_rate_ <= 0) request_rate_ = std::numeric_limits<double>::max();
+	sending_start_ = std::chrono::steady_clock::now();
+
 	//if in simulation mode, setup CFO
 	if (mode_ != 0)
 	{
@@ -111,7 +115,7 @@ void mu2e::Mu2eEventReceiverBase::start()
 	}
 }
 
-bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCLib::DTC_EventWindowTag ts_in)
+bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCLib::DTC_EventWindowTag ts_in, artdaq::Fragment::sequence_id_t seq_in)
 {
 	auto before_read = std::chrono::steady_clock::now();
 	int retryCount = 5;
@@ -138,6 +142,7 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 	auto after_read = std::chrono::steady_clock::now();
 
 	DTCLib::DTC_EventWindowTag ts_out = data[0]->GetEventWindowTag();
+	artdaq::Fragment::sequence_id_t seq_out = seq_in == 0 ? getCurrentSequenceID() : seq_in;
 	if (ts_out.GetEventWindowTag(true) != ts_in.GetEventWindowTag(true))
 	{
 		TLOG(TLVL_TRACE) << "Requested timestamp " << ts_in.GetEventWindowTag(true) << ", received data with timestamp " << ts_out.GetEventWindowTag(true);
@@ -198,14 +203,14 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 	if (data.size() == 1)
 	{
 		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
-		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		frags.emplace_back(new artdaq::Fragment(seq_out, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(data[0]->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), data[0]->GetRawBufferPointer(), data[0]->GetEventByteCount());
 	}
 	else
 	{
 		TLOG(TLVL_TRACE + 20) << "Creating ContainerFragment, sz=" << data.size();
-		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0]));
+		frags.emplace_back(new artdaq::Fragment(seq_out, fragment_ids_[0]));
 		frags.back()->setTimestamp(fragment_timestamp);
 		artdaq::ContainerFragmentLoader cfl(*frags.back());
 		cfl.set_missing_data(false);
@@ -213,7 +218,7 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 		for (auto& evt : data)
 		{
 			TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
-			artdaq::Fragment frag(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp);
+			artdaq::Fragment frag(seq_out, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp);
 			frag.resizeBytes(evt->GetEventByteCount());
 			memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 			cfl.addFragment(frag);

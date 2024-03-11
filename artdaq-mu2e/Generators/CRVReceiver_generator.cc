@@ -96,7 +96,7 @@ bool mu2e::CRVReceiver::getNext_(artdaq::FragmentPtrs& frags)
 			}
 		}
 		TLOG(TLVL_DEBUG) << "Requesting CRV data for Event Window Tag " << req.second;
-		auto ret = getNextDTCFragment(frags, DTCLib::DTC_EventWindowTag(req.second));
+		auto ret = getNextDTCFragment(frags, DTCLib::DTC_EventWindowTag(req.second), req.first);
 		if (!ret) return false;
 	}
 
