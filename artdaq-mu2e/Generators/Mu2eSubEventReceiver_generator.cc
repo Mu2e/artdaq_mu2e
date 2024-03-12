@@ -255,78 +255,76 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		TLOG(TLVL_TRACE) << "Requested timestamp " << ts_in.GetEventWindowTag(true) << ", received data with timestamp " << ts_out.GetEventWindowTag(true);
 	}
 
-	size_t size_bytes = sizeof(DTCLib::DTC_EventHeader);
+	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
 	for (auto& subevt : data)
 	{
+		size_t size_bytes = sizeof(DTCLib::DTC_EventHeader);
 		size_bytes += subevt->GetSubEventByteCount();
-	}
 
-	auto evt = std::make_unique<DTCLib::DTC_Event>(size_bytes);
+		auto evt = std::make_unique<DTCLib::DTC_Event>(size_bytes);
 
-	auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer()) + sizeof(DTCLib::DTC_EventHeader);
-	for (auto& subevt : data)
-	{
+		auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer()) + sizeof(DTCLib::DTC_EventHeader);
+
 		memcpy(const_cast<uint8_t*>(ptr), subevt->GetRawBufferPointer(), subevt->GetSubEventByteCount());
 		ptr += subevt->GetSubEventByteCount();
-	}
-	evt->SetupEvent();
-	evt->SetEventWindowTag(ts_out);
+		evt->SetupEvent();
+		evt->SetEventWindowTag(ts_out);
 
-	if (print_packets_)
-	{
-		for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
+		if (print_packets_)
 		{
-			auto subevt = evt->GetSubEvent(se);
-			for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
+			for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
 			{
-				auto block = subevt->GetDataBlock(bl);
-				auto first = block->GetHeader();
-				TLOG(TLVL_INFO) << first->toJSON();
-				for (int ii = 0; ii < first->GetPacketCount(); ++ii)
+				auto subevt = evt->GetSubEvent(se);
+				for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 				{
-					TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON()
-									<< std::endl;
+					auto block = subevt->GetDataBlock(bl);
+					auto first = block->GetHeader();
+					TLOG(TLVL_INFO) << first->toJSON();
+					for (int ii = 0; ii < first->GetPacketCount(); ++ii)
+					{
+						TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON()
+										<< std::endl;
+					}
 				}
 			}
 		}
-	}
-	if (rawOutput_)
-	{
-		evt->WriteEvent(rawOutputStream_, false);
-	}
+		if (rawOutput_)
+		{
+			evt->WriteEvent(rawOutputStream_, false);
+		}
 
-	// auto after_print = std::chrono::steady_clock::now();
+		// auto after_print = std::chrono::steady_clock::now();
 
-	auto fragment_timestamp = ts_out.GetEventWindowTag(true);
+		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
 
-	if (first_timestamp_seen_ == 0)
-	{
-		first_timestamp_seen_ = fragment_timestamp;
+		if (first_timestamp_seen_ == 0)
+		{
+			first_timestamp_seen_ = fragment_timestamp;
+		}
+
+		if (fragment_timestamp < highest_timestamp_seen_)
+		{
+			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+		}
+		else if (fragment_timestamp > highest_timestamp_seen_)
+		{
+			highest_timestamp_seen_ = fragment_timestamp;
+		}
+		else
+		{
+			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+			timestamp_loops_++;
+		}
+
+		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount();
+		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		frags.back()->resizeBytes(evt->GetEventByteCount());
+		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
+
+		TLOG(TLVL_TRACE + 20) << "Incrementing event counter";
+		ev_counter_inc();
 	}
-
-	if (fragment_timestamp < highest_timestamp_seen_)
-	{
-		fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-	}
-	else if (fragment_timestamp > highest_timestamp_seen_)
-	{
-		highest_timestamp_seen_ = fragment_timestamp;
-	}
-	else
-	{
-		fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-		timestamp_loops_++;
-	}
-
-	TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount();
-	frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
-	frags.back()->resizeBytes(evt->GetEventByteCount());
-	memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
-
 	auto after_copy = std::chrono::steady_clock::now();
-	TLOG(TLVL_TRACE + 20) << "Incrementing event counter";
-	ev_counter_inc();
-
 	TLOG(TLVL_TRACE + 20) << "Reporting Metrics";
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
