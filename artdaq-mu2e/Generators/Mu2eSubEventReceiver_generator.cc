@@ -267,6 +267,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	for (auto& subevt : data)
 	{
 		memcpy(const_cast<uint8_t*>(ptr), subevt->GetRawBufferPointer(), subevt->GetSubEventByteCount());
+		ptr += subevt->GetSubEventByteCount();
 	}
 	evt->SetupEvent();
 	evt->SetEventWindowTag(ts_out);
