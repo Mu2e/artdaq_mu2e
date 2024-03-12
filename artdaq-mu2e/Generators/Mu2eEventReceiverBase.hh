@@ -39,7 +39,7 @@ public:
 	DTCLib::DTC_SimMode GetMode() { return mode_; }
 
 protected:
-	bool getNextDTCFragment(artdaq::FragmentPtrs& output, DTCLib::DTC_EventWindowTag ts);
+  bool getNextDTCFragment(artdaq::FragmentPtrs& output, DTCLib::DTC_EventWindowTag ts, artdaq::Fragment::sequence_id_t seq_in = 0);
 
 	void start() override;
 
@@ -81,10 +81,13 @@ protected:
 	std::unique_ptr<DTCLib::DTC> theInterface_;
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
-        std::size_t const       throttle_usecs_;
+        float                   request_rate_;
         std::condition_variable throttle_cv_;
 	std::mutex              throttle_mutex_;
         int                     diagLevel_;
+        int                     frag_sent_;
+        std::chrono::time_point<std::chrono::steady_clock> sending_start_;
+
 };
 }  // namespace mu2e
 

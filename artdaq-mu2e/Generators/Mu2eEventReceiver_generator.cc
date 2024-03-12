@@ -43,8 +43,23 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	}
 
 	std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
-	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
+	auto throttle_usecs = 1000000 / request_rate_;
+	TLOG(TLVL_INFO) << "[mu2e::Mu2eEventReceiver::getNext_] request_rate= " << request_rate_
+			<< " wait_time= " << throttle_usecs;
+	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(static_cast<int>( throttle_usecs)), [&]() { return should_stop(); });
 
+	// if (frag_sent_ == 0) 
+        // {
+	//         sending_start_ = std::chrono::steady_clock::now();
+	// }
+
+	// auto target = sending_start_ + std::chrono::microseconds(static_cast<int>((frag_sent_+1) * 1000000 / request_rate_));
+	// auto now    = std::chrono::steady_clock::now();
+	// if ((now < target))
+	// {
+	//         std::this_thread::sleep_until(target);
+	// }
+	
 
 	if (should_stop())
 	{
@@ -56,10 +71,11 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	if (mode_ != 0)
 	{
-	        if (diagLevel_ >0) TLOG(TLVL_INFO) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
+	        TLOG_DEBUG(2) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
 
+	++frag_sent_;
 	return getNextDTCFragment(frags, zero);
 }
 
