@@ -260,14 +260,22 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	{
 		size_t size_bytes = sizeof(DTCLib::DTC_EventHeader);
 		size_bytes += subevt->GetSubEventByteCount();
+		TLOG(TLVL_TRACE + 20) << "Size of event will be " << static_cast<int>(size_bytes) << "B";
 
 		auto evt = std::make_unique<DTCLib::DTC_Event>(size_bytes);
-
+		
+		DTCLib::DTC_EventHeader evtHdr;
+		evtHdr.inclusive_event_byte_count = size_bytes;
+		evtHdr.num_dtcs = 1;
+		memcpy(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer())), &evtHdr, sizeof(DTCLib::DTC_EventHeader));
 		auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer()) + sizeof(DTCLib::DTC_EventHeader);
 
+		TLOG(TLVL_TRACE + 20) << "Calling memcpy(" << (const void*)ptr << ", " << (void*)subevt->GetRawBufferPointer() << ", " << subevt->GetSubEventByteCount() << ")";
 		memcpy(const_cast<uint8_t*>(ptr), subevt->GetRawBufferPointer(), subevt->GetSubEventByteCount());
 		ptr += subevt->GetSubEventByteCount();
+		TLOG(TLVL_TRACE + 20) << "Calling SetupEvent";
 		evt->SetupEvent();
+		TLOG(TLVL_TRACE + 20) << "Setting EventWindowTag to " << ts_out.GetEventWindowTag(true);
 		evt->SetEventWindowTag(ts_out);
 
 		if (print_packets_)
@@ -316,7 +324,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 			timestamp_loops_++;
 		}
 
-		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount();
+		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
 		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
