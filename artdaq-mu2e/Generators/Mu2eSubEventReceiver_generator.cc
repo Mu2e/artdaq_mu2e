@@ -51,7 +51,7 @@ private:
 	size_t highest_timestamp_seen_{0};
 	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
 	DTCLib::DTC_SimMode mode_;
-	bool simFileRead_;
+  bool simFileRead_{true};
 	const bool skip_dtc_init_;
 	bool rawOutput_{false};
 	std::string rawOutputFile_{""};
@@ -90,8 +90,10 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
-	std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
-	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
+	if(throttle_usecs_ > 0) {
+	  std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
+	  throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
+	}
 
 	if (should_stop())
 	{
@@ -131,7 +133,7 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
-	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 1000000))  // in units of us
+	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
 	, diagLevel_(ps.get<int>("diagLevel", 0))
 {
 	// mode_ can still be overridden by environment!
@@ -186,7 +188,6 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	{
 		theInterface_->ClearDetectorEmulatorInUse();  // Needed if we're doing ROC Emulator...make sure Detector Emulation
 													  // is disabled
-		simFileRead_ = true;
 	}
 }
 
