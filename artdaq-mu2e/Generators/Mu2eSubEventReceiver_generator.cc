@@ -268,6 +268,8 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		DTCLib::DTC_EventHeader evtHdr;
 		evtHdr.inclusive_event_byte_count = size_bytes;
 		evtHdr.num_dtcs = 1;
+                evtHdr.event_tag_low  = ts_out.GetEventWindowTag(true) & 0xFFFFFFFF;
+                evtHdr.event_tag_high = (ts_out.GetEventWindowTag(true) >> 32) & 0xFFFF;
 		memcpy(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer())), &evtHdr, sizeof(DTCLib::DTC_EventHeader));
 		auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer()) + sizeof(DTCLib::DTC_EventHeader);
 
@@ -279,11 +281,34 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		TLOG(TLVL_TRACE + 20) << "Setting EventWindowTag to " << ts_out.GetEventWindowTag(true);
 		evt->SetEventWindowTag(ts_out);
 
+		for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
+		  {
+		    auto subevt = evt->GetSubEvent(se);
+		    auto subevtheader =  subevt->GetHeader();
+		    metricMan->sendMetric("ROC link0 status", subevtheader->link0_status, "status", 3, artdaq::MetricMode::Accumulate);
+		    metricMan->sendMetric("ROC link1 status", subevtheader->link1_status, "status", 3, artdaq::MetricMode::Accumulate);
+		    metricMan->sendMetric("ROC link2 status", subevtheader->link2_status, "status", 3, artdaq::MetricMode::Accumulate);
+		    metricMan->sendMetric("ROC link3 status", subevtheader->link3_status, "status", 3, artdaq::MetricMode::Accumulate);
+		    metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Accumulate);
+		    metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Accumulate);
+
+		    for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
+		      {
+			auto block = subevt->GetDataBlock(bl);
+			auto first = block->GetHeader();
+			std::string  nn  = "Packages per ROC " + std::to_string(bl);
+			metricMan->sendMetric(nn,  first->GetPacketCount(), "Packages", 3, artdaq::MetricMode::Average);
+		      }
+		  }
+		
 		if (print_packets_)
 		{
+		        TLOG(TLVL_INFO) << "[print_packets starts] subEventCounts: "<<  evt->GetSubEventCount();
 			for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
 			{
 				auto subevt = evt->GetSubEvent(se);
+				auto subevtheader =  subevt->GetHeader();
+				TLOG(TLVL_INFO) << subevtheader->toJson();
 				for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 				{
 					auto block = subevt->GetDataBlock(bl);
@@ -291,8 +316,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 					TLOG(TLVL_INFO) << first->toJSON();
 					for (int ii = 0; ii < first->GetPacketCount(); ++ii)
 					{
-						TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON()
-										<< std::endl;
+					  TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON();
 					}
 				}
 			}
@@ -329,7 +353,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
-
+		metricMan->sendMetric("Average Event Size",  evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
 		TLOG(TLVL_TRACE + 20) << "Incrementing event counter";
 		ev_counter_inc();
 	}
