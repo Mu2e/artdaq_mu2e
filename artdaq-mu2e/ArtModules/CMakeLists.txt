@@ -9,6 +9,13 @@ cet_build_plugin(DTCEventVerifier art::module LIBRARIES REG
  artdaq::DAQdata
 )
 
+cet_build_plugin(CRVGR art::module LIBRARIES REG
+ artdaq_core_mu2e::artdaq-core-mu2e_Data_dict
+ artdaq_core_mu2e::artdaq-core-mu2e_Overlays
+ artdaq_core_mu2e::artdaq-core-mu2e_Data
+ artdaq::DAQdata
+)
+
 
 cet_build_plugin(OfflineFragmentsDumper art::module LIBRARIES REG
  artdaq_core_mu2e::artdaq-core-mu2e_Overlays
