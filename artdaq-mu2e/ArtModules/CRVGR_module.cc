@@ -29,8 +29,8 @@ namespace mu2e {
   {
   public:
     struct Config {
-      fhicl::Atom<int>  diagLevel     {fhicl::Name("diagLevel")     , fhicl::Comment("diagnostic level"), 100};
-      fhicl::Atom<int>  metrics_level {fhicl::Name("metricsLevel" ) , fhicl::Comment("Metrics reporting level"), 1};
+      fhicl::Atom<int>  diagLevel     {fhicl::Name("diagLevel")     , fhicl::Comment("diagnostic level"), 0};
+      fhicl::Atom<int>  metrics_level {fhicl::Name("metricsLevel" ) , fhicl::Comment("Metrics reporting level"), 3};
     };
 
     explicit CRVGR(const art::EDFilter::Table<Config>& config);
@@ -43,14 +43,15 @@ namespace mu2e {
     std::set<int> dtcs_;
     int           diagLevel_;
     int           metrics_reporting_level_;
-    bool          isFirstEvent_; // not used
-    int           nDTCs_; // not used
+    int           nGrEvents_;
   };
 }  // namespace mu2e
 
 mu2e::CRVGR::CRVGR(const art::EDFilter::Table<Config>& config)
-  : art::EDFilter{config}, 
-    isFirstEvent_(true)    
+  : art::EDFilter{config}
+  , diagLevel_(config().diagLevel())
+  , metrics_reporting_level_(config().metrics_level())
+  , nGrEvents_(0)   
 {
   //produces<mu2e::EventHeader>();
 }
@@ -102,7 +103,7 @@ bool mu2e::CRVGR::filter(art::Event& event)
 	}
     }
 
-  if (diagLevel_ > 0)
+  if (diagLevel_ > 1)
     {
       std::cout << "[CRVGR::filter] Found nFragments  "
 		<< fragments.size() << std::endl;
@@ -113,70 +114,78 @@ bool mu2e::CRVGR::filter(art::Event& event)
 			    metrics_reporting_level_, artdaq::MetricMode::LastPoint);
     }
 
-  //evtHeader->initErrorChecks();
-
   for (const auto& frag : fragments) {
       mu2e::DTCEventFragment bb(frag);
       auto data = bb.getData();
       auto event = &data;
-      if (diagLevel_ > 0) 
+      if (diagLevel_ > 1) 
           std::cout << "Event tag:\t" << "0x" << std::hex << std::setw(4) << std::setfill('0') << event->GetEventWindowTag().GetEventWindowTag(true) << std::endl;
       // get the event and the relative sub events
       DTCLib::DTC_EventHeader* eventHeader = event->GetHeader();
-      std::vector<DTCLib::DTC_SubEvent> subevents = event->GetSubEvents(); // In future, use GetSubsystemData to only get CRV subevents
-      if (diagLevel_ > 0) {
+      if (diagLevel_ > 1) {
 	        std::cout << eventHeader->toJson() << std::endl
 	        << "Subevents count: " << event->GetSubEventCount() << std::endl;
       }
 
-      for (unsigned int i = 0; i < subevents.size(); ++i) {
-          DTCLib::DTC_SubEvent subevent = subevents[i];
-          if (diagLevel_ > 0) {
+      for (unsigned int i = 0; i < event->GetSubEventCount(); ++i) { // In future, use GetSubsystemData to only get CRV subevents
+          DTCLib::DTC_SubEvent& subevent = *(event->GetSubEvent(i));
+          if (diagLevel_ > 1) {
 	            std::cout << "Subevent [" << i << "]:" << std::endl;
 	            std::cout << subevent.GetHeader()->toJson() << std::endl;
 	        }
-          std::vector<DTCLib::DTC_DataBlock> dataBlocks = subevent.GetDataBlocks();
-          if (diagLevel_ > 0) {
-              std::cout << "Number of Data Block: " << subevent.GetDataBlockCount() << " (" 
-                        << dataBlocks.size() << ")" << std::endl;
+          if (diagLevel_ > 1) {
+              std::cout << "Number of Data Block: " << subevent.GetDataBlockCount() << std::endl;
           }
-	        for (unsigned int j = 0; j < dataBlocks.size(); ++j) {
-	             // print the data block header
-	             DTCLib::DTC_DataHeaderPacket* dataHeader = dataBlocks[j].GetHeader().get();
-	             if (diagLevel_ > 0) {
-                   std::cout << "Data block [" << j << "]:" << std::endl;
-                   std::cout << dataHeader->toJSON();
-               } 
+          for (size_t bl = 0; bl < subevent.GetDataBlockCount(); ++bl) {
+              auto block = subevent.GetDataBlock(bl);
+              auto blockheader = block->GetHeader();
+              if (diagLevel_ > 1) {
+                  std::cout << blockheader->toJSON() << std::endl;
+                  for (int ii = 0; ii < blockheader->GetPacketCount(); ++ii) {
+                      std::cout << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON() << std::endl;
+                  }
+              }
+              // check if we want to decode this data block
+              if(blockheader->isValid() &&
+                 blockheader->GetSubsystem() == 0 && // 0x2 for CRV in future DTC_Subsystem::DTC_Subsystem_CRV
+                 blockheader->GetVersion() == 0 // in future 0xFF for GR1 packages
+              ) {
+                  ++nGrEvents_;
+                  auto crvData = CRVGRDataDecoder(subevent); 
+                  const mu2e::CRVGRDataDecoder::CRVGRRawPacket& crvRaw = crvData.GetCRVGRRawPacket(bl);
+                  if (diagLevel_ > 0) {
+                      std::cout << crvRaw;
+                  }
+                  auto CRVGRStatus = crvData.GetCRVGRStatusPacket(bl);
+                  if (diagLevel_ > 0) {
+                      std::cout << CRVGRStatus;
+                  }
 
-               // print the data block payload
-	             const void* dataPtr = dataBlocks[j].GetData();
-	             if (diagLevel_ > 0)  std::cout << "Data payload:" << std::endl;
-	             for (int l = 0; l < dataHeader->GetByteCount(); l += 2) {
-		                auto thisWord = reinterpret_cast<const uint16_t*>(dataPtr)[l];
-		                 if (diagLevel_ > 0)  std::cout << "\t0x" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(thisWord) << std::endl;
-		           }
-
-
-               // check if we want to decode
-               if(dataHeader->isValid() &&
-                  dataHeader->GetSubsystem() == 0 && // 0x2 for CRV in future DTC_Subsystem::DTC_Subsystem_CRV
-                  dataHeader->GetVersion() == 0 // in future 0xFF for GR1 packages
-               ) {
-                  auto crvData = CRVGRDataDecoder(subevent); // not sure this can work because we have now multiple data ?
-                  //std::cout << "DEBUG" << std::endl;
-                  //std::cout << "DEBUG" << std::endl;
-                  //mu2e::CRVGRDataDecoder::CRVGRStatusPacket& crvHeader = *crvData.GetCRVGRStatusPacket(j);
-                  //std::cout << crvHeader;
-                  mu2e::CRVGRDataDecoder::CRVGRRawPacket& crvRaw = *crvData.GetCRVGRRawPacket(j);
-                  std::cout << crvRaw;
-                  mu2e::CRVGRDataDecoder::CRVGRStatusPacket& crvHeader = *crvData.GetCRVGRStatusPacket(j);
-                  std::cout << crvHeader;
-                  
-               }
-               //const void* dataPtr = dataBlocks[j].GetData(); // gets the payload
-               //if (diagLevel_ > 0) {
-               //    std::cout << "Data byte count " << j << "]:" << std::endl;
-               //}
+                  if (metricMan != nullptr) {
+                      metricMan->sendMetric("gr.pllLock", 1-CRVGRStatus.PLLlock, "unlocked",
+			                                      metrics_reporting_level_, artdaq::MetricMode::Accumulate|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.LossCnt", CRVGRStatus.LossCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.CRCErrorCnt", CRVGRStatus.CRCErrorCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.ewt", (int)CRVGRStatus.GetEventWindowTag(), " ",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.BeamOn", CRVGRStatus.BeamOn, "on",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.lastWindow", CRVGRStatus.lastWindow, "cnts",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.InjectionTs", CRVGRStatus.InjectionTs, "cnts",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.CRCErrorCnt", CRVGRStatus.CRCErrorCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.MarkerCnt", CRVGRStatus.MarkerDelayCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.HeartBeatCnt", CRVGRStatus.HeartBeatCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("gr.n", nGrEvents_, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                  }
+              }
           }
       }
   }

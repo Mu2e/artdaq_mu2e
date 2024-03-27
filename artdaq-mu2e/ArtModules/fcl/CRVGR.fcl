@@ -1,0 +1,52 @@
+
+process_name : CRVGR1Test
+
+source : {
+   module_type : RootInput
+   fileNames   : @nil
+
+   # firstEvent  : 500
+   maxEvents   : -1
+#   inputCommands: ["keep *",
+#                   "drop *Mu2eEventHeader*_*_*_*"]
+}
+
+physics : {
+
+   producers : {
+   }
+
+   filters : {
+      CRVGRmetrics : {
+          module_type :CRVGR
+      }
+    }
+
+   analyzers  : {
+   }
+
+   t1 : [ CRVGRmetrics ] 
+   e1 : [ ]
+
+   #trigger_paths  : [t1]
+   end_paths       : [e1]
+
+}
+
+outputs:  {
+   outfile :  {
+      module_type   :   RootOutput
+      fileName      :   "digis_from_dtcevts_debug.art"
+
+      outputCommands: [
+         "drop *_*_*_*",
+         "keep *_*_*_*"
+      ]
+   }
+    dump: { module_type: FileDumperOutput
+wantProductFriendlyClassName: true
+	onlyIfPresent: true }
+}
+
+services.TFileService.fileName : "generateDigiFromDTCEvts_test.root"
+services.scheduler.wantSummary: true
