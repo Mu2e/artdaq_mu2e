@@ -285,12 +285,12 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		  {
 		    auto subevt = evt->GetSubEvent(se);
 		    auto subevtheader =  subevt->GetHeader();
-		    metricMan->sendMetric("ROC link0 status", subevtheader->link0_status, "status", 3, artdaq::MetricMode::Accumulate);
-		    metricMan->sendMetric("ROC link1 status", subevtheader->link1_status, "status", 3, artdaq::MetricMode::Accumulate);
-		    metricMan->sendMetric("ROC link2 status", subevtheader->link2_status, "status", 3, artdaq::MetricMode::Accumulate);
-		    metricMan->sendMetric("ROC link3 status", subevtheader->link3_status, "status", 3, artdaq::MetricMode::Accumulate);
-		    metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Accumulate);
-		    metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Accumulate);
+		    metricMan->sendMetric("ROC link0 status", subevtheader->link0_status, "status", 3, artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link1 status", subevtheader->link1_status, "status", 3, artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link2 status", subevtheader->link2_status, "status", 3, artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link3 status", subevtheader->link3_status, "status", 3, artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Maximum);
 
 		    for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 		      {
@@ -298,6 +298,8 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 			auto first = block->GetHeader();
 			std::string  nn  = "Packages per ROC " + std::to_string(bl);
 			metricMan->sendMetric(nn,  first->GetPacketCount(), "Packages", 3, artdaq::MetricMode::Average);
+			std::string  rocLink = "ROC "+std::to_string(first->GetLinkID())+" status";
+			metricMan->sendMetric(rocLink, first->GetStatus(), "status", 3, artdaq::MetricMode::Maximum);			
 		      }
 		  }
 		
