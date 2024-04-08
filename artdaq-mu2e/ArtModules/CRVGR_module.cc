@@ -105,8 +105,8 @@ bool mu2e::CRVGR::filter(art::Event& event)
 
   if (diagLevel_ > 1)
     {
-      std::cout << "[CRVGR::filter] Found nFragments  "
-		<< fragments.size() << std::endl;
+      TLOG(TLVL_INFO) << "[CRVGR::filter] Found nFragments  "
+		  << fragments.size();
     }
   if (metricMan != nullptr)
     {
@@ -119,46 +119,54 @@ bool mu2e::CRVGR::filter(art::Event& event)
       auto data = bb.getData();
       auto event = &data;
       if (diagLevel_ > 1) 
-          std::cout << "Event tag:\t" << "0x" << std::hex << std::setw(4) << std::setfill('0') << event->GetEventWindowTag().GetEventWindowTag(true) << std::endl;
+          TLOG(TLVL_INFO) << "Event tag:\t" << "0x" << std::hex << std::setw(4) << std::setfill('0') << event->GetEventWindowTag().GetEventWindowTag(true);
       // get the event and the relative sub events
       DTCLib::DTC_EventHeader* eventHeader = event->GetHeader();
       if (diagLevel_ > 1) {
-	        std::cout << eventHeader->toJson() << std::endl
+	        TLOG(TLVL_INFO) << eventHeader->toJson() << std::endl
 	        << "Subevents count: " << event->GetSubEventCount() << std::endl;
       }
 
       for (unsigned int i = 0; i < event->GetSubEventCount(); ++i) { // In future, use GetSubsystemData to only get CRV subevents
           DTCLib::DTC_SubEvent& subevent = *(event->GetSubEvent(i));
           if (diagLevel_ > 1) {
-	            std::cout << "Subevent [" << i << "]:" << std::endl;
-	            std::cout << subevent.GetHeader()->toJson() << std::endl;
+	            TLOG(TLVL_INFO) << "Subevent [" << i << "]:" << std::endl;
+	            TLOG(TLVL_INFO) << subevent.GetHeader()->toJson() << std::endl;
 	        }
           if (diagLevel_ > 1) {
-              std::cout << "Number of Data Block: " << subevent.GetDataBlockCount() << std::endl;
+              TLOG(TLVL_INFO) << "Number of Data Block: " << subevent.GetDataBlockCount() << std::endl;
           }
           for (size_t bl = 0; bl < subevent.GetDataBlockCount(); ++bl) {
               auto block = subevent.GetDataBlock(bl);
               auto blockheader = block->GetHeader();
               if (diagLevel_ > 1) {
-                  std::cout << blockheader->toJSON() << std::endl;
+                  TLOG(TLVL_INFO) << blockheader->toJSON() << std::endl;
                   for (int ii = 0; ii < blockheader->GetPacketCount(); ++ii) {
-                      std::cout << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON() << std::endl;
+                      TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON() << std::endl;
                   }
               }
               // check if we want to decode this data block
               if(blockheader->isValid() &&
-                 blockheader->GetSubsystem() == 0 && // 0x2 for CRV in future DTC_Subsystem::DTC_Subsystem_CRV
-                 blockheader->GetVersion() == 0 // in future 0xFF for GR1 packages
+                 blockheader->GetSubsystem() == 0x2 && // 0x2 for CRV in future DTC_Subsystem::DTC_Subsystem_CRV
+                 blockheader->GetVersion() == 0xff // in future 0xFF for GR1 packages
               ) {
+                  if (metricMan != nullptr) {
+                  metricMan->sendMetric("gr.subsystem", blockheader->GetSubsystem(), "subsystem",
+			                                  metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+                  metricMan->sendMetric("gr.version", blockheader->GetVersion(), "version",
+			                                  metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+                  metricMan->sendMetric("gr.valid", blockheader->isValid(), "subsystem",
+			                                  metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+                  }
                   ++nGrEvents_;
                   auto crvData = CRVGRDataDecoder(subevent); 
                   const mu2e::CRVGRDataDecoder::CRVGRRawPacket& crvRaw = crvData.GetCRVGRRawPacket(bl);
                   if (diagLevel_ > 0) {
-                      std::cout << crvRaw;
+                      TLOG(TLVL_INFO) << crvRaw;
                   }
                   auto CRVGRStatus = crvData.GetCRVGRStatusPacket(bl);
                   if (diagLevel_ > 0) {
-                      std::cout << CRVGRStatus;
+                      TLOG(TLVL_INFO) << CRVGRStatus;
                   }
 
                   if (metricMan != nullptr) {
