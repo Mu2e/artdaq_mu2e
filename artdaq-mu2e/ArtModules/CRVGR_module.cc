@@ -16,6 +16,7 @@
 
 #include "artdaq-core-mu2e/Data/EventHeader.hh"
 #include "artdaq-core-mu2e/Data/CRVGRDataDecoder.hh"
+#include "artdaq-core-mu2e/Data/CRVDataDecoder.hh"
 #include "artdaq-core-mu2e/Overlays/DTCEventFragment.hh"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 
@@ -44,6 +45,7 @@ namespace mu2e {
     int           diagLevel_;
     int           metrics_reporting_level_;
     int           nGrEvents_;
+    int           nEvents_;
   };
 }  // namespace mu2e
 
@@ -52,6 +54,7 @@ mu2e::CRVGR::CRVGR(const art::EDFilter::Table<Config>& config)
   , diagLevel_(config().diagLevel())
   , metrics_reporting_level_(config().metrics_level())
   , nGrEvents_(0)   
+  , nEvents_(0) 
 {
   //produces<mu2e::EventHeader>();
 }
@@ -146,9 +149,9 @@ bool mu2e::CRVGR::filter(art::Event& event)
                   }
               }
               // check if we want to decode this data block
-              if(blockheader->isValid() &&
-                 blockheader->GetSubsystem() == 0x2 && // 0x2 for CRV in future DTC_Subsystem::DTC_Subsystem_CRV
-                 blockheader->GetVersion() == 0xff // in future 0xFF for GR1 packages
+              if(blockheader->isValid()
+                 && blockheader->GetSubsystem() == 0x2 // 0x2 for CRV: DTC_Subsystem::DTC_Subsystem_CRV
+                 //&& blockheader->GetVersion() == 0xff // 0xFF for GR1 packages
               ) {
                   if (metricMan != nullptr) {
                   metricMan->sendMetric("gr.subsystem", blockheader->GetSubsystem(), "subsystem",
@@ -158,40 +161,67 @@ bool mu2e::CRVGR::filter(art::Event& event)
                   metricMan->sendMetric("gr.valid", blockheader->isValid(), "subsystem",
 			                                  metrics_reporting_level_, artdaq::MetricMode::LastPoint);
                   }
-                  ++nGrEvents_;
-                  auto crvData = CRVGRDataDecoder(subevent); 
-                  const mu2e::CRVGRDataDecoder::CRVGRRawPacket& crvRaw = crvData.GetCRVGRRawPacket(bl);
-                  if (diagLevel_ > 0) {
-                      TLOG(TLVL_INFO) << crvRaw;
-                  }
-                  auto CRVGRStatus = crvData.GetCRVGRStatusPacket(bl);
-                  if (diagLevel_ > 0) {
-                      TLOG(TLVL_INFO) << CRVGRStatus;
+
+                  if( blockheader->GetVersion() == 0xff ) { // 0xFF for GR1 packages
+                      ++nGrEvents_;
+                      auto crvData = CRVGRDataDecoder(subevent); 
+                      const mu2e::CRVGRDataDecoder::CRVGRRawPacket& crvRaw = crvData.GetCRVGRRawPacket(bl);
+                      if (diagLevel_ > 0) {
+                          TLOG(TLVL_INFO) << crvRaw;
+                      }
+                      auto CRVGRStatus = crvData.GetCRVGRStatusPacket(bl);
+                      if (diagLevel_ > 0) {
+                          TLOG(TLVL_INFO) << CRVGRStatus;
+                      }
+
+                      if (metricMan != nullptr) {
+                          metricMan->sendMetric("gr.pllLock", 1-CRVGRStatus.PLLlock, "unlocked",
+			                                           metrics_reporting_level_, artdaq::MetricMode::Accumulate|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.LossCnt", CRVGRStatus.LossCnt, "cnt",
+			                                           metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.CRCErrorCnt", CRVGRStatus.CRCErrorCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.ewt", (int)CRVGRStatus.GetEventWindowTag(), " ",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.BeamOn", CRVGRStatus.BeamOn, "on",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.lastWindow", CRVGRStatus.lastWindow, "cnts",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.InjectionTs", CRVGRStatus.InjectionTs, "cnts",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.CRCErrorCnt", CRVGRStatus.CRCErrorCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.MarkerCnt", CRVGRStatus.MarkerDelayCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.HeartBeatCnt", CRVGRStatus.HeartBeatCnt, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                          metricMan->sendMetric("gr.n", nGrEvents_, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      }
                   }
 
-                  if (metricMan != nullptr) {
-                      metricMan->sendMetric("gr.pllLock", 1-CRVGRStatus.PLLlock, "unlocked",
-			                                      metrics_reporting_level_, artdaq::MetricMode::Accumulate|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.LossCnt", CRVGRStatus.LossCnt, "cnt",
+                  // wideband data taking mode
+                  else if(blockheader->GetVersion() == 0x0 ) { // mode 0x0
+                      ++nEvents_;
+                      auto crvData = CRVDataDecoder(subevent); 
+                      const auto crvStatus = crvData.GetCRVROCStatusPacket(bl);
+                      metricMan->sendMetric("status.n", nEvents_, "cnt",
 			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.CRCErrorCnt", CRVGRStatus.CRCErrorCnt, "cnt",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.ewt", (int)CRVGRStatus.GetEventWindowTag(), " ",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.BeamOn", CRVGRStatus.BeamOn, "on",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.lastWindow", CRVGRStatus.lastWindow, "cnts",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.InjectionTs", CRVGRStatus.InjectionTs, "cnts",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.CRCErrorCnt", CRVGRStatus.CRCErrorCnt, "cnt",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.MarkerCnt", CRVGRStatus.MarkerDelayCnt, "cnt",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.HeartBeatCnt", CRVGRStatus.HeartBeatCnt, "cnt",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
-                      metricMan->sendMetric("gr.n", nGrEvents_, "cnt",
-			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint|artdaq::MetricMode::Persist);
+                      metricMan->sendMetric("status.eventWordCount", crvStatus.ControllerEventWordCount, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+                      metricMan->sendMetric("status.triggerCount", crvStatus.TriggerCount, "cnt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+                      metricMan->sendMetric("status.status", crvStatus.MicroBunchStatus, "status",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+                      metricMan->sendMetric("status.ewt", static_cast<int>(crvStatus.GetEventWindowTag()), "ewt",
+			                                      metrics_reporting_level_, artdaq::MetricMode::LastPoint);
+                      // loop through channel?
+                      if (diagLevel_ > 0) {
+                          TLOG(TLVL_INFO) << crvStatus;
+                          for (auto& hit : crvData.GetCRVHits(bl)) {
+                               TLOG(TLVL_INFO) << hit;
+                          }
+                      }
                   }
               }
           }
