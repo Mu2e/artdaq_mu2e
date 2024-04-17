@@ -292,11 +292,19 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		    metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Maximum);
 		    metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Maximum);
 
+		    metricMan->sendMetric("ROC link0 latency", subevtheader->link0_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link1 latency", subevtheader->link1_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link2 latency", subevtheader->link2_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link3 latency", subevtheader->link3_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link4 latency", subevtheader->link4_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
+		    metricMan->sendMetric("ROC link5 latency", subevtheader->link5_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
+
+
 		    for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 		      {
 			auto block = subevt->GetDataBlock(bl);
 			auto first = block->GetHeader();
-			std::string  nn  = "Packages per ROC " + std::to_string(bl);
+			std::string  nn  = "Packets per ROC " + std::to_string(bl);
 			metricMan->sendMetric(nn,  first->GetPacketCount(), "Packages", 3, artdaq::MetricMode::Average);
 			std::string  rocLink = "ROC "+std::to_string(first->GetLinkID())+" status";
 			metricMan->sendMetric(rocLink, first->GetStatus(), "status", 3, artdaq::MetricMode::Maximum);			
