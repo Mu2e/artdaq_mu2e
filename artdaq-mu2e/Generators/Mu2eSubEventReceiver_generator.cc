@@ -2,7 +2,6 @@
 // It can be used as an exmaple for developing more specific functionality.
 
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
-#include "artdaq-core-mu2e/Overlays/DTC_Packets.h"
 #include "dtcInterfaceLib/DTC.h"
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
