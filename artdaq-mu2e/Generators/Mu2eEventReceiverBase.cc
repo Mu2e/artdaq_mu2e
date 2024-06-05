@@ -11,42 +11,53 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	: CommandableFragmentGenerator(ps)
 	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
 	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, skip_dtc_init_(ps.get<bool>("skip_dtc_init", false))
 	, rawOutput_(ps.get<bool>("raw_output_enable", false))
 	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
 	, print_packets_(ps.get<bool>("debug_print", false))
 	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
+        , request_rate_(ps.get<float>("request_rate", -1.))// Hz
+        , diagLevel_(ps.get<int>("diagLevel", 0))
+        , frag_sent_(0)
 {
 	// mode_ can still be overridden by environment!
-	theInterface_ = new DTCLib::DTC(mode_,
+	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
 									ps.get<int>("dtc_id", -1),
 									ps.get<unsigned>("roc_mask", 0x1),
 									ps.get<std::string>("dtc_fw_version", ""),
-									ps.get<bool>("skip_dtc_init", false),
+									skip_dtc_init_,
 									ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
 
-	fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
-	theCFO_ = new DTCLib::DTCSoftwareCFO(theInterface_,
-										 cfoConfig.get<bool>("use_dtc_cfo_emulator", true),
-										 cfoConfig.get<size_t>("debug_packet_count", 0),
-										 DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")),
-										 cfoConfig.get<bool>("sticky_debug_type", false),
-										 cfoConfig.get<bool>("quiet", false),
-										 cfoConfig.get<bool>("asyncRR", false),
-										 cfoConfig.get<bool>("force_no_debug_mode", false),
-										 cfoConfig.get<bool>("useCFODRP", false));
-	mode_ = theInterface_->ReadSimMode();
-
+	mode_ = theInterface_->GetSimMode();
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiverBase Initialized with mode " << mode_;
 
-	TLOG(TLVL_INFO) << "The DTC Firmware version string is: " << theInterface_->ReadDesignVersion();
+	if(request_rate_ <= 0) request_rate_ = std::numeric_limits<double>::max();
+	sending_start_ = std::chrono::steady_clock::now();
+
+	//if in simulation mode, setup CFO
+	if (mode_ != 0)
+	{
+		fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
+		theCFO_ = std::make_unique<DTCLib::DTCSoftwareCFO>(theInterface_.get(),
+											cfoConfig.get<bool>("use_dtc_cfo_emulator", true),
+											cfoConfig.get<size_t>("debug_packet_count", 0),
+											DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")),
+											cfoConfig.get<bool>("sticky_debug_type", false),
+											cfoConfig.get<bool>("quiet", false),
+											cfoConfig.get<bool>("asyncRR", false),
+											cfoConfig.get<bool>("force_no_debug_mode", false),
+											cfoConfig.get<bool>("useCFODRP", false));
+	}
+	
+	if(skip_dtc_init_) return; //skip any control of DTC 
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
 		theInterface_->SetDetectorEmulatorInUse();
 		theInterface_->ResetDDR();
-		theInterface_->ResetDTC();
+		theInterface_->SoftReset();
 
 		char* file_c = getenv("DTCLIB_SIM_FILE");
 
@@ -69,6 +80,7 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 		simFileRead_ = true;
 	}
 }
+mu2e::Mu2eEventReceiverBase::~Mu2eEventReceiverBase() {}
 
 void mu2e::Mu2eEventReceiverBase::readSimFile_(std::string sim_file)
 {
@@ -79,15 +91,12 @@ void mu2e::Mu2eEventReceiverBase::readSimFile_(std::string sim_file)
 	TLOG(TLVL_INFO) << "Done reading simulation file into DTC memory.";
 }
 
-mu2e::Mu2eEventReceiverBase::~Mu2eEventReceiverBase()
-{
-	delete theInterface_;
-	delete theCFO_;
-}
-
 void mu2e::Mu2eEventReceiverBase::stop()
 {
 	rawOutputStream_.close();
+	
+	if(skip_dtc_init_) return; //skip any control of DTC
+
 	theInterface_->DisableDetectorEmulator();
 	theInterface_->DisableCFOEmulation();
 }
@@ -106,7 +115,7 @@ void mu2e::Mu2eEventReceiverBase::start()
 	}
 }
 
-bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCLib::DTC_EventWindowTag ts_in)
+bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCLib::DTC_EventWindowTag ts_in, artdaq::Fragment::sequence_id_t seq_in)
 {
 	auto before_read = std::chrono::steady_clock::now();
 	int retryCount = 5;
@@ -133,6 +142,7 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 	auto after_read = std::chrono::steady_clock::now();
 
 	DTCLib::DTC_EventWindowTag ts_out = data[0]->GetEventWindowTag();
+	artdaq::Fragment::sequence_id_t seq_out = seq_in == 0 ? getCurrentSequenceID() : seq_in;
 	if (ts_out.GetEventWindowTag(true) != ts_in.GetEventWindowTag(true))
 	{
 		TLOG(TLVL_TRACE) << "Requested timestamp " << ts_in.GetEventWindowTag(true) << ", received data with timestamp " << ts_out.GetEventWindowTag(true);
@@ -193,14 +203,14 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 	if (data.size() == 1)
 	{
 		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
-		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		frags.emplace_back(new artdaq::Fragment(seq_out, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(data[0]->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), data[0]->GetRawBufferPointer(), data[0]->GetEventByteCount());
 	}
 	else
 	{
 		TLOG(TLVL_TRACE + 20) << "Creating ContainerFragment, sz=" << data.size();
-		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0]));
+		frags.emplace_back(new artdaq::Fragment(seq_out, fragment_ids_[0]));
 		frags.back()->setTimestamp(fragment_timestamp);
 		artdaq::ContainerFragmentLoader cfl(*frags.back());
 		cfl.set_missing_data(false);
@@ -208,7 +218,7 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 		for (auto& evt : data)
 		{
 			TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
-			artdaq::Fragment frag(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp);
+			artdaq::Fragment frag(seq_out, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp);
 			frag.resizeBytes(evt->GetEventByteCount());
 			memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 			cfl.addFragment(frag);

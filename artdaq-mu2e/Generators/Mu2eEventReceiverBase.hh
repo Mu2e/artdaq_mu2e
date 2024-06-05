@@ -39,7 +39,7 @@ public:
 	DTCLib::DTC_SimMode GetMode() { return mode_; }
 
 protected:
-	bool getNextDTCFragment(artdaq::FragmentPtrs& output, DTCLib::DTC_EventWindowTag ts);
+  bool getNextDTCFragment(artdaq::FragmentPtrs& output, DTCLib::DTC_EventWindowTag ts, artdaq::Fragment::sequence_id_t seq_in = 0);
 
 	void start() override;
 
@@ -67,6 +67,7 @@ protected:
 	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
 	DTCLib::DTC_SimMode mode_;
 	bool simFileRead_;
+	const bool skip_dtc_init_;
 	bool rawOutput_{false};
 	std::string rawOutputFile_{""};
 	std::ofstream rawOutputStream_;
@@ -77,10 +78,16 @@ protected:
 	size_t n_dtcs_{1};
 	size_t first_timestamp_seen_{0};
 
-	DTCLib::DTC* theInterface_;
-	DTCLib::DTCSoftwareCFO* theCFO_;
+	std::unique_ptr<DTCLib::DTC> theInterface_;
+	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
-	// For Debugging:
+        float                   request_rate_;
+        std::condition_variable throttle_cv_;
+	std::mutex              throttle_mutex_;
+        int                     diagLevel_;
+        int                     frag_sent_;
+        std::chrono::time_point<std::chrono::steady_clock> sending_start_;
+
 };
 }  // namespace mu2e
 
