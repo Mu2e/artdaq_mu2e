@@ -102,7 +102,7 @@ bool mu2e::STMUDPReceiver::getNext_(artdaq::FragmentPtrs &frags)//getNext_packet
     TLOG(TLVL_DEBUG) << "max_data_to_copy = " << retval*packet_len;
     while (n_data_copied < retval*packet_len) {
       // sneak a look at the event length
-      int event_len = *(rcv_buffer+n_data_copied+2);
+      int event_len = *(rcv_buffer+n_data_copied+STMFragment::tHdr.EvLen);
 
       TLOG(TLVL_DEBUG) << "event_len = " << event_len;
       int event_size = event_len*sizeof(int16_t);
