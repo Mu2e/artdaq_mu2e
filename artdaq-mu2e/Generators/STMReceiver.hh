@@ -22,10 +22,9 @@
 #include "artdaq-core/Data/Fragment.hh"
 #include "artdaq/Generators/CommandableFragmentGenerator.hh"
 #include "fhiclcpp/fwd.h"
-#include "artdaq-core-mu2e/Overlays/STMFragment.hh"
+#include "artdaq-core-mu2e/Overlays/STMFragmentOLD.hh"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 
-//#include "artdaq-mu2e/Generators/STMUtils/UDPsocket.hh"
 #include "STMDAQ-TestBeam/utils/UDPsocket.hh"
 
 #include <atomic>
@@ -45,8 +44,6 @@ public:
   
   // Receive counter
   int recvCount = 0;
-  // Define receive buffer as array of packets                                                           
-  UDPsocket::packet *rcv_buffer;
 
   // Define the return value of number of messages recieved                                              
   int retval = 0;
@@ -83,10 +80,9 @@ private:
 
   // Istance of UDP socket class
   UDPsocket udp[chNum];
-  int sendSock[chNum];
   int recvSock[chNum];
-
-	
+  int16_t *rcv_buffer; // from UDP socket
+  bool read_to_fragment_;
 };
 }  // namespace mu2e
 

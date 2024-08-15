@@ -40,7 +40,7 @@ mu2e::STMReceiver::STMReceiver(fhicl::ParameterSet const &ps)
 	    // Setup server
 	    recvSock[i] = udp[i].setupServer(i,SW);
 	  }
-	  rcv_buffer = new UDPsocket::packet [udp[0].RECVMMSG_NUM];
+    rcv_buffer = new int16_t[udp[0].RECVMMSG_NUM];
 	}
 
 	if (toOutputFile_)
@@ -109,7 +109,7 @@ bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs &frags)//getNext_packet
 	  bytes_from_packet += fw_pHdr_Size;
 	  std::cout << "Read in the pHdr. bytes_from_packet is " << bytes_from_packet << std::endl;
 
-	  if(read_to_fragment)_{
+	  if(read_to_fragment_){
 	    memcpy(dataBegin, &pHdr, fw_pHdr_Size);
 	    dataBegin += fw_pHdr_Size;
 	    if(verbose){std::cout << "Read the packet header into the fragment" << std::endl;};
@@ -299,7 +299,7 @@ bool mu2e::STMReceiver::getNext_(artdaq::FragmentPtrs &frags)//getNext_packet
 	    // Loop until timouet
 	    while(udp[0].timeout_counter != udp[0].getTimeoutMax()){
 	      // Get packet and check if it times out (returns 0)
-	      if ((retval = udp[0].getPackets(rcv_buffer,recvSock[0],0)) <= 0){
+	      if ((retval = udp[0].recv(rcv_buffer,recvSock[0],0)) <= 0){
 		// Increment timeout counters
 		udp[0].timeout_counter++;
 	      } // Else continue...}
