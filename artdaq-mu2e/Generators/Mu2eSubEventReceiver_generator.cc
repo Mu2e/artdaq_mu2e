@@ -397,7 +397,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 size_t mu2e::Mu2eSubEventReceiver::getCurrentSequenceID()
 {
-	return ((ev_counter() - 1) * n_dtcs_) + dtc_offset_ + 1;
+  return ev_counter();
 }
 
 // The following macro is defined in artdaq's GeneratorMacros.hh header
