@@ -6,6 +6,7 @@
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
 #include "artdaq-core/Data/ContainerFragmentLoader.hh"
+#include "artdaq-core/Data/MetadataFragment.hh"
 #include "artdaq/DAQdata/Globals.hh"
 #include "artdaq/Generators/GeneratorMacros.hh"
 
@@ -66,6 +67,7 @@ private:
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
 	std::size_t const throttle_usecs_;
+        std::size_t const rollover_subrun_interval_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
 	int diagLevel_;
@@ -108,6 +110,15 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
 
+	//--------------------------------------------------------------------------------
+	// temporary sub-run transition
+	//--------------------------------------------------------------------------------
+	if (rollover_subrun_interval_ > 0 && ev_counter() % rollover_subrun_interval_ == 0 && fragment_id() ==0 )
+	{
+	  auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, ev_counter() + 1, 1 + (ev_counter() / rollover_subrun_interval_), 0);
+	  frags.emplace_back(std::move(endOfSubrunFrag));
+	}
+	
 	return getNextDTCFragment(frags, zero);
 }
 
@@ -124,16 +135,17 @@ DTCLib::DTC_EventWindowTag mu2e::Mu2eSubEventReceiver::getCurrentEventWindowTag(
 mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	: CommandableFragmentGenerator(ps)
 	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
-	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
-	, skip_dtc_init_(ps.get<bool>("skip_dtc_init", false))
-	, rawOutput_(ps.get<bool>("raw_output_enable", false))
-	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
-	, print_packets_(ps.get<bool>("debug_print", false))
-	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
-	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
-	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
-	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
-	, diagLevel_(ps.get<int>("diagLevel", 0))
+	, mode_                    (DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, skip_dtc_init_           (ps.get<bool>       ("skip_dtc_init", false))
+	, rawOutput_               (ps.get<bool>       ("raw_output_enable", false))
+	, rawOutputFile_           (ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
+	, print_packets_           (ps.get<bool>       ("debug_print", false))
+	, heartbeats_after_        (ps.get<size_t>     ("null_heartbeats_after_requests", 16))
+	, dtc_offset_              (ps.get<size_t>     ("dtc_position_in_chain", 0))
+	, n_dtcs_                  (ps.get<size_t>     ("n_dtcs_in_chain", 1))
+	, throttle_usecs_          (ps.get<size_t>     ("throttle_usecs", 0))  // in units of us
+	, rollover_subrun_interval_(ps.get<size_t>     ("rollover_subrun_interval", 20000))
+	, diagLevel_               (ps.get<int>        ("diagLevel", 0))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
@@ -385,7 +397,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 size_t mu2e::Mu2eSubEventReceiver::getCurrentSequenceID()
 {
-	return ((ev_counter() - 1) * n_dtcs_) + dtc_offset_ + 1;
+  return ev_counter();
 }
 
 // The following macro is defined in artdaq's GeneratorMacros.hh header
