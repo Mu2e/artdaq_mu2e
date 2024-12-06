@@ -86,18 +86,23 @@ mu2e::Mu2eSubEventReceiver::~Mu2eSubEventReceiver()
 
 bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 {
+	TLOG(TLVL_TRACE + 20) << "getNext_";
 	while (!simFileRead_ && !should_stop())
 	{
+		TLOG(TLVL_TRACE + 20) << "Sleeping...";
 		usleep(5000);
 	}
 
-	if(throttle_usecs_ > 0) {
-	  std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
-	  throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
+	if(throttle_usecs_ > 0) 
+	{
+		TLOG(TLVL_TRACE + 20) << "Throttling... " << throttle_usecs_;
+	  	std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
+	  	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
 	}
 
 	if (should_stop())
 	{
+		TLOG(TLVL_TRACE + 20) << "Stopping.";
 		return false;
 	}
 
@@ -119,8 +124,19 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	  frags.emplace_back(std::move(endOfSubrunFrag));
 	}
 	
-	return getNextDTCFragment(frags, zero);
-}
+	TLOG(TLVL_TRACE + 20) << "getNext_ req";
+	auto start_time = std::chrono::steady_clock::now();
+	bool retVal = true; 
+	do
+	{
+		retVal = getNextDTCFragment(frags, zero);
+		TLOG(TLVL_TRACE + 20) << "getNext_ req retry? " << retVal << " " << frags.size();
+	} while (1 && retVal && frags.size() < 900 && 
+		artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < 100000 /* 100 ms */);
+	TLOG(TLVL_TRACE + 20) << "getNext_ req done" << retVal << " " << frags.size();
+
+	return retVal;
+} //end getNext_()
 
 DTCLib::DTC_EventWindowTag mu2e::Mu2eSubEventReceiver::getCurrentEventWindowTag()
 {
@@ -244,9 +260,8 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	{
 		try
 		{
-			TLOG(TLVL_TRACE + 25) << "Calling theInterface->GetData(" << ts_in.GetEventWindowTag(true) << ")";
-			data = theInterface_->GetSubEventData(ts_in);
-			TLOG(TLVL_TRACE + 25) << "Done calling theInterface->GetData(" << ts_in.GetEventWindowTag(true) << ") data.size()=" << data.size() << ", retryCount=" << retryCount;
+			data = theInterface_->GetSubEventData(ts_in /* not used when not matching */);
+			TLOG(TLVL_TRACE + 25) << "Done calling theInterface->GetData() data.size()=" << data.size() << ", retryCount=" << retryCount;
 		}
 		catch (std::exception const& ex)
 		{
@@ -262,10 +277,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	auto after_read = std::chrono::steady_clock::now();
 
 	DTCLib::DTC_EventWindowTag ts_out = data[0]->GetEventWindowTag();
-	if (ts_out.GetEventWindowTag(true) != ts_in.GetEventWindowTag(true))
-	{
-		TLOG(TLVL_TRACE) << "Requested timestamp " << ts_in.GetEventWindowTag(true) << ", received data with timestamp " << ts_out.GetEventWindowTag(true);
-	}
+	TLOG(TLVL_TRACE) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);	
 
 	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
 	for (auto& subevt : data)
