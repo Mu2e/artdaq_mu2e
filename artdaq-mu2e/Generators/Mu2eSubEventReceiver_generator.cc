@@ -215,6 +215,7 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	{
 		theInterface_->ClearDetectorEmulatorInUse();  // Needed if we're doing ROC Emulator...make sure Detector Emulation
 													  // is disabled
+		theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
 	}
 }
 
@@ -365,25 +366,35 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 		if (first_timestamp_seen_ == 0)
 		{
-			first_timestamp_seen_ = fragment_timestamp;
-		}
-
-		if (fragment_timestamp < highest_timestamp_seen_)
-		{
-			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-		}
-		else if (fragment_timestamp > highest_timestamp_seen_)
-		{
+			first_timestamp_seen_   = fragment_timestamp;
 			highest_timestamp_seen_ = fragment_timestamp;
 		}
-		else
-		{
-			fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-			timestamp_loops_++;
+
+		if (mode_ != 0){
+		  if (fragment_timestamp < highest_timestamp_seen_)
+		    {
+		      fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+		    }
+		  else if (fragment_timestamp > highest_timestamp_seen_)
+		    {
+		      highest_timestamp_seen_ = fragment_timestamp;
+		    }
+		  else
+		    {
+		      fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+		      timestamp_loops_++;
+		    }
 		}
 
+		if (highest_timestamp_seen_ < fragment_timestamp){
+		  highest_timestamp_seen_ = fragment_timestamp;
+		}else {
+		  TLOG(TLVL_TRACE + 20) << "fragment_timestamp = " <<fragment_timestamp << " while highest_timestamp_seen_" << highest_timestamp_seen_;
+		}
+		
 		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
-		frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		//frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 		metricMan->sendMetric("Average Event Size",  evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
