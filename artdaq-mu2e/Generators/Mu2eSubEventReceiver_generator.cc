@@ -50,8 +50,8 @@ private:
 	// State
 	size_t highest_timestamp_seen_{0};
 	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
-	DTCLib::DTC_SimMode mode_;
-  bool simFileRead_{true};
+	DTCLib::DTC_SimMode mode_; //!=0 is simulation mode
+  	bool simFileRead_{true};
 	const bool skip_dtc_init_;
 	bool rawOutput_{false};
 	std::string rawOutputFile_{""};
@@ -61,7 +61,7 @@ private:
 
 	size_t dtc_offset_{0};
 	size_t n_dtcs_{1};
-	size_t first_timestamp_seen_{0};
+	size_t first_timestamp_seen_{size_t(-1)}, last_fragment_timestamp{size_t(-1)};
 
 	std::unique_ptr<DTCLib::DTC> theInterface_;
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
@@ -140,7 +140,7 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 DTCLib::DTC_EventWindowTag mu2e::Mu2eSubEventReceiver::getCurrentEventWindowTag()
 {
-	if (first_timestamp_seen_ > 0)
+	if (first_timestamp_seen_ != size_t(-1))
 	{
 		return DTCLib::DTC_EventWindowTag(getCurrentSequenceID() + first_timestamp_seen_);
 	}
@@ -364,36 +364,40 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
 
-		if (first_timestamp_seen_ == 0)
+		if (first_timestamp_seen_ == size_t(-1)) //reset
 		{
 			first_timestamp_seen_   = fragment_timestamp;
 			highest_timestamp_seen_ = fragment_timestamp;
 		}
 
-		if (mode_ != 0){
-		  if (fragment_timestamp < highest_timestamp_seen_)
-		    {
-		      fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-		    }
-		  else if (fragment_timestamp > highest_timestamp_seen_)
-		    {
-		      highest_timestamp_seen_ = fragment_timestamp;
-		    }
-		  else
-		    {
-		      fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-		      timestamp_loops_++;
-		    }
-		}
-
-		if (highest_timestamp_seen_ < fragment_timestamp){
-		  highest_timestamp_seen_ = fragment_timestamp;
-		}else {
-		  TLOG(TLVL_TRACE + 20) << "fragment_timestamp = " <<fragment_timestamp << " while highest_timestamp_seen_" << highest_timestamp_seen_;
+		if (1 ||  //we want this offset to allow multiple injections resetting the event tag
+			 mode_ != 0) //!=0 is simulation mode
+		{ 
+			if (fragment_timestamp < highest_timestamp_seen_) //then wraparround case
+			{
+				fragment_timestamp += (++timestamp_loops_) * highest_timestamp_seen_;
+			}
+			else if (fragment_timestamp > highest_timestamp_seen_)
+			{
+				highest_timestamp_seen_ = fragment_timestamp;
+			}
+			else
+			{
+				fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
+			}
 		}
 		
-		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
+		if(last_fragment_timestamp != size_t(-1) && last_fragment_timestamp + 1 != fragment_timestamp)
+			TLOG(TLVL_DEBUG) << "NOT INCREMENTAL timestamp new=" << fragment_timestamp <<
+				" vs old=" << last_fragment_timestamp;
+		last_fragment_timestamp = fragment_timestamp;
+		
+		TLOG(TLVL_TRACE + 20) << "fragment_timestamp=" <<fragment_timestamp << " while highest_timestamp_seen_=" << highest_timestamp_seen_ <<
+			", timestamp_loops_=" << timestamp_loops_;
+		
+		
 		//frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
 		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
