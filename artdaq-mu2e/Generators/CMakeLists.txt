@@ -12,11 +12,11 @@ artdaq_plugin_types::CommandableFragmentGenerator
 
 include(artdaq::commandableGenerator)
 
-include_directories(/home/mu2estm/STMDAQ_software/STMDAQ-TestBeam)
-link_directories(/home/mu2estm/STMDAQ_software/STMDAQ-TestBeam/build/lib)
-include_directories(/home/mu2estm/STMDAQ_software/STMDAQ-TestBeam/UDPtesting/new)
+include_directories(/home/mu2estm/)
+link_directories(/home/mu2estm/STMDAQ-TestBeam/build/lib)
+#include_directories(/home/mu2estm/STMDAQ-TestBeam/UDPtest
 
-cet_make_library(LIBRARY_NAME stmdaq-utils SOURCE /home/mu2estm/STMDAQ_software/STMDAQ-TestBeam/UDPtesting/new/UDPsocket.cc)
+#cet_make_library(LIBRARY_NAME stmdaq-utils SOURCE /home/mu2estm/STMDAQ_software/STMDAQ-TestBeam/UDPtesting/new/UDPsocket.cc)
   
 cet_build_plugin(Mu2eEventReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase
   )
@@ -28,9 +28,9 @@ cet_build_plugin(Mu2eSubEventReceiver artdaq::commandableGenerator
   artdaq_plugin_types::CommandableFragmentGenerator
 )
 
-cet_build_plugin(STMReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase libUtils.so)
+#cet_build_plugin(STMReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase libUtils.so)
 #cet_build_plugin(STMUDPReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase libUtils.so)
-cet_build_plugin(STMUDPReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase stmdaq-utils)
+cet_build_plugin(STMUDPReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase libUtils.so)
 cet_build_plugin(CRVReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase)
 
 

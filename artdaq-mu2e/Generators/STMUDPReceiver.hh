@@ -25,8 +25,7 @@
 #include "artdaq-core-mu2e/Overlays/STMFragment.hh"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 
-//#include "STMDAQ-TestBeam/utils/UDPsocket.hh"
-#include "STMDAQ-TestBeam/UDPtesting/new/UDPsocket.hh"
+#include "STMDAQ-TestBeam/utils/UDPsocket.hh"
 
 #include <atomic>
 #include <vector>
@@ -66,8 +65,8 @@ private:
 
   // Istance of UDP socket class
   int i_ch;
-  int port;
   std::string ip_address;
+  int port;
   UDPsocket udp;//[chNum];
   int recvSock;//[chNum];
   int16_t* rcv_buffer; // from UDP socket
