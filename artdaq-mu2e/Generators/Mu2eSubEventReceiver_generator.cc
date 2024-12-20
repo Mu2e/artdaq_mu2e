@@ -364,9 +364,9 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
 		auto timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
 
-		if (last_fragment_timestamp_ != size_t(-1) && last_fragment_timestamp_ + 1 != timestamp_to_use)
+		if (last_fragment_timestamp != size_t(-1) && last_fragment_timestamp + 1 != timestamp_to_use)
 		{
-			TLOG(TLVL_DEBUG) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
+			TLOG(TLVL_DEBUG) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp;
 		}
 
 		if (first_timestamp_seen_ == size_t(-1)) //reset
@@ -374,12 +374,12 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 			first_timestamp_seen_   = fragment_timestamp;
 		}
 
-			if (timestamp_to_use < last_fragment_timestamp_)
+			if (timestamp_to_use < last_fragment_timestamp)
 			{
-				current_timestamp_offset_ = last_fragment_timestamp_ - fragment_timestamp + 1;  // So that this == last_fragment_timestamp_ + 1
+				current_timestamp_offset_ = last_fragment_timestamp - fragment_timestamp + 1;  // So that this == last_fragment_timestamp + 1
 				timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
 			}
-			last_fragment_timestamp_ = timestamp_to_use;
+			last_fragment_timestamp = timestamp_to_use;
 		TLOG(TLVL_TRACE + 20) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
 		
 		
