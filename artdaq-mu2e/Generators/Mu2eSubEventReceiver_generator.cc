@@ -48,8 +48,7 @@ private:
 	std::vector<artdaq::Fragment::fragment_id_t> fragment_ids_;
 
 	// State
-	size_t highest_timestamp_seen_{0};
-	size_t timestamp_loops_{0};  // For playback mode, so that we continually generate unique timestamps
+	size_t current_timestamp_offset_{0};
 	DTCLib::DTC_SimMode mode_; //!=0 is simulation mode
   	bool simFileRead_{true};
 	const bool skip_dtc_init_;
@@ -364,41 +363,29 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
 
+		if (last_fragment_timestamp != size_t(-1) && last_fragment_timestamp + 1 != fragment_timestamp)
+		{
+			TLOG(TLVL_DEBUG) << "NOT INCREMENTAL timestamp new=" << fragment_timestamp << " vs old=" << last_fragment_timestamp;
+		}
+
 		if (first_timestamp_seen_ == size_t(-1)) //reset
 		{
 			first_timestamp_seen_   = fragment_timestamp;
-			highest_timestamp_seen_ = fragment_timestamp;
 		}
 
-		if (1 ||  //we want this offset to allow multiple injections resetting the event tag
-			 mode_ != 0) //!=0 is simulation mode
-		{ 
-			if (fragment_timestamp < highest_timestamp_seen_) //then wraparround case
+			if (fragment_timestamp < last_fragment_timestamp_)
 			{
-				fragment_timestamp += (++timestamp_loops_) * highest_timestamp_seen_;
+				current_timestamp_offset_ = last_fragment_timestamp_ - fragment_timestamp + 1; // So that this == last_fragment_timestamp + 1
 			}
-			else if (fragment_timestamp > highest_timestamp_seen_)
-			{
-				highest_timestamp_seen_ = fragment_timestamp;
-			}
-			else
-			{
-				fragment_timestamp += timestamp_loops_ * highest_timestamp_seen_;
-			}
-		}
-		
-		if(last_fragment_timestamp != size_t(-1) && last_fragment_timestamp + 1 != fragment_timestamp)
-			TLOG(TLVL_DEBUG) << "NOT INCREMENTAL timestamp new=" << fragment_timestamp <<
-				" vs old=" << last_fragment_timestamp;
-		last_fragment_timestamp = fragment_timestamp;
-		
-		TLOG(TLVL_TRACE + 20) << "fragment_timestamp=" <<fragment_timestamp << " while highest_timestamp_seen_=" << highest_timestamp_seen_ <<
-			", timestamp_loops_=" << timestamp_loops_;
+
+		auto timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
+			last_fragment_timestamp = timestamp_to_use;
+		TLOG(TLVL_TRACE + 20) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
 		
 		
 		//frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
-		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		frags.emplace_back(new artdaq::Fragment(timestamp_to_use, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 		metricMan->sendMetric("Average Event Size",  evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
