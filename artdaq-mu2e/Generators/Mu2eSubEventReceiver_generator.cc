@@ -305,7 +305,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		evt->SetEventWindowTag(ts_out);
 
 		for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
-		  {
+		{
 		    auto subevt = evt->GetSubEvent(se);
 		    auto subevtheader =  subevt->GetHeader();
 		    metricMan->sendMetric("ROC link0 status", subevtheader->link0_status, "status", 3, artdaq::MetricMode::Maximum);
@@ -324,19 +324,19 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 
 		    for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
-		      {
-			auto block = subevt->GetDataBlock(bl);
-			auto first = block->GetHeader();
-			std::string  nn  = "Packets per ROC " + std::to_string(bl);
-			metricMan->sendMetric(nn,  first->GetPacketCount(), "Packages", 3, artdaq::MetricMode::Average);
-			std::string  rocLink = "ROC "+std::to_string(first->GetLinkID())+" status";
-			metricMan->sendMetric(rocLink, first->GetStatus(), "status", 3, artdaq::MetricMode::Maximum);			
-		      }
-		  }
+			{
+				auto block = subevt->GetDataBlock(bl);
+				auto first = block->GetHeader();
+				std::string  nn  = "Packets per ROC " + std::to_string(bl);
+				metricMan->sendMetric(nn,  first->GetPacketCount(), "Packages", 3, artdaq::MetricMode::Average);
+				std::string  rocLink = "ROC "+std::to_string(first->GetLinkID())+" status";
+				metricMan->sendMetric(rocLink, first->GetStatus(), "status", 3, artdaq::MetricMode::Maximum);			
+			}
+		}
 		
 		if (print_packets_)
 		{
-		        TLOG(TLVL_INFO) << "[print_packets starts] subEventCounts: "<<  evt->GetSubEventCount();
+			TLOG(TLVL_INFO) << "[print_packets starts] subEventCounts: "<<  evt->GetSubEventCount();
 			for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
 			{
 				auto subevt = evt->GetSubEvent(se);
@@ -349,7 +349,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 					TLOG(TLVL_INFO) << first->toJSON();
 					for (int ii = 0; ii < first->GetPacketCount(); ++ii)
 					{
-					  TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON();
+					  	TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON();
 					}
 				}
 			}
@@ -364,7 +364,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
 		auto timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
 
-		if (last_fragment_timestamp != size_t(-1) && last_fragment_timestamp + 1 != timestamp_to_use)
+		if (last_fragment_timestamp_ != size_t(-1) && last_fragment_timestamp_ + 1 != timestamp_to_use)
 		{
 			TLOG(TLVL_DEBUG+19) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
 		}
@@ -374,12 +374,12 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 			first_timestamp_seen_   = fragment_timestamp;
 		}
 
-			if (timestamp_to_use < last_fragment_timestamp)
-			{
-				current_timestamp_offset_ = last_fragment_timestamp - fragment_timestamp + 1;  // So that this == last_fragment_timestamp + 1
-				timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
-			}
-			last_fragment_timestamp_ = timestamp_to_use;
+		if (timestamp_to_use < last_fragment_timestamp_)
+		{
+			current_timestamp_offset_ = last_fragment_timestamp_ - fragment_timestamp + 1;  // So that this == last_fragment_timestamp_ + 1
+			timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
+		}
+		last_fragment_timestamp_ = timestamp_to_use;
 		TLOG(TLVL_TRACE + 24) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
 		
 		
