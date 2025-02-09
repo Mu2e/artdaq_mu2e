@@ -131,7 +131,7 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	{
 		retVal = getNextDTCFragment(frags, zero);
 		TLOG(TLVL_TRACE + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
-	} while (1 && retVal && frags.size() < 900 && 
+	} while (retVal && frags.size() < 900 && 
 		artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < get_next_dtc_fragment_timeout_usecs /* 100 ms */);
 	TLOG(TLVL_TRACE + 36) << "getNext_ req done" << retVal << " " << frags.size();
 
@@ -293,8 +293,8 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		DTCLib::DTC_EventHeader evtHdr;
 		evtHdr.inclusive_event_byte_count = size_bytes;
 		evtHdr.num_dtcs = 1;
-                evtHdr.event_tag_low  = ts_out.GetEventWindowTag(true) & 0xFFFFFFFF;
-                evtHdr.event_tag_high = (ts_out.GetEventWindowTag(true) >> 32) & 0xFFFF;
+		evtHdr.event_tag_low  = ts_out.GetEventWindowTag(true) & 0xFFFFFFFF;
+		evtHdr.event_tag_high = (ts_out.GetEventWindowTag(true) >> 32) & 0xFFFF;
 		memcpy(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer())), &evtHdr, sizeof(DTCLib::DTC_EventHeader));
 		auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer()) + sizeof(DTCLib::DTC_EventHeader);
 
