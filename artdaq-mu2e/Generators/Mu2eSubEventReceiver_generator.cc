@@ -66,7 +66,8 @@ private:
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
 	std::size_t const throttle_usecs_;
-        std::size_t const rollover_subrun_interval_;
+    std::size_t const get_next_dtc_fragment_timeout_usecs_;
+	std::size_t const rollover_subrun_interval_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
 	int diagLevel_;
@@ -131,7 +132,7 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		retVal = getNextDTCFragment(frags, zero);
 		TLOG(TLVL_TRACE + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
 	} while (1 && retVal && frags.size() < 900 && 
-		artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < 100000 /* 100 ms */);
+		artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < get_next_dtc_fragment_timeout_usecs /* 100 ms */);
 	TLOG(TLVL_TRACE + 36) << "getNext_ req done" << retVal << " " << frags.size();
 
 	return retVal;
@@ -159,6 +160,7 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	, dtc_offset_              (ps.get<size_t>     ("dtc_position_in_chain", 0))
 	, n_dtcs_                  (ps.get<size_t>     ("n_dtcs_in_chain", 1))
 	, throttle_usecs_          (ps.get<size_t>     ("throttle_usecs", 0))  // in units of us
+    , get_next_dtc_fragment_timeout_usecs_(ps.get<size_t>("get_next_dtc_fragment_timeout_usecs", 100000)), // in units of us
 	, rollover_subrun_interval_(ps.get<size_t>     ("rollover_subrun_interval", 20000))
 	, diagLevel_               (ps.get<int>        ("diagLevel", 0))
 {
