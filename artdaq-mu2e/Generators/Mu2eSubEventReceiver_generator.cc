@@ -50,7 +50,7 @@ private:
 	// State
 	size_t current_timestamp_offset_{0};
 	DTCLib::DTC_SimMode mode_; //!=0 is simulation mode
-  	bool simFileRead_{true};
+  	bool waitForSimFileRead_{false};
 	const bool skip_dtc_init_;
 	bool rawOutput_{false};
 	std::string rawOutputFile_{""};
@@ -86,7 +86,7 @@ mu2e::Mu2eSubEventReceiver::~Mu2eSubEventReceiver()
 bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 {
 	TLOG(TLVL_TRACE + 30) << "getNext_";
-	while (!simFileRead_ && !should_stop())
+	while (waitForSimFileRead_ && !should_stop())
 	{
 		TLOG(TLVL_TRACE + 31) << "Sleeping...";
 		usleep(5000);
@@ -205,7 +205,7 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 		}
 		if (sim_file.size() > 0)
 		{
-			simFileRead_ = false;
+			waitForSimFileRead_ = true;
 			std::thread reader(&mu2e::Mu2eSubEventReceiver::readSimFile_, this, sim_file);
 			reader.detach();
 		}
@@ -223,7 +223,7 @@ void mu2e::Mu2eSubEventReceiver::readSimFile_(std::string sim_file)
 	TLOG(TLVL_INFO) << "Starting read of simulation file " << sim_file << "."
 					<< " Please wait to start the run until finished.";
 	theInterface_->WriteSimFileToDTC(sim_file, true);
-	simFileRead_ = true;
+	waitForSimFileRead_ = false;
 	TLOG(TLVL_INFO) << "Done reading simulation file into DTC memory.";
 }
 
