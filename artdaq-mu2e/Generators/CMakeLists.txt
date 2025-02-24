@@ -24,8 +24,6 @@ cet_build_plugin(Mu2eSubEventReceiver artdaq::commandableGenerator
 
 cet_build_plugin(CRVReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase)
 
-cet_build_plugin(STMReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase)
-
 
 
 #get_cmake_property(_variableNames VARIABLES)
