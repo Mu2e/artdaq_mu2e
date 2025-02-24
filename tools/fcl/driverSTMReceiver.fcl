@@ -10,8 +10,8 @@ transition_timeout: 30
 fragment_receiver: {
 
    # Parameters defining and configuring the fragment generator to be used
-   		    
-   generator: STMReceiver 
+
+   generator: STMReceiver
    sim_mode: Disabled # F
    raw_output_enable: false # true
    raw_output_file: "Mu2eReceiver.bin"
@@ -48,7 +48,7 @@ fragment_receiver: {
    fragment_id: 0
    board_id: 0
    max_fragment_size_bytes: 0x100000
-}  		  
+}
 
 event_builder: {
 
@@ -111,6 +111,3 @@ resume_after_timeout: true }
 }
 
 process_name: Driver
-
-
-
