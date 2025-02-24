@@ -1,4 +1,4 @@
-// This file implements the basic data readout functionality on top of Mu2eEventReceiverBase. 
+// This file implements the basic data readout functionality on top of Mu2eEventReceiverBase.
 // It can be used as an exmaple for developing more specific functionality.
 
 #include "artdaq-mu2e/Generators/Mu2eEventReceiverBase.hh"
@@ -26,7 +26,7 @@ private:
 }  // namespace mu2e
 
 mu2e::Mu2eEventReceiver::Mu2eEventReceiver(fhicl::ParameterSet const& ps)
-  : Mu2eEventReceiverBase(ps)
+	: Mu2eEventReceiverBase(ps)
 {
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiver Initialized with mode " << mode_;
 }
@@ -45,11 +45,11 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
 	auto throttle_usecs = 1000000 / request_rate_;
 	TLOG(TLVL_INFO) << "[mu2e::Mu2eEventReceiver::getNext_] request_rate= " << request_rate_
-			<< " wait_time= " << throttle_usecs;
-	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(static_cast<int>( throttle_usecs)), [&]() { return should_stop(); });
+					<< " wait_time= " << throttle_usecs;
+	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(static_cast<int>(throttle_usecs)), [&]() { return should_stop(); });
 
-	// if (frag_sent_ == 0) 
-        // {
+	// if (frag_sent_ == 0)
+	// {
 	//         sending_start_ = std::chrono::steady_clock::now();
 	// }
 
@@ -59,7 +59,6 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	// {
 	//         std::this_thread::sleep_until(target);
 	// }
-	
 
 	if (should_stop())
 	{
@@ -71,7 +70,7 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	if (mode_ != 0)
 	{
-	        TLOG_DEBUG(2) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
+		TLOG_DEBUG(2) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
 
@@ -81,7 +80,7 @@ bool mu2e::Mu2eEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 DTCLib::DTC_EventWindowTag mu2e::Mu2eEventReceiver::getCurrentEventWindowTag()
 {
-	if(first_timestamp_seen_ > 0) 
+	if (first_timestamp_seen_ > 0)
 	{
 		return DTCLib::DTC_EventWindowTag(getCurrentSequenceID() + first_timestamp_seen_);
 	}

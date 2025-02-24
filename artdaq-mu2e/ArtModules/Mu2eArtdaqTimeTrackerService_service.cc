@@ -52,28 +52,26 @@ using Parameters = ServiceTable<ArtdaqTimeTrackerServiceInterface::Config>;
 class Mu2eArtdaqTimeTrackerService : public ArtdaqTimeTrackerServiceInterface
 {
 public:
-  /**
-   * \brief DefaultArtdaqTimeTrackerService Destructor
-   */
-  virtual ~Mu2eArtdaqTimeTrackerService() = default;
+	/**
+	 * \brief DefaultArtdaqTimeTrackerService Destructor
+	 */
+	virtual ~Mu2eArtdaqTimeTrackerService() = default;
 
-  /**
-   * \brief Mu2eArtdaqTimeTrackerService Constructor
-   */
-  Mu2eArtdaqTimeTrackerService(Parameters const&, art::ActivityRegistry&);
+	/**
+	 * \brief Mu2eArtdaqTimeTrackerService Constructor
+	 */
+	Mu2eArtdaqTimeTrackerService(Parameters const&, art::ActivityRegistry&);
 
 private:
 };
 
 Mu2eArtdaqTimeTrackerService::Mu2eArtdaqTimeTrackerService(Parameters const& config, ActivityRegistry& areg)
-  :  ArtdaqTimeTrackerServiceInterface(config, areg)
+	: ArtdaqTimeTrackerServiceInterface(config, areg)
 {
-  TLOG(TLVL_DEBUG) << "Mu2eArtdaqTimeTrackerService CONSTRUCTOR START";
-  //SetBasicTypes(mu2e::makeFragmentTypeMap());
-  TLOG(TLVL_DEBUG) << "Mu2eArtdaqTimeTrackerService CONSTRUCTOR END";
+	TLOG(TLVL_DEBUG) << "Mu2eArtdaqTimeTrackerService CONSTRUCTOR START";
+	// SetBasicTypes(mu2e::makeFragmentTypeMap());
+	TLOG(TLVL_DEBUG) << "Mu2eArtdaqTimeTrackerService CONSTRUCTOR END";
 }
 
-DECLARE_ART_SERVICE_INTERFACE_IMPL(Mu2eArtdaqTimeTrackerService, ArtdaqTimeTrackerServiceInterface , LEGACY)
+DECLARE_ART_SERVICE_INTERFACE_IMPL(Mu2eArtdaqTimeTrackerService, ArtdaqTimeTrackerServiceInterface, LEGACY)
 DEFINE_ART_SERVICE_INTERFACE_IMPL(Mu2eArtdaqTimeTrackerService, ArtdaqTimeTrackerServiceInterface)
-
-

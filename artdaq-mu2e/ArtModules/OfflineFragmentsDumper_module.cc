@@ -49,17 +49,20 @@ void mu2e::Mu2eDump::analyze(art::Event const& e)
 	std::cout << calFragments->size() << " CAL fragments." << std::endl;
 	std::cout << crvFragments->size() << " CRV fragments." << std::endl;
 	size_t totalSize = 0;
-	for (size_t idx = 0; idx < trkFragments->size(); ++idx) {
+	for (size_t idx = 0; idx < trkFragments->size(); ++idx)
+	{
 		auto size = ((*trkFragments)[idx]).size() * sizeof(artdaq::RawDataType);
 		totalSize += size;
 		std::cout << "\tTRK Fragment " << idx << " has size " << size << std::endl;
 	}
-	for (size_t idx = 0; idx < calFragments->size(); ++idx) {
+	for (size_t idx = 0; idx < calFragments->size(); ++idx)
+	{
 		auto size = ((*calFragments)[idx]).size() * sizeof(artdaq::RawDataType);
 		totalSize += size;
 		std::cout << "\tCAL Fragment " << idx << " has size " << size << std::endl;
 	}
-	for (size_t idx = 0; idx < crvFragments->size(); ++idx) {
+	for (size_t idx = 0; idx < crvFragments->size(); ++idx)
+	{
 		auto size = ((*crvFragments)[idx]).size() * sizeof(artdaq::RawDataType);
 		totalSize += size;
 		std::cout << "\tCRV Fragment " << idx << " has size " << size << std::endl;

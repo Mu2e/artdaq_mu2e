@@ -59,23 +59,20 @@ void mu2e::DTCEventDump::endJob()
 
 void mu2e::DTCEventDump::beginJob()
 {
-		std::string fileName = binary_file_name_;
-		if (fileName.find(".bin") != std::string::npos)
-		{
-			std::string timestr = "_" + std::to_string(time(0));
-			fileName.insert(fileName.find(".bin"), timestr);
-		}
-		output_file_.open(fileName, std::ios::out | std::ios::app | std::ios::binary);
-	
+	std::string fileName = binary_file_name_;
+	if (fileName.find(".bin") != std::string::npos)
+	{
+		std::string timestr = "_" + std::to_string(time(0));
+		fileName.insert(fileName.find(".bin"), timestr);
+	}
+	output_file_.open(fileName, std::ios::out | std::ios::app | std::ios::binary);
 }
-
 
 void mu2e::DTCEventDump::analyze(art::Event const& evt)
 {
 	art::EventNumber_t eventNumber = evt.event();
 	TRACE(11, "mu2e::DTCEventDump::analyze enter eventNumber=%d", eventNumber);
-	
-  
+
 	artdaq::Fragments fragments;
 	artdaq::FragmentPtrs containerFragments;
 
@@ -119,20 +116,18 @@ void mu2e::DTCEventDump::analyze(art::Event const& evt)
 	}
 	// look for raw Toy data
 	TLOG(TLVL_INFO) << "Run " << evt.run() << ", subrun " << evt.subRun() << ", event " << eventNumber << " has "
-	                << fragments.size() << " fragment(s) of type DTCEVT";
+					<< fragments.size() << " fragment(s) of type DTCEVT";
 
 	for (const auto& frag : fragments)
 	{
 		DTCEventFragment bb(frag);
 		auto evt = bb.getData();
-		TLOG(TLVL_DEBUG) << "Event " << evt.GetEventWindowTag().GetEventWindowTag(true) << " has size " << evt.GetEventByteCount() << " (fragment size " << frag.sizeBytes()<< ")";
+		TLOG(TLVL_DEBUG) << "Event " << evt.GetEventWindowTag().GetEventWindowTag(true) << " has size " << evt.GetEventByteCount() << " (fragment size " << frag.sizeBytes() << ")";
 
-		if(output_file_) {
-		
+		if (output_file_)
+		{
 			evt.WriteEvent(output_file_, detemu_format_);
 		}
-
-
 	}
 }
 

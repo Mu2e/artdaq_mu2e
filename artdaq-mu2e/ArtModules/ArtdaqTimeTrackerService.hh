@@ -123,12 +123,12 @@ operator<<(std::ostream& os, Statistics const& info)
 }  // namespace art
 
 /**
-   * \brief Interface for ArtdaqFragmentNamingService. This interface is declared to art as part of the required registration of an art Service
-   */
+ * \brief Interface for ArtdaqFragmentNamingService. This interface is declared to art as part of the required registration of an art Service
+ */
 class ArtdaqTimeTrackerServiceInterface
 {
 public:
-	//static constexpr bool service_handle_allowed{false};
+	// static constexpr bool service_handle_allowed{false};
 
 	struct Config
 	{
@@ -143,7 +143,7 @@ public:
 	using Parameters = ServiceTable<Config>;
 	ArtdaqTimeTrackerServiceInterface(Parameters const& config, ActivityRegistry& areg)
 		: printSummary_{config().printSummary()}
-		, db_{ServiceHandle<DatabaseConnection>{}->get(
+		, db_{ServiceHandle<DatabaseConnection>{} -> get(
 			  config().dbOutput().filename() + "_" + app_name + ".csv")}
 		, overwriteContents_{config().dbOutput().overwrite()}
 		, timeSourceColumnNames_{{"Run", "SubRun", "Event", "Source", "Time"}}
@@ -433,4 +433,4 @@ void ArtdaqTimeTrackerServiceInterface::logToDestination_(Statistics const& evt,
 
 DECLARE_ART_SERVICE_INTERFACE(ArtdaqTimeTrackerServiceInterface, LEGACY)
 
-//#endif /* artdaq_mu2e_ArtModules_ArtdaqTimeTrackerService_h */
+// #endif /* artdaq_mu2e_ArtModules_ArtdaqTimeTrackerService_h */

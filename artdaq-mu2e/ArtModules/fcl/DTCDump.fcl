@@ -6,7 +6,7 @@ physics:
     {
       module_type: DTCDump
       raw_data_label: daq
-      
+
       max_DataPackets_to_show: 0
       print_json: false
       print_packet_format: true
