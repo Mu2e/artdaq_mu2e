@@ -52,7 +52,7 @@ private:
 	void stopNoMutex() override {}
 
 	void stop() override {}
-		
+
 	// STM-specific stuff
 	bool fromInputFile_{false};
 	std::ifstream inputFileStream_;
@@ -63,8 +63,6 @@ private:
 	// are the FHiCL variable names with a "_" appended
 
 	FragmentType fragment_type_{FragmentType::STM};  // Type of fragment (see FragmentType.hh)
-
-	
 };
 }  // namespace mu2e
 

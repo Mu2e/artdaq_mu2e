@@ -39,7 +39,7 @@ public:
 	DTCLib::DTC_SimMode GetMode() { return mode_; }
 
 protected:
-  bool getNextDTCFragment(artdaq::FragmentPtrs& output, DTCLib::DTC_EventWindowTag ts, artdaq::Fragment::sequence_id_t seq_in = 0);
+	bool getNextDTCFragment(artdaq::FragmentPtrs& output, DTCLib::DTC_EventWindowTag ts, artdaq::Fragment::sequence_id_t seq_in = 0);
 
 	void start() override;
 
@@ -50,7 +50,6 @@ protected:
 	void readSimFile_(std::string sim_file);
 
 	size_t getCurrentSequenceID();
-
 
 	// Like "getNext_", "fragmentIDs_" is a mandatory override; it
 	// returns a vector of the fragment IDs an instance of this class
@@ -81,13 +80,12 @@ protected:
 	std::unique_ptr<DTCLib::DTC> theInterface_;
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
-        float                   request_rate_;
-        std::condition_variable throttle_cv_;
-	std::mutex              throttle_mutex_;
-        int                     diagLevel_;
-        int                     frag_sent_;
-        std::chrono::time_point<std::chrono::steady_clock> sending_start_;
-
+	float request_rate_;
+	std::condition_variable throttle_cv_;
+	std::mutex throttle_mutex_;
+	int diagLevel_;
+	int frag_sent_;
+	std::chrono::time_point<std::chrono::steady_clock> sending_start_;
 };
 }  // namespace mu2e
 

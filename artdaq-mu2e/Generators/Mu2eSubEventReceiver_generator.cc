@@ -49,8 +49,8 @@ private:
 
 	// State
 	size_t current_timestamp_offset_{0};
-	DTCLib::DTC_SimMode mode_; //!=0 is simulation mode
-  	bool simFileRead_{true};
+	DTCLib::DTC_SimMode mode_;  //!=0 is simulation mode
+	bool simFileRead_{true};
 	const bool skip_dtc_init_;
 	bool rawOutput_{false};
 	std::string rawOutputFile_{""};
@@ -66,7 +66,7 @@ private:
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
 	std::size_t const throttle_usecs_;
-        std::size_t const rollover_subrun_interval_;
+	std::size_t const rollover_subrun_interval_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
 	int diagLevel_;
@@ -92,11 +92,11 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		usleep(5000);
 	}
 
-	if(throttle_usecs_ > 0) 
+	if (throttle_usecs_ > 0)
 	{
 		TLOG(TLVL_TRACE + 32) << "Throttling... " << throttle_usecs_;
-	  	std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
-	  	throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
+		std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
+		throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
 	}
 
 	if (should_stop())
@@ -117,25 +117,25 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	//--------------------------------------------------------------------------------
 	// temporary sub-run transition
 	//--------------------------------------------------------------------------------
-	if (rollover_subrun_interval_ > 0 && ev_counter() % rollover_subrun_interval_ == 0 && fragment_id() ==0 )
+	if (rollover_subrun_interval_ > 0 && ev_counter() % rollover_subrun_interval_ == 0 && fragment_id() == 0)
 	{
-	  auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, ev_counter() + 1, 1 + (ev_counter() / rollover_subrun_interval_), 0);
-	  frags.emplace_back(std::move(endOfSubrunFrag));
+		auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, ev_counter() + 1, 1 + (ev_counter() / rollover_subrun_interval_), 0);
+		frags.emplace_back(std::move(endOfSubrunFrag));
 	}
-	
+
 	TLOG(TLVL_TRACE + 34) << "getNext_ req";
 	auto start_time = std::chrono::steady_clock::now();
-	bool retVal = true; 
+	bool retVal = true;
 	do
 	{
 		retVal = getNextDTCFragment(frags, zero);
 		TLOG(TLVL_TRACE + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
-	} while (1 && retVal && frags.size() < 900 && 
-		artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < 100000 /* 100 ms */);
+	} while (1 && retVal && frags.size() < 900 &&
+			 artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < 100000 /* 100 ms */);
 	TLOG(TLVL_TRACE + 36) << "getNext_ req done" << retVal << " " << frags.size();
 
 	return retVal;
-} //end getNext_()
+}  // end getNext_()
 
 DTCLib::DTC_EventWindowTag mu2e::Mu2eSubEventReceiver::getCurrentEventWindowTag()
 {
@@ -150,17 +150,17 @@ DTCLib::DTC_EventWindowTag mu2e::Mu2eSubEventReceiver::getCurrentEventWindowTag(
 mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	: CommandableFragmentGenerator(ps)
 	, fragment_ids_{static_cast<artdaq::Fragment::fragment_id_t>(fragment_id())}
-	, mode_                    (DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
-	, skip_dtc_init_           (ps.get<bool>       ("skip_dtc_init", false))
-	, rawOutput_               (ps.get<bool>       ("raw_output_enable", false))
-	, rawOutputFile_           (ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
-	, print_packets_           (ps.get<bool>       ("debug_print", false))
-	, heartbeats_after_        (ps.get<size_t>     ("null_heartbeats_after_requests", 16))
-	, dtc_offset_              (ps.get<size_t>     ("dtc_position_in_chain", 0))
-	, n_dtcs_                  (ps.get<size_t>     ("n_dtcs_in_chain", 1))
-	, throttle_usecs_          (ps.get<size_t>     ("throttle_usecs", 0))  // in units of us
-	, rollover_subrun_interval_(ps.get<size_t>     ("rollover_subrun_interval", 20000))
-	, diagLevel_               (ps.get<int>        ("diagLevel", 0))
+	, mode_(DTCLib::DTC_SimModeConverter::ConvertToSimMode(ps.get<std::string>("sim_mode", "Disabled")))
+	, skip_dtc_init_(ps.get<bool>("skip_dtc_init", false))
+	, rawOutput_(ps.get<bool>("raw_output_enable", false))
+	, rawOutputFile_(ps.get<std::string>("raw_output_file", "/tmp/Mu2eReceiver.bin"))
+	, print_packets_(ps.get<bool>("debug_print", false))
+	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
+	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
+	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
+	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
+	, rollover_subrun_interval_(ps.get<size_t>("rollover_subrun_interval", 20000))
+	, diagLevel_(ps.get<int>("diagLevel", 0))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
@@ -277,7 +277,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	auto after_read = std::chrono::steady_clock::now();
 
 	DTCLib::DTC_EventWindowTag ts_out = data[0]->GetEventWindowTag();
-	TLOG(TLVL_TRACE) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);	
+	TLOG(TLVL_TRACE) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);
 
 	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
 	for (auto& subevt : data)
@@ -287,12 +287,12 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		TLOG(TLVL_TRACE + 20) << "Size of event will be " << static_cast<int>(size_bytes) << "B";
 
 		auto evt = std::make_unique<DTCLib::DTC_Event>(size_bytes);
-		
+
 		DTCLib::DTC_EventHeader evtHdr;
 		evtHdr.inclusive_event_byte_count = size_bytes;
 		evtHdr.num_dtcs = 1;
-                evtHdr.event_tag_low  = ts_out.GetEventWindowTag(true) & 0xFFFFFFFF;
-                evtHdr.event_tag_high = (ts_out.GetEventWindowTag(true) >> 32) & 0xFFFF;
+		evtHdr.event_tag_low = ts_out.GetEventWindowTag(true) & 0xFFFFFFFF;
+		evtHdr.event_tag_high = (ts_out.GetEventWindowTag(true) >> 32) & 0xFFFF;
 		memcpy(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer())), &evtHdr, sizeof(DTCLib::DTC_EventHeader));
 		auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer()) + sizeof(DTCLib::DTC_EventHeader);
 
@@ -306,41 +306,40 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 		for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
 		{
-		    auto subevt = evt->GetSubEvent(se);
-		    auto subevtheader =  subevt->GetHeader();
-		    metricMan->sendMetric("ROC link0 status", subevtheader->link0_status, "status", 3, artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link1 status", subevtheader->link1_status, "status", 3, artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link2 status", subevtheader->link2_status, "status", 3, artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link3 status", subevtheader->link3_status, "status", 3, artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Maximum);
+			auto subevt = evt->GetSubEvent(se);
+			auto subevtheader = subevt->GetHeader();
+			metricMan->sendMetric("ROC link0 status", subevtheader->link0_status, "status", 3, artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link1 status", subevtheader->link1_status, "status", 3, artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link2 status", subevtheader->link2_status, "status", 3, artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link3 status", subevtheader->link3_status, "status", 3, artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Maximum);
 
-		    metricMan->sendMetric("ROC link0 latency", subevtheader->link0_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link1 latency", subevtheader->link1_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link2 latency", subevtheader->link2_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link3 latency", subevtheader->link3_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link4 latency", subevtheader->link4_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
-		    metricMan->sendMetric("ROC link5 latency", subevtheader->link5_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum|artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link0 latency", subevtheader->link0_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link1 latency", subevtheader->link1_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link2 latency", subevtheader->link2_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link3 latency", subevtheader->link3_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link4 latency", subevtheader->link4_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link5 latency", subevtheader->link5_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
 
-
-		    for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
+			for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 			{
 				auto block = subevt->GetDataBlock(bl);
 				auto first = block->GetHeader();
-				std::string  nn  = "Packets per ROC " + std::to_string(bl);
-				metricMan->sendMetric(nn,  first->GetPacketCount(), "Packages", 3, artdaq::MetricMode::Average);
-				std::string  rocLink = "ROC "+std::to_string(first->GetLinkID())+" status";
-				metricMan->sendMetric(rocLink, first->GetStatus(), "status", 3, artdaq::MetricMode::Maximum);			
+				std::string nn = "Packets per ROC " + std::to_string(bl);
+				metricMan->sendMetric(nn, first->GetPacketCount(), "Packages", 3, artdaq::MetricMode::Average);
+				std::string rocLink = "ROC " + std::to_string(first->GetLinkID()) + " status";
+				metricMan->sendMetric(rocLink, first->GetStatus(), "status", 3, artdaq::MetricMode::Maximum);
 			}
 		}
-		
+
 		if (print_packets_)
 		{
-			TLOG(TLVL_INFO) << "[print_packets starts] subEventCounts: "<<  evt->GetSubEventCount();
+			TLOG(TLVL_INFO) << "[print_packets starts] subEventCounts: " << evt->GetSubEventCount();
 			for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
 			{
 				auto subevt = evt->GetSubEvent(se);
-				auto subevtheader =  subevt->GetHeader();
+				auto subevtheader = subevt->GetHeader();
 				TLOG(TLVL_INFO) << subevtheader->toJson();
 				for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 				{
@@ -349,7 +348,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 					TLOG(TLVL_INFO) << first->toJSON();
 					for (int ii = 0; ii < first->GetPacketCount(); ++ii)
 					{
-					  	TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON();
+						TLOG(TLVL_INFO) << DTCLib::DTC_DataPacket(((uint8_t*)block->blockPointer) + ((ii + 1) * 16)).toJSON();
 					}
 				}
 			}
@@ -366,12 +365,12 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 		if (last_fragment_timestamp_ != size_t(-1) && last_fragment_timestamp_ + 1 != timestamp_to_use)
 		{
-			TLOG(TLVL_DEBUG+19) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
+			TLOG(TLVL_DEBUG + 19) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
 		}
 
-		if (first_timestamp_seen_ == size_t(-1)) //reset
+		if (first_timestamp_seen_ == size_t(-1))  // reset
 		{
-			first_timestamp_seen_   = fragment_timestamp;
+			first_timestamp_seen_ = fragment_timestamp;
 		}
 
 		if (timestamp_to_use < last_fragment_timestamp_)
@@ -381,14 +380,13 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		}
 		last_fragment_timestamp_ = timestamp_to_use;
 		TLOG(TLVL_TRACE + 24) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
-		
-		
-		//frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+
+		// frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		TLOG(TLVL_TRACE + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
 		frags.emplace_back(new artdaq::Fragment(timestamp_to_use, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
-		metricMan->sendMetric("Average Event Size",  evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
+		metricMan->sendMetric("Average Event Size", evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
 		TLOG(TLVL_TRACE + 26) << "Incrementing event counter";
 		ev_counter_inc();
 	}
@@ -411,7 +409,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 size_t mu2e::Mu2eSubEventReceiver::getCurrentSequenceID()
 {
-  return ev_counter();
+	return ev_counter();
 }
 
 // The following macro is defined in artdaq's GeneratorMacros.hh header
