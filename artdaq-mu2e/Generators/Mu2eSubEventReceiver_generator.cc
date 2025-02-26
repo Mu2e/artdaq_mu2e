@@ -79,9 +79,7 @@ private:
 };
 }  // namespace mu2e
 
-mu2e::Mu2eSubEventReceiver::~Mu2eSubEventReceiver()
-{
-}
+mu2e::Mu2eSubEventReceiver::~Mu2eSubEventReceiver() {}
 
 bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 {
@@ -213,7 +211,7 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	else
 	{
 		theInterface_->ClearDetectorEmulatorInUse();  // Needed if we're doing ROC Emulator...make sure Detector Emulation
-													  // is disabled
+		// is disabled
 		theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
 	}
 }
@@ -239,6 +237,8 @@ void mu2e::Mu2eSubEventReceiver::stop()
 
 void mu2e::Mu2eSubEventReceiver::start()
 {
+	theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+
 	if (rawOutput_)
 	{
 		std::string fileName = rawOutputFile_;
@@ -361,29 +361,31 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		// auto after_print = std::chrono::steady_clock::now();
 
 		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
-		auto timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
+		//      auto timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
+		metricMan->sendMetric("Last event window tag", fragment_timestamp, "status", 3, artdaq::MetricMode::LastPoint);
 
-		if (last_fragment_timestamp_ != size_t(-1) && last_fragment_timestamp_ + 1 != timestamp_to_use)
-		{
-			TLOG(TLVL_DEBUG + 19) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
-		}
+		// if (last_fragment_timestamp_ != size_t(-1) && last_fragment_timestamp_ + 1 != timestamp_to_use)
+		// 	{
+		// 	  TLOG(TLVL_DEBUG+19) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
+		// 	}
 
-		if (first_timestamp_seen_ == size_t(-1))  // reset
-		{
-			first_timestamp_seen_ = fragment_timestamp;
-		}
+		// if (first_timestamp_seen_ == size_t(-1)) //reset
+		// 	{
+		// 	  first_timestamp_seen_   = fragment_timestamp;
+		// 	}
 
-		if (timestamp_to_use < last_fragment_timestamp_)
-		{
-			current_timestamp_offset_ = last_fragment_timestamp_ - fragment_timestamp + 1;  // So that this == last_fragment_timestamp_ + 1
-			timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
-		}
-		last_fragment_timestamp_ = timestamp_to_use;
-		TLOG(TLVL_TRACE + 24) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
+		// if (timestamp_to_use < last_fragment_timestamp_)
+		// 	{
+		// 	  current_timestamp_offset_ = last_fragment_timestamp_ - fragment_timestamp + 1;  // So that this == last_fragment_timestamp_ + 1
+		// 	  timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
+		// 	}
+		// last_fragment_timestamp_ = timestamp_to_use;
+		// TLOG(TLVL_TRACE + 24) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
 
 		// frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		TLOG(TLVL_TRACE + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
-		frags.emplace_back(new artdaq::Fragment(timestamp_to_use, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+
+		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 		metricMan->sendMetric("Average Event Size", evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
