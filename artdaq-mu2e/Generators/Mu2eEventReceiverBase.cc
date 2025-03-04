@@ -18,40 +18,40 @@ mu2e::Mu2eEventReceiverBase::Mu2eEventReceiverBase(fhicl::ParameterSet const& ps
 	, heartbeats_after_(ps.get<size_t>("null_heartbeats_after_requests", 16))
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
-        , request_rate_(ps.get<float>("request_rate", -1.))// Hz
-        , diagLevel_(ps.get<int>("diagLevel", 0))
-        , frag_sent_(0)
+	, request_rate_(ps.get<float>("request_rate", -1.))  // Hz
+	, diagLevel_(ps.get<int>("diagLevel", 0))
+	, frag_sent_(0)
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
-									ps.get<int>("dtc_id", -1),
-									ps.get<unsigned>("roc_mask", 0x1),
-									ps.get<std::string>("dtc_fw_version", ""),
-									skip_dtc_init_,
-									ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
+												  ps.get<int>("dtc_id", -1),
+												  ps.get<unsigned>("roc_mask", 0x1),
+												  ps.get<std::string>("dtc_fw_version", ""),
+												  skip_dtc_init_,
+												  ps.get<std::string>("simulator_memory_file_name", "mu2esim.bin"));
 
 	mode_ = theInterface_->GetSimMode();
 	TLOG(TLVL_DEBUG) << "Mu2eEventReceiverBase Initialized with mode " << mode_;
 
-	if(request_rate_ <= 0) request_rate_ = std::numeric_limits<double>::max();
+	if (request_rate_ <= 0) request_rate_ = std::numeric_limits<double>::max();
 	sending_start_ = std::chrono::steady_clock::now();
 
-	//if in simulation mode, setup CFO
+	// if in simulation mode, setup CFO
 	if (mode_ != 0)
 	{
 		fhicl::ParameterSet cfoConfig = ps.get<fhicl::ParameterSet>("cfo_config", fhicl::ParameterSet());
 		theCFO_ = std::make_unique<DTCLib::DTCSoftwareCFO>(theInterface_.get(),
-											cfoConfig.get<bool>("use_dtc_cfo_emulator", true),
-											cfoConfig.get<size_t>("debug_packet_count", 0),
-											DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")),
-											cfoConfig.get<bool>("sticky_debug_type", false),
-											cfoConfig.get<bool>("quiet", false),
-											cfoConfig.get<bool>("asyncRR", false),
-											cfoConfig.get<bool>("force_no_debug_mode", false),
-											cfoConfig.get<bool>("useCFODRP", false));
+														   cfoConfig.get<bool>("use_dtc_cfo_emulator", true),
+														   cfoConfig.get<size_t>("debug_packet_count", 0),
+														   DTCLib::DTC_DebugTypeConverter::ConvertToDebugType(cfoConfig.get<std::string>("debug_type", "2")),
+														   cfoConfig.get<bool>("sticky_debug_type", false),
+														   cfoConfig.get<bool>("quiet", false),
+														   cfoConfig.get<bool>("asyncRR", false),
+														   cfoConfig.get<bool>("force_no_debug_mode", false),
+														   cfoConfig.get<bool>("useCFODRP", false));
 	}
-	
-	if(skip_dtc_init_) return; //skip any control of DTC 
+
+	if (skip_dtc_init_) return;  // skip any control of DTC
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
@@ -94,8 +94,8 @@ void mu2e::Mu2eEventReceiverBase::readSimFile_(std::string sim_file)
 void mu2e::Mu2eEventReceiverBase::stop()
 {
 	rawOutputStream_.close();
-	
-	if(skip_dtc_init_) return; //skip any control of DTC
+
+	if (skip_dtc_init_) return;  // skip any control of DTC
 
 	theInterface_->DisableDetectorEmulator();
 	theInterface_->DisableCFOEmulation();
@@ -247,5 +247,5 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 
 size_t mu2e::Mu2eEventReceiverBase::getCurrentSequenceID()
 {
-	return ((ev_counter()-1) * n_dtcs_) + dtc_offset_ + 1;
+	return ((ev_counter() - 1) * n_dtcs_) + dtc_offset_ + 1;
 }
