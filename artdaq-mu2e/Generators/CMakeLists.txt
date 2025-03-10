@@ -15,6 +15,14 @@ include(artdaq::commandableGenerator)
 cet_build_plugin(Mu2eEventReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase
   )
 
+cet_build_plugin(CFODataReceiver artdaq::commandableGenerator
+  LIBRARIES REG 
+  artdaq_core_mu2e::artdaq-core-mu2e_Overlays
+  mu2e_pcie_utils::DTCInterface
+  mu2e_pcie_utils::CFOInterface
+  artdaq_plugin_types::CommandableFragmentGenerator
+)
+
 cet_build_plugin(Mu2eSubEventReceiver artdaq::commandableGenerator
   LIBRARIES REG 
   artdaq_core_mu2e::artdaq-core-mu2e_Overlays
