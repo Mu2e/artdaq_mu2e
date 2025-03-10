@@ -1,6 +1,6 @@
 
 cet_make_library(LIBRARY_NAME artdaq-mu2e_Generators_Mu2eReceiverBase
-SOURCE 
+SOURCE
 Mu2eEventReceiverBase.cc
 LIBRARIES PUBLIC
 artdaq::DAQdata
@@ -11,12 +11,12 @@ artdaq_plugin_types::CommandableFragmentGenerator
   )
 
 include(artdaq::commandableGenerator)
-  
+
 cet_build_plugin(Mu2eEventReceiver artdaq::commandableGenerator LIBRARIES REG artdaq_mu2e::artdaq-mu2e_Generators_Mu2eReceiverBase
   )
 
 cet_build_plugin(CFODataReceiver artdaq::commandableGenerator
-  LIBRARIES REG 
+  LIBRARIES REG
   artdaq_core_mu2e::artdaq-core-mu2e_Overlays
   mu2e_pcie_utils::DTCInterface
   mu2e_pcie_utils::CFOInterface
@@ -24,7 +24,7 @@ cet_build_plugin(CFODataReceiver artdaq::commandableGenerator
 )
 
 cet_build_plugin(Mu2eSubEventReceiver artdaq::commandableGenerator
-  LIBRARIES REG 
+  LIBRARIES REG
   artdaq_core_mu2e::artdaq-core-mu2e_Overlays
   mu2e_pcie_utils::DTCInterface
   artdaq_plugin_types::CommandableFragmentGenerator
