@@ -69,7 +69,6 @@ private:
 	std::size_t const rollover_subrun_interval_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
-	int diagLevel_;
 	// The "getNext_" function is used to implement user-specific
 	// functionality; it's a mandatory override of the pure virtual
 	// getNext_ function declared in CommandableFragmentGenerator
@@ -108,7 +107,7 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 
 	if (mode_ != DTCLib::DTC_SimMode_Disabled)
 	{
-		if (diagLevel_ > 0) TLOG(TLVL_INFO) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
+		TLOG(TLVL_TRACE + 30) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
 
@@ -158,7 +157,6 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
 	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
 	, rollover_subrun_interval_(ps.get<size_t>("rollover_subrun_interval", 20000))
-	, diagLevel_(ps.get<int>("diagLevel", 0))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
@@ -277,7 +275,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	auto after_read = std::chrono::steady_clock::now();
 
 	DTCLib::DTC_EventWindowTag ts_out = data[0]->GetEventWindowTag();
-	TLOG(TLVL_TRACE) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);
+	TLOG(TLVL_TRACE + 19) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);
 
 	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
 	for (auto& subevt : data)
