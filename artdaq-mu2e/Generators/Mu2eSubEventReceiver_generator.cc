@@ -393,6 +393,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		ev_counter_inc();
 	}
 	auto after_copy = std::chrono::steady_clock::now();
+	for(auto& frag : frags) { frag->getLatency(true); }
 	TLOG(TLVL_TRACE + 27) << "Reporting Metrics";
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
