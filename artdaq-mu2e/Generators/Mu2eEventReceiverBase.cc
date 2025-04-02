@@ -1,5 +1,6 @@
 #include "artdaq-mu2e/Generators/Mu2eEventReceiverBase.hh"
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
+#include "artdaq-core-mu2e/Overlays/DTCEventFragment.hh"
 
 #include "artdaq-core/Data/ContainerFragmentLoader.hh"
 #include "artdaq/DAQdata/Globals.hh"
@@ -204,6 +205,13 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 	{
 		TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
 		frags.emplace_back(new artdaq::Fragment(seq_out, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+
+		if (data[0]->IsCorrupt())
+		{
+			DTCEventFragment::Metadata md;
+			md.corrupt_flag = true;
+			frags.back()->setMetadata(md);
+		}
 		frags.back()->resizeBytes(data[0]->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), data[0]->GetRawBufferPointer(), data[0]->GetEventByteCount());
 	}
@@ -219,6 +227,12 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 		{
 			TLOG(TLVL_TRACE + 20) << "Creating Fragment, sz=" << data[0]->GetEventByteCount();
 			artdaq::Fragment frag(seq_out, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp);
+			if (evt->IsCorrupt())
+			{
+				DTCEventFragment::Metadata md;
+				md.corrupt_flag = true;
+				frag.setMetadata(md);
+			}
 			frag.resizeBytes(evt->GetEventByteCount());
 			memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 			cfl.addFragment(frag);

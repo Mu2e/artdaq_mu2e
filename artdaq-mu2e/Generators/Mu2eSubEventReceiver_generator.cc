@@ -2,6 +2,7 @@
 // It can be used as an exmaple for developing more specific functionality.
 
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
+#include "artdaq-core-mu2e/Overlays/DTCEventFragment.hh"
 #include "dtcInterfaceLib/DTC.h"
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
 
@@ -387,6 +388,13 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 
 		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
+
+		if (evt->IsCorrupt())
+		{
+			DTCEventFragment::Metadata md;
+			md.corrupt_flag = true;
+			frags.back()->setMetadata(md);
+		}
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 		metricMan->sendMetric("Average Event Size", evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
 		TLOG(TLVL_TRACE + 26) << "Incrementing event counter";
