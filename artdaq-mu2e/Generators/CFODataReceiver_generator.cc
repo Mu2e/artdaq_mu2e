@@ -76,23 +76,23 @@ mu2e::CFODataReceiver::~CFODataReceiver()
 
 bool mu2e::CFODataReceiver::getNext_(artdaq::FragmentPtrs& frags)
 {
-	TLOG(TLVL_TRACE + 30) << "getNext_";
-	while (!should_stop())
-	{
-		TLOG(TLVL_TRACE + 31) << "Sleeping...";
-		usleep(5000);
-	}
+	TLOG(TLVL_DEBUG + 30) << "getNext_";
+	// while (!should_stop())
+	// {
+	// 	TLOG(TLVL_DEBUG + 31) << "Sleeping...";
+	// 	usleep(5000);
+	// }
 
 	if (throttle_usecs_ > 0)
 	{
-		TLOG(TLVL_TRACE + 32) << "Throttling... " << throttle_usecs_;
+		TLOG(TLVL_DEBUG + 32) << "Throttling... " << throttle_usecs_;
 		std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
 		throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
 	}
 
 	if (should_stop())
 	{
-		TLOG(TLVL_TRACE + 33) << "Stopping.";
+		TLOG(TLVL_DEBUG + 33) << "Stopping.";
 		return false;
 	}
 
@@ -108,16 +108,16 @@ bool mu2e::CFODataReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		frags.emplace_back(std::move(endOfSubrunFrag));
 	}
 
-	TLOG(TLVL_TRACE + 34) << "getNext_ req";
+	TLOG(TLVL_DEBUG + 34) << "getNext_ req";
 	auto start_time = std::chrono::steady_clock::now();
 	bool retVal = true;
 	do
 	{
 		retVal = getNextDTCFragment(frags, zero);
-		TLOG(TLVL_TRACE + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
+		TLOG(TLVL_DEBUG + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
 	} while (1 && retVal && frags.size() < 900 &&
 			 artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < 100000 /* 100 ms */);
-	TLOG(TLVL_TRACE + 36) << "getNext_ req done" << retVal << " " << frags.size();
+	TLOG(TLVL_DEBUG + 36) << "getNext_ req done" << retVal << " " << frags.size();
 
 	return retVal;
 }  // end getNext_()
@@ -177,7 +177,7 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 		try
 		{
 			theCFO_->GetData(data, ts_in /* not used when not matching */);  // do we need to set matchEventWindowTag = true??
-			TLOG(TLVL_TRACE + 25) << "Done calling theCFO->GetData() data.size()=" << data.size() << ", retryCount=" << retryCount;
+			TLOG(TLVL_DEBUG + 25) << "Done calling theCFO->GetData() data.size()=" << data.size() << ", retryCount=" << retryCount;
 		}
 		catch (std::exception const& ex)
 		{
@@ -193,41 +193,41 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 	auto after_read = std::chrono::steady_clock::now();
 
 	DTCLib::DTC_EventWindowTag ts_out = data[0]->GetEventWindowTag();
-	TLOG(TLVL_TRACE) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);
+	TLOG(TLVL_DEBUG) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);
 
 	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
 	for (auto& cfoevt : data)
 	{
-		TLOG(TLVL_TRACE + 20) << "Initializing a CFO_Event ";
+		TLOG(TLVL_DEBUG + 20) << "Initializing a CFO_Event ";
 		auto evt = std::make_unique<CFOLib::CFO_Event>(&cfoevt);
-		// TLOG(TLVL_TRACE + 23) << "Setting Eventmode to " << (uint64_t) evt->GetEventMode();
+		// TLOG(TLVL_DEBUG + 23) << "Setting Eventmode to " << (uint64_t) evt->GetEventMode();
 
 		auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer());
 
-		TLOG(TLVL_TRACE + 21) << "Calling memcpy(" << (const void*)ptr << ", " << (void*)cfoevt->GetRawBufferPointer() << ", " << cfoevt->GetEventByteCount() << ")";
+		TLOG(TLVL_DEBUG + 21) << "Calling memcpy(" << (const void*)ptr << ", " << (void*)cfoevt->GetRawBufferPointer() << ", " << cfoevt->GetEventByteCount() << ")";
 		memcpy(const_cast<uint8_t*>(ptr), cfoevt->GetRawBufferPointer(), cfoevt->GetEventByteCount());
 		ptr += cfoevt->GetEventByteCount();
 
-		TLOG(TLVL_TRACE + 23) << "Setting EventWindowTag to " << ts_out.GetEventWindowTag(true);
+		TLOG(TLVL_DEBUG + 23) << "Setting EventWindowTag to " << ts_out.GetEventWindowTag(true);
 		evt->SetEventWindowTag(ts_out);
 
 		// auto after_print = std::chrono::steady_clock::now();
 
 		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
-		TLOG(TLVL_TRACE + 24) << "fragment_timestamp=" << fragment_timestamp;  // << " while timestamp_to_use=" << timestamp_to_use;
+		TLOG(TLVL_DEBUG + 24) << "fragment_timestamp=" << fragment_timestamp;  // << " while timestamp_to_use=" << timestamp_to_use;
 
 		// frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
-		TLOG(TLVL_TRACE + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
-		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
+		TLOG(TLVL_DEBUG + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
+		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::CFO, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 		metricMan->sendMetric("Average Event Size", evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
-		TLOG(TLVL_TRACE + 26) << "Incrementing event counter";
+		TLOG(TLVL_DEBUG + 26) << "Incrementing event counter";
 		ev_counter_inc();
 	}
 
 	auto after_copy = std::chrono::steady_clock::now();
-	TLOG(TLVL_TRACE + 27) << "Reporting Metrics";
+	TLOG(TLVL_DEBUG + 27) << "Reporting Metrics";
 	auto hwTime = theCFO_->GetDevice()->GetDeviceTime();
 
 	double hw_timestamp_rate = 1 / hwTime;
@@ -236,7 +236,7 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 	metricMan->sendMetric("Fragment Prep Time", artdaq::TimeUtils::GetElapsedTime(before_read, after_read), "s", 3, artdaq::MetricMode::Average);
 	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
 
-	TLOG(TLVL_TRACE + 28) << "Returning true";
+	TLOG(TLVL_DEBUG + 28) << "Returning true";
 
 	return true;
 }
