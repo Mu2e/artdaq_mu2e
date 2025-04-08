@@ -66,7 +66,6 @@ private:
 	std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
 	std::size_t const throttle_usecs_;
-	std::size_t const rollover_subrun_interval_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
 	// The "getNext_" function is used to implement user-specific
@@ -111,15 +110,6 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
 
-	//--------------------------------------------------------------------------------
-	// temporary sub-run transition
-	//--------------------------------------------------------------------------------
-	if (rollover_subrun_interval_ > 0 && ev_counter() % rollover_subrun_interval_ == 0 && fragment_id() == 0)
-	{
-		auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, ev_counter() + 1, 1 + (ev_counter() / rollover_subrun_interval_), 0);
-		frags.emplace_back(std::move(endOfSubrunFrag));
-	}
-
 	TLOG(TLVL_TRACE + 34) << "getNext_ req";
 	auto start_time = std::chrono::steady_clock::now();
 	bool retVal = true;
@@ -156,7 +146,6 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
 	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
-	, rollover_subrun_interval_(ps.get<size_t>("rollover_subrun_interval", 20000))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
@@ -391,6 +380,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		ev_counter_inc();
 	}
 	auto after_copy = std::chrono::steady_clock::now();
+	for (auto& frag : frags) { frag->getLatency(true); }
 	TLOG(TLVL_TRACE + 27) << "Reporting Metrics";
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
