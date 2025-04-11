@@ -81,23 +81,23 @@ mu2e::Mu2eSubEventReceiver::~Mu2eSubEventReceiver() {}
 
 bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 {
-	TLOG(TLVL_TRACE + 30) << "getNext_";
+	TLOG(TLVL_DEBUG + 30) << "getNext_";
 	while (!simFileRead_ && !should_stop())
 	{
-		TLOG(TLVL_TRACE + 31) << "Sleeping...";
+		TLOG(TLVL_DEBUG + 31) << "Sleeping...";
 		usleep(5000);
 	}
 
 	if (throttle_usecs_ > 0)
 	{
-		TLOG(TLVL_TRACE + 32) << "Throttling... " << throttle_usecs_;
+		TLOG(TLVL_DEBUG + 32) << "Throttling... " << throttle_usecs_;
 		std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
 		throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
 	}
 
 	if (should_stop())
 	{
-		TLOG(TLVL_TRACE + 33) << "Stopping.";
+		TLOG(TLVL_DEBUG + 33) << "Stopping.";
 		return false;
 	}
 
@@ -110,16 +110,16 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
 
-	TLOG(TLVL_TRACE + 34) << "getNext_ req";
+	TLOG(TLVL_DEBUG + 34) << "getNext_ req";
 	auto start_time = std::chrono::steady_clock::now();
 	bool retVal = true;
 	do
 	{
 		retVal = getNextDTCFragment(frags, zero);
-		TLOG(TLVL_TRACE + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
+		TLOG(TLVL_DEBUG + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
 	} while (1 && retVal && frags.size() < 900 &&
 			 artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < 100000 /* 100 ms */);
-	TLOG(TLVL_TRACE + 36) << "getNext_ req done" << retVal << " " << frags.size();
+	TLOG(TLVL_DEBUG + 36) << "getNext_ req done" << retVal << " " << frags.size();
 
 	return retVal;
 }  // end getNext_()
@@ -248,7 +248,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		try
 		{
 			data = theInterface_->GetSubEventData(ts_in /* not used when not matching */);
-			TLOG(TLVL_TRACE + 25) << "Done calling theInterface->GetData() data.size()=" << data.size() << ", retryCount=" << retryCount;
+			TLOG(TLVL_DEBUG + 24) << "Done calling theInterface->GetData() data.size()=" << data.size() << ", retryCount=" << retryCount;
 		}
 		catch (std::exception const& ex)
 		{
@@ -271,7 +271,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	{
 		size_t size_bytes = sizeof(DTCLib::DTC_EventHeader);
 		size_bytes += subevt->GetSubEventByteCount();
-		TLOG(TLVL_TRACE + 20) << "Size of event will be " << static_cast<int>(size_bytes) << "B";
+		TLOG(TLVL_DEBUG + 20) << "Size of event will be " << static_cast<int>(size_bytes) << "B";
 
 		auto evt = std::make_unique<DTCLib::DTC_Event>(size_bytes);
 
@@ -283,12 +283,12 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		memcpy(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer())), &evtHdr, sizeof(DTCLib::DTC_EventHeader));
 		auto ptr = reinterpret_cast<const uint8_t*>(evt->GetRawBufferPointer()) + sizeof(DTCLib::DTC_EventHeader);
 
-		TLOG(TLVL_TRACE + 21) << "Calling memcpy(" << (const void*)ptr << ", " << (void*)subevt->GetRawBufferPointer() << ", " << subevt->GetSubEventByteCount() << ")";
+		TLOG(TLVL_DEBUG + 21) << "Calling memcpy(" << (const void*)ptr << ", " << (void*)subevt->GetRawBufferPointer() << ", " << subevt->GetSubEventByteCount() << ")";
 		memcpy(const_cast<uint8_t*>(ptr), subevt->GetRawBufferPointer(), subevt->GetSubEventByteCount());
 		ptr += subevt->GetSubEventByteCount();
-		TLOG(TLVL_TRACE + 22) << "Calling SetupEvent";
+		TLOG(TLVL_DEBUG + 22) << "Calling SetupEvent";
 		evt->SetupEvent();
-		TLOG(TLVL_TRACE + 23) << "Setting EventWindowTag to " << ts_out.GetEventWindowTag(true);
+		TLOG(TLVL_DEBUG + 23) << "Setting EventWindowTag to " << ts_out.GetEventWindowTag(true);
 		evt->SetEventWindowTag(ts_out);
 
 		for (size_t se = 0; se < evt->GetSubEventCount(); ++se)
@@ -352,36 +352,37 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		metricMan->sendMetric("Last event window tag", fragment_timestamp, "status", 3, artdaq::MetricMode::LastPoint);
 
 		// if (last_fragment_timestamp_ != size_t(-1) && last_fragment_timestamp_ + 1 != timestamp_to_use)
-		// 	{
-		// 	  TLOG(TLVL_DEBUG+19) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
-		// 	}
+		//      {
+		//        TLOG(TLVL_DEBUG+19) << "NOT INCREMENTAL timestamp new=" << timestamp_to_use << " vs old=" << last_fragment_timestamp_;
+		//      }
 
 		// if (first_timestamp_seen_ == size_t(-1)) //reset
-		// 	{
-		// 	  first_timestamp_seen_   = fragment_timestamp;
-		// 	}
+		//      {
+		//        first_timestamp_seen_   = fragment_timestamp;
+		//      }
 
 		// if (timestamp_to_use < last_fragment_timestamp_)
-		// 	{
-		// 	  current_timestamp_offset_ = last_fragment_timestamp_ - fragment_timestamp + 1;  // So that this == last_fragment_timestamp_ + 1
-		// 	  timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
-		// 	}
+		//      {
+		//        current_timestamp_offset_ = last_fragment_timestamp_ - fragment_timestamp + 1;  // So that this == last_fragment_timestamp_ + 1
+		//        timestamp_to_use = fragment_timestamp + current_timestamp_offset_;
+		//      }
 		// last_fragment_timestamp_ = timestamp_to_use;
-		// TLOG(TLVL_TRACE + 24) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
+		// TLOG(TLVL_DEBUG + 24) << "fragment_timestamp=" << fragment_timestamp << " while timestamp_to_use=" << timestamp_to_use;
 
 		// frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
-		TLOG(TLVL_TRACE + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
+		TLOG(TLVL_DEBUG + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", frag_id=" << fragment_ids_[0]
+							  << ", timestamp=" << fragment_timestamp;
 
 		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 		metricMan->sendMetric("Average Event Size", evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
-		TLOG(TLVL_TRACE + 26) << "Incrementing event counter";
+		TLOG(TLVL_DEBUG + 26) << "Incrementing event counter";
 		ev_counter_inc();
 	}
 	auto after_copy = std::chrono::steady_clock::now();
 	for (auto& frag : frags) { frag->getLatency(true); }
-	TLOG(TLVL_TRACE + 27) << "Reporting Metrics";
+	TLOG(TLVL_DEBUG + 27) << "Reporting Metrics";
 	auto hwTime = theInterface_->GetDevice()->GetDeviceTime();
 
 	double hw_timestamp_rate = 1 / hwTime;
@@ -392,7 +393,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	metricMan->sendMetric("HW Timestamp Rate", hw_timestamp_rate, "timestamps/s", 1, artdaq::MetricMode::Average);
 	metricMan->sendMetric("PCIe Transfer Rate", hw_data_rate, "B/s", 1, artdaq::MetricMode::Average);
 
-	TLOG(TLVL_TRACE + 28) << "Returning true";
+	TLOG(TLVL_DEBUG + 28) << "Returning true";
 
 	return true;
 }
