@@ -54,13 +54,16 @@ private:
 	size_t first_timestamp_seen_{size_t(-1)}, last_fragment_timestamp_{size_t(-1)};
 
 	std::unique_ptr<CFOLib::CFO> theCFO_;
-	//	  std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
+	//        std::unique_ptr<DTCLib::DTCSoftwareCFO> theCFO_;
 
 	std::size_t const throttle_usecs_;
-	std::size_t const rollover_subrun_interval_;
+	std::size_t rollover_subrun_interval_;
+	bool rollover_transition_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
 	int diagLevel_;
+	std::map<uint64_t, int> ewts_;  // for checking if an event window tag has been found before
+
 	// The "getNext_" function is used to implement user-specific
 	// functionality; it's a mandatory override of the pure virtual
 	// getNext_ function declared in CommandableFragmentGenerator
@@ -79,8 +82,8 @@ bool mu2e::CFODataReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	TLOG(TLVL_DEBUG + 30) << "getNext_";
 	// while (!should_stop())
 	// {
-	// 	TLOG(TLVL_DEBUG + 31) << "Sleeping...";
-	// 	usleep(5000);
+	//      TLOG(TLVL_DEBUG + 31) << "Sleeping...";
+	//      usleep(5000);
 	// }
 
 	if (throttle_usecs_ > 0)
@@ -102,9 +105,14 @@ bool mu2e::CFODataReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	//--------------------------------------------------------------------------------
 	// temporary sub-run transition
 	//--------------------------------------------------------------------------------
-	if (rollover_subrun_interval_ > 0 && ev_counter() % rollover_subrun_interval_ == 0 && fragment_id() == 0)
+	if (rollover_transition_)
 	{
-		auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, ev_counter() + 1, 1 + (ev_counter() / rollover_subrun_interval_), 0);
+		rollover_transition_ = false;
+		const auto last_timestamp = ewts_.rbegin()->first;
+		const auto next_subrun = 1 + (ev_counter() / rollover_subrun_interval_);
+		TLOG(TLVL_DEBUG + 31) << "getNext_ sending subrun transition to subrun " << next_subrun << " and timestamp " << last_timestamp + 1;
+		//                                                                                          next EWT   subrun number      ID
+		auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, last_timestamp + 1, next_subrun, fragment_id());
 		frags.emplace_back(std::move(endOfSubrunFrag));
 	}
 
@@ -140,6 +148,7 @@ mu2e::CFODataReceiver::CFODataReceiver(fhicl::ParameterSet const& ps)
 	, print_packets_(ps.get<bool>("debug_print", false))
 	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
 	, rollover_subrun_interval_(ps.get<size_t>("rollover_subrun_interval", 20000))
+	, rollover_transition_(false)
 	, diagLevel_(ps.get<int>("diagLevel", 0))
 {
 	// mode_ can still be overridden by environment!
@@ -152,6 +161,12 @@ mu2e::CFODataReceiver::CFODataReceiver(fhicl::ParameterSet const& ps)
 	mode_ = theCFO_->GetSimMode();
 	TLOG(TLVL_DEBUG) << "CFODataReceiver Initialized with mode " << mode_;
 
+	if (rollover_subrun_interval_ == 0)
+	{
+		TLOG(TLVL_WARNING) << "Subrun rollover is set to 0, overriding this with 1M";
+		rollover_subrun_interval_ = 1e6;
+	}
+
 	if (skip_cfo_init_) return;  // skip any control of DTC
 
 	theCFO_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
@@ -159,17 +174,19 @@ mu2e::CFODataReceiver::CFODataReceiver(fhicl::ParameterSet const& ps)
 
 void mu2e::CFODataReceiver::stop()
 {
+	ewts_.clear();
 	// if (skip_cfo_init_) return;  // skip any control of DTC
 }
 
 void mu2e::CFODataReceiver::start()
 {
 	theCFO_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+	ewts_.clear();
 }
 
 bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCLib::DTC_EventWindowTag ts_in)
 {
-	auto before_read = std::chrono::steady_clock::now();
+	const auto before_read = std::chrono::steady_clock::now();
 	int retryCount = 5;
 	std::vector<std::unique_ptr<CFOLib::CFO_Event>> data;
 	while (data.size() == 0 && retryCount >= 0)
@@ -190,14 +207,28 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 		// Return true if no data in external CFO mode, otherwise false
 		return mode_ == 0;
 	}
-	auto after_read = std::chrono::steady_clock::now();
-
-	DTCLib::DTC_EventWindowTag ts_out = data[0]->GetEventWindowTag();
-	TLOG(TLVL_DEBUG) << "Received data with timestamp " << ts_out.GetEventWindowTag(true);
+	const auto after_read = std::chrono::steady_clock::now();
 
 	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
+	// std::map<uint64_t, int> ewts; // for checking if an event window tag has been found before
+	// std::map<uint64_t, std::unique_ptr<artdaq::ContainerFragmentLoader>> ewts; // for collecting fragments with the same event window tag
 	for (auto& cfoevt : data)
 	{
+		const DTCLib::DTC_EventWindowTag ts_out = cfoevt->GetEventWindowTag();
+		const auto fragment_timestamp = ts_out.GetEventWindowTag(true);
+		TLOG(TLVL_DEBUG + 19) << "Received data with timestamp " << fragment_timestamp;
+		if (ewts_.count(fragment_timestamp))
+		{
+			TLOG(TLVL_DEBUG + 17) << "Received data with timestamp " << fragment_timestamp << " " << ewts_[fragment_timestamp] << " times already";
+			++ewts_[fragment_timestamp];
+			// FIXME: Decide how to best handle these cases
+			continue;
+		}
+		else
+		{
+			ewts_[fragment_timestamp] = 1;
+			TLOG(TLVL_DEBUG + 18) << "Received data with timestamp " << fragment_timestamp << " for the first time";
+		}
 		TLOG(TLVL_DEBUG + 20) << "Initializing a CFO_Event ";
 		auto evt = std::make_unique<CFOLib::CFO_Event>(&cfoevt);
 		// TLOG(TLVL_DEBUG + 23) << "Setting Eventmode to " << (uint64_t) evt->GetEventMode();
@@ -208,29 +239,29 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 		memcpy(const_cast<uint8_t*>(ptr), cfoevt->GetRawBufferPointer(), cfoevt->GetEventByteCount());
 		ptr += cfoevt->GetEventByteCount();
 
-		TLOG(TLVL_DEBUG + 23) << "Setting EventWindowTag to " << ts_out.GetEventWindowTag(true);
-		evt->SetEventWindowTag(ts_out);
-
-		// auto after_print = std::chrono::steady_clock::now();
-
-		auto fragment_timestamp = ts_out.GetEventWindowTag(true);
-		TLOG(TLVL_DEBUG + 24) << "fragment_timestamp=" << fragment_timestamp;  // << " while timestamp_to_use=" << timestamp_to_use;
-
-		// frags.emplace_back(new artdaq::Fragment(getCurrentSequenceID(), fragment_ids_[0], FragmentType::DTCEVT, fragment_timestamp));
-		TLOG(TLVL_DEBUG + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", seqid=" << getCurrentSequenceID();
+		TLOG(TLVL_DEBUG + 25) << "Creating Fragment, sz=" << evt->GetEventByteCount() << ", timestamp=" << fragment_timestamp;
 		frags.emplace_back(new artdaq::Fragment(fragment_timestamp, fragment_ids_[0], FragmentType::CFO, fragment_timestamp));
 		frags.back()->resizeBytes(evt->GetEventByteCount());
 		memcpy(frags.back()->dataBegin(), evt->GetRawBufferPointer(), evt->GetEventByteCount());
 		metricMan->sendMetric("Average Event Size", evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
 		TLOG(TLVL_DEBUG + 26) << "Incrementing event counter";
 		ev_counter_inc();
+		//--------------------------------------------------------------------------------
+		// temporary sub-run transition
+		//--------------------------------------------------------------------------------
+		if (rollover_subrun_interval_ > 0 && ev_counter() % rollover_subrun_interval_ == 0 && fragment_id() == 0)
+		{
+			TLOG(TLVL_DEBUG + 29) << "Identified the subrun rollover (timestamp = " << fragment_timestamp
+								  << " ev_counter = " << ev_counter() << ")";
+			rollover_transition_ = true;
+		}
 	}
 
-	auto after_copy = std::chrono::steady_clock::now();
+	const auto after_copy = std::chrono::steady_clock::now();
 	TLOG(TLVL_DEBUG + 27) << "Reporting Metrics";
-	auto hwTime = theCFO_->GetDevice()->GetDeviceTime();
+	const auto hwTime = theCFO_->GetDevice()->GetDeviceTime();
 
-	double hw_timestamp_rate = 1 / hwTime;
+	const double hw_timestamp_rate = 1. / hwTime;
 
 	metricMan->sendMetric("CFO Read Time", artdaq::TimeUtils::GetElapsedTime(after_read, after_copy), "s", 3, artdaq::MetricMode::Average);
 	metricMan->sendMetric("Fragment Prep Time", artdaq::TimeUtils::GetElapsedTime(before_read, after_read), "s", 3, artdaq::MetricMode::Average);
