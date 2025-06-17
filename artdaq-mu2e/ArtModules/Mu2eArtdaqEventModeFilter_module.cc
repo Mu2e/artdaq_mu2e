@@ -29,36 +29,34 @@ public:
 	virtual bool filter(art::Event const& evt);
 
 private:
-  std::string  evtHeaderLabel_;
-  uint8_t      eventModeToSelect_;
-  
-
+	std::string evtHeaderLabel_;
+	uint8_t eventModeToSelect_;
 };
 
-mu2e::Mu2eArtdaqEventModeFilter::Mu2eArtdaqEventModeFilter(fhicl::ParameterSet const& pset) : 
-  EDFilter(pset)
-  , evtHeaderLabel_    (pset.get<std::string>("EventHeaderModuleLabel"))
-  , eventModeToSelect_ (pset.get<uint8_t>("EventModeToSelect"))
-											      
+mu2e::Mu2eArtdaqEventModeFilter::Mu2eArtdaqEventModeFilter(fhicl::ParameterSet const& pset)
+	: EDFilter(pset)
+	, evtHeaderLabel_(pset.get<std::string>("EventHeaderModuleLabel"))
+	, eventModeToSelect_(pset.get<uint8_t>("EventModeToSelect"))
+
 {
-  
 }
 mu2e::Mu2eArtdaqEventModeFilter::~Mu2eArtdaqEventModeFilter() {}
 
 bool mu2e::Mu2eArtdaqEventModeFilter::filter(art::Event const& evt)
 {
-  art::Handle<artdaq::Mu2eEventHeader> evtHeaderH;
-  evt.getByLabel(evtHeaderLabel_, evtHeaderHraw);
-  
-  if (!evtHeaderH.isValid()) {
-    std::cout << "[mu2e::Mu2eArtdaqEventModeFilter::filter] no Mu2eEventHeader found with string: " << evtHeaderLabel_ << std::endl;
-    return false;
-  }
+	art::Handle<artdaq::Mu2eEventHeader> evtHeaderH;
+	evt.getByLabel(evtHeaderLabel_, evtHeaderHraw);
 
-  if (evtHeaderH->EventMode == eventModeToSelect_) 
-    return true;
-  
-  return false;
+	if (!evtHeaderH.isValid())
+	{
+		std::cout << "[mu2e::Mu2eArtdaqEventModeFilter::filter] no Mu2eEventHeader found with string: " << evtHeaderLabel_ << std::endl;
+		return false;
+	}
+
+	if (evtHeaderH->EventMode == eventModeToSelect_)
+		return true;
+
+	return false;
 }
 
 DEFINE_ART_MODULE(mu2e::Mu2eArtdaqEventModeFilter)

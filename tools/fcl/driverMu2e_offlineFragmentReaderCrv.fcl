@@ -9,12 +9,12 @@ fragment_receiver: {
 
   # Parameters defining and configuring the fragment generator to be used
 
-  generator: Mu2eReceiver
+  generator: CRVReceiver
   ring_0_roc_count: 1
   ring_0_timing_enabled: false
   debug_print: true
   verbose: true
-  #raw_output_enable: true
+  raw_output_enable: true
   #raw_output_file: "mu2eReceiver.bin"
   load_sim_file: true
   #use e.g. export DTCLIB_SIM_FILE=DTC_packets_Crv.bin to set input binary file
@@ -22,9 +22,11 @@ fragment_receiver: {
   #sim_file: "DTC_packets_Crv.bin"
   # Parameters configuring the fragment generator's parent class
   # artdaq::CommandableFragmentGenerator
+  no_request_mode: true
+  no_request_mode_first_timestamp: 0x407
 
-  fragment_id: 0
-  board_id: 0
+  fragment_id: 2
+  board_id: 32
 }
 
 event_builder: {
@@ -36,6 +38,7 @@ event_builder: {
   max_fragment_size_bytes: 0x200000
 #  buffer_count: 16
   buffer_count: 100
+  init_fragment_count: 0
 }
 
 ######################################################################
@@ -51,10 +54,14 @@ physics:
     {
       module_type: OfflineFragmentsDumper
     }
+    a2:
+    {
+     module_type: DTCEventDump
+    }
   }
 
   #t1: [a1]
-  t1: [rootout]
+  t1: [a2, rootout]
 
 }
 
@@ -83,15 +90,19 @@ outputs:
   }
 }
 
-source:
-{
-  module_type: OfflineFragmentReader
+source: {
+  module_type: ArtdaqInput
+}
+
+#source:
+#{
+#  module_type: OfflineFragmentReader
 #  waiting_time: 900
 #  resume_after_timeout: true
-  readTrkFragments: false
-  readCaloFragments: false
-  readCrvFragments: true
-  debug_event_number_mode: true
-}
+#  readTrkFragments: false
+#  readCaloFragments: false
+#  readCrvFragments: true
+#  debug_event_number_mode: true
+#}
 
 process_name: Driver

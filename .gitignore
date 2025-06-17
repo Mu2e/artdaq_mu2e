@@ -6,3 +6,5 @@ bin
 obj
 *.vcxproj*
 CMakePresets.json
+build-linux-*
+spack-build-*

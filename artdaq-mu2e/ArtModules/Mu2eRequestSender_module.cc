@@ -35,11 +35,10 @@ public:
 		/// "request_address" (Default: "227.128.12.26"): Multicast address to send DataRequests to
 		fhicl::Atom<std::string> request_address{fhicl::Name{"request_address"}, fhicl::Comment{"Multicast address to send DataRequests to"}, "227.128.12.26"};
 		/// "max_request_count" (Default: 100): Number of requests to store in circular buffer (equivalent to how many times each request will be sent)
-		fhicl::Atom<size_t> max_request_count{fhicl::Name{"max_request_count"}, fhicl::Comment{"Number of requests to store in circular buffer (equivalent to how many times each request will be sent)"}, 100};	
+		fhicl::Atom<size_t> max_request_count{fhicl::Name{"max_request_count"}, fhicl::Comment{"Number of requests to store in circular buffer (equivalent to how many times each request will be sent)"}, 100};
 	};
 	/// Used for ParameterSet validation (if desired)
 	using Parameters = fhicl::WrappedTable<Config>;
-
 
 	explicit Mu2eRequestSender(fhicl::ParameterSet const& p);
 	virtual ~Mu2eRequestSender() = default;
@@ -69,8 +68,10 @@ void mu2e::Mu2eRequestSender::analyze(art::Event const& e)
 	std::vector<art::Handle<artdaq::detail::RawEventHeader>> rawHeaderHandles;
 	e.getManyByType(rawHeaderHandles);
 
-	for (auto const& hdr : rawHeaderHandles) {
-		if (hdr.isValid()) {
+	for (auto const& hdr : rawHeaderHandles)
+	{
+		if (hdr.isValid())
+		{
 			seq = hdr->sequence_id;
 			ts = hdr->timestamp;
 			break;
@@ -80,7 +81,8 @@ void mu2e::Mu2eRequestSender::analyze(art::Event const& e)
 	request_sender_->AddRequest(seq, ts);
 	sent_requests_.push_back(seq);
 
-	while (sent_requests_.size() > max_list_size_) {
+	while (sent_requests_.size() > max_list_size_)
+	{
 		request_sender_->RemoveRequest(sent_requests_.front());
 		sent_requests_.pop_front();
 	}
