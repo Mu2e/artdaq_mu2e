@@ -75,6 +75,11 @@ private:
 
 	bool getNext_(artdaq::FragmentPtrs& output) override;
 	DTCLib::DTC_EventWindowTag getCurrentEventWindowTag();
+
+    // counters
+    int link_error_count[6];
+    int link_timeout_count[6];
+    int subevent_count;
 };
 }  // namespace mu2e
 
@@ -147,6 +152,9 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
 	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
+    , link_error_count{0}
+    , link_timeout_count{0}
+    , subevent_count{0}
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
@@ -237,6 +245,10 @@ void mu2e::Mu2eSubEventReceiver::start()
 		}
 		rawOutputStream_.open(fileName, std::ios::out | std::ios::app | std::ios::binary);
 	}
+
+    std::fill_n(link_error_count, 6, 0);
+    std::fill_n(link_timeout_count, 6, 0);
+    subevent_count = 0;
 }
 
 bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCLib::DTC_EventWindowTag ts_in)
@@ -303,12 +315,21 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 			metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Maximum);
 			metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Maximum);
 
-			metricMan->sendMetric("ROC link0 latency", subevtheader->link0_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link1 latency", subevtheader->link1_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link2 latency", subevtheader->link2_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link3 latency", subevtheader->link3_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link4 latency", subevtheader->link4_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link5 latency", subevtheader->link5_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link0 latency", subevtheader->link0_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link1 latency", subevtheader->link1_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link2 latency", subevtheader->link2_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link3 latency", subevtheader->link3_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link4 latency", subevtheader->link4_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link5 latency", subevtheader->link5_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+
+            for (size_t link_id = 0; link_id < 6; ++link_id)
+            {
+                std::string error_cnt_string = "ROC link" + std::to_string(link_id) + " error count";
+                std::string timeout_cnt_string = "ROC link" + std::to_string(link_id) + " timeout count";
+                metricMan->sendMetric(error_cnt_string,   link_error_count[link_id] += (subevtheader->link0_status & 0x80), "status", 3, artdaq::MetricMode::LastPoint);
+                metricMan->sendMetric(timeout_cnt_string, link_timeout_count[link_id] += (subevtheader->link0_status & 0x1), "status", 3, artdaq::MetricMode::LastPoint);
+            }
+            metricMan->sendMetric("ROC link5 error count", subevent_count++, "status", 3, artdaq::MetricMode::LastPoint);
 
 			for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 			{
