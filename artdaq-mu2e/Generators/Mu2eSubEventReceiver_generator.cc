@@ -74,6 +74,15 @@ private:
 	std::size_t const throttle_usecs_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
+	std::size_t rollover_subrun_interval_;	
+	bool rollover_transition_;	
+	uint64_t last_timestamp_;
+		
+	// counters
+	int link_error_count[6];
+	int link_timeout_count[6];
+	int subevent_count;
+	
 	int software_data_rate_scan_{0};
 	int software_data_rate_scan_step_{100000};
 	// The "getNext_" function is used to implement user-specific
@@ -83,19 +92,15 @@ private:
 	bool getNext_(artdaq::FragmentPtrs& output) override;
 	DTCLib::DTC_EventWindowTag getCurrentEventWindowTag();
 
-    // counters
-    int link_error_count[6];
-    int link_timeout_count[6];
-    int subevent_count;
-    // Software data rate scans
-    // If software_data_rate_scan_ is set, data is generated in data,
-    // as fast as possible (unless throttle_usecs is set). The payload
-    // in link0/block0 is increased by 16 bytes/1 package every 
-    // software_data_rate_scan_interval_ events until ~32k payload is reached
-    DTCLib::DTC_EventWindowTag sim_ts_{static_cast<uint64_t>(0)};
-    size_t sim_buffer_size_; // 8k at the moment
-    std::unique_ptr<uint8_t[]> sim_buffer_;
-    int software_data_rate_payload_bytes_{0};
+	// Software data rate scans
+	// If software_data_rate_scan_ is set, data is generated in data,
+	// as fast as possible (unless throttle_usecs is set). The payload
+	// in link0/block0 is increased by 16 bytes/1 package every 
+	// software_data_rate_scan_interval_ events until ~32k payload is reached
+	DTCLib::DTC_EventWindowTag sim_ts_{static_cast<uint64_t>(0)};
+	size_t sim_buffer_size_; // 8k at the moment
+	std::unique_ptr<uint8_t[]> sim_buffer_;
+	int software_data_rate_payload_bytes_{0};
 };
 }  // namespace mu2e
 
@@ -131,6 +136,16 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		TLOG(TLVL_TRACE + 30) << "Sending request for timestamp " << getCurrentEventWindowTag().GetEventWindowTag(true);
 		theCFO_->SendRequestForTimestamp(getCurrentEventWindowTag(), heartbeats_after_);
 	}
+
+	if (rollover_transition_) {
+		rollover_transition_ = false;
+		const auto next_subrun = 1 + (ev_counter() / rollover_subrun_interval_);
+		TLOG(TLVL_DEBUG + 31) << "getNext_ sending subrun transition to subrun " << next_subrun << " and timestamp " << last_timestamp_ + 1;
+		auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, last_timestamp_ + 1, next_subrun, fragment_id());
+		frags.emplace_back(std::move(endOfSubrunFrag));
+	}
+
+
 
 	TLOG(TLVL_DEBUG + 34) << "getNext_ req";
 	auto start_time = std::chrono::steady_clock::now();
@@ -168,11 +183,16 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
 	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
+	, rollover_subrun_interval_(ps.get<size_t>("rollover_subrun_interval", 0)) // 0 is off	
+	, rollover_transition_(false)
+	, last_timestamp_{0}
 	, link_error_count{0}
 	, link_timeout_count{0}
 	, subevent_count{0}
 	, software_data_rate_scan_ (ps.get<int>       ("software_data_rate_scan", 0))
 	, software_data_rate_scan_step_ (ps.get<int>   ("software_data_rate_scan_step", 100000))
+    , sim_buffer_size_(32768)//8192)  // Adjust size as needed, 32k max payload at the moment (2^11 packages (16 bytes each))
+    , sim_buffer_(std::make_unique<uint8_t[]>(sim_buffer_size_))
 {
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
@@ -437,7 +457,18 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		metricMan->sendMetric("Average Event Size", evt->GetEventByteCount(), "Bytes", 3, artdaq::MetricMode::Average);
 		TLOG(TLVL_DEBUG + 26) << "Incrementing event counter";
 		ev_counter_inc();
+
+		if (rollover_subrun_interval_ > 0 && ev_counter() % rollover_subrun_interval_ == 0)
+		{
+			TLOG(TLVL_DEBUG + 29) << "Identified the subrun rollover (timestamp = " << fragment_timestamp
+									    << " ev_counter = " << ev_counter() << ")";
+			rollover_transition_ = true;
+			last_timestamp_ = fragment_timestamp;
+		}
+
 	}
+
+	
 	auto after_copy = std::chrono::steady_clock::now();
 	for (auto& frag : frags) { frag->getLatency(true); }
 	TLOG(TLVL_DEBUG + 27) << "Reporting Metrics";
@@ -488,7 +519,7 @@ std::vector<std::unique_ptr<DTCLib::DTC_SubEvent>> mu2e::Mu2eSubEventReceiver::G
     uint8_t* current_ptr = sim_buffer_.get();
 
     size_t total_subevent_size = sizeof(DTCLib::DTC_SubEventHeader);
-    total_subevent_size = 6 * 16 + block0_payload_size;
+    total_subevent_size =  6 * 16 + block0_payload_size;
     
 	// Create a SubEvent
     DTCLib::DTC_SubEventHeader* header = reinterpret_cast<DTCLib::DTC_SubEventHeader*>(current_ptr);
