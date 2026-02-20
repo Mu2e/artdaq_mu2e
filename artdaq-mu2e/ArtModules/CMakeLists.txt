@@ -23,7 +23,6 @@ cetlib::sqlite
 artdaq::DAQdata
 art::Framework_Principal
           )
-  
 
 # Subdirectories.
 add_subdirectory(fcl)
