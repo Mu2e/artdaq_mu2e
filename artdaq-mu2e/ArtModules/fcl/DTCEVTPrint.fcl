@@ -6,8 +6,8 @@ source: {
 }
 
 physics : {
-  
-  producers: { 
+ 
+  producers: {
   }
 
   analyzers : {
@@ -25,7 +25,7 @@ physics : {
   end_paths : [a1] # , e1]
 }
 
-outputs: { 
+outputs: {
   fileDump: {
   }
-} 
+}
