@@ -1,0 +1,164 @@
+#include "artdaq-core-mu2e/Overlays/FragmentType.hh"
+#include "artdaq-core-mu2e/Overlays/CFO_Packets/CFO_Event.h"
+
+#include "artdaq/DAQdata/Globals.hh"
+#include "artdaq/Generators/GeneratorMacros.hh"
+
+#include "zmq.hpp"
+#include <fstream>
+
+#include "trace.h"
+#define TRACE_NAME "CFOZmqReceiver"
+
+namespace mu2e {
+class CFOZmqReceiver : public artdaq::CommandableFragmentGenerator
+{
+public:
+	explicit CFOZmqReceiver(fhicl::ParameterSet const& ps);
+	virtual ~CFOZmqReceiver();
+
+private:
+	void start() override { start_receiver_thread_(); }
+
+	void stopNoMutex() override {}
+
+	void stop() override { stop_receiver_thread_(); }
+
+	// The "getNext_" function is used to implement user-specific
+	// functionality; it's a mandatory override of the pure virtual
+	// getNext_ function declared in CommandableFragmentGenerator
+
+	bool getNext_(artdaq::FragmentPtrs& output) override;
+
+	void start_receiver_thread_();
+	void stop_receiver_thread_();
+	void receiveCFOData_();
+
+	std::mutex frag_mutex_;
+	artdaq::FragmentPtrs frags_;
+	zmq::context_t context_;
+	zmq::socket_t socket_;
+	std::string zmq_address_;
+	uint64_t event_mode_bitmask_;
+	std::atomic<bool> receive_thread_running_{false};
+	std::unique_ptr<boost::thread> receiver_thread_;
+};
+}  // namespace mu2e
+
+mu2e::CFOZmqReceiver::CFOZmqReceiver(fhicl::ParameterSet const& ps)
+	: CommandableFragmentGenerator(ps)
+	, context_()
+	, socket_(context_, zmq::socket_type::sub)
+	, zmq_address_(ps.get<std::string>("zmqAddress", "inproc://default"))
+	, event_mode_bitmask_(ps.get<uint64_t>("eventModeBitmask", 0xFFFFFFFFFFFFFFFF))
+{
+	socket_.set(zmq::sockopt::rcvtimeo, 1000);  // 1 second timeout
+}
+
+mu2e::CFOZmqReceiver::~CFOZmqReceiver()
+{
+	socket_.close();
+	context_.close();
+}
+
+bool mu2e::CFOZmqReceiver::getNext_(artdaq::FragmentPtrs& output)
+{
+	if (should_stop())
+	{
+		TLOG(TLVL_DEBUG + 33) << "Stopping.";
+		return false;
+	}
+
+	std::lock_guard<std::mutex> lock(frag_mutex_);
+	output.splice(output.end(), frags_);
+	return true;
+}
+
+void mu2e::CFOZmqReceiver::start_receiver_thread_()
+{
+	stop_receiver_thread_();
+	TLOG(TLVL_INFO) << "Starting Data Receiver Thread";
+	receive_thread_running_ = true;
+	try
+	{
+		receiver_thread_.reset(new boost::thread(&mu2e::CFOZmqReceiver::receiveCFOData_, this));
+		char tname[16];
+		snprintf(tname, 16, "%s", "ZMQRecv");  // NOLINT
+		auto handle = receiver_thread_->native_handle();
+		pthread_setname_np(handle, tname);
+	}
+	catch (const boost::exception& e)
+	{
+		TLOG(TLVL_ERROR) << "Caught boost::exception starting Data Receiver thread: " << boost::diagnostic_information(e) << ", errno=" << errno;
+	}
+}
+
+void mu2e::CFOZmqReceiver::stop_receiver_thread_()
+{
+	TLOG(TLVL_INFO) << "Stopping Data Receiver Thread";
+	receive_thread_running_ = false;
+
+	if (receiver_thread_ != nullptr && receiver_thread_->joinable())
+	{
+		receiver_thread_->join();
+	}
+}
+
+void mu2e::CFOZmqReceiver::receiveCFOData_()
+{
+	socket_.connect(zmq_address_);
+	socket_.set(zmq::sockopt::subscribe, "");  // Subscribe to all messages
+	while (receive_thread_running_)
+	{
+		try
+		{
+			zmq::message_t topic_msg;
+			zmq::message_t data_msg;
+			auto topic_ret = socket_.recv(topic_msg, zmq::recv_flags::none);
+			if (!topic_ret.has_value())
+			{
+                // No data in socket buffer
+				continue;
+			}
+			auto data_ret = socket_.recv(data_msg, zmq::recv_flags::none);
+			if (!data_ret.has_value())
+			{
+				continue;
+			}
+
+			auto cfoEvent = CFOLib::CFO_Event(data_msg.data());
+			uint64_t eventMode = cfoEvent.GetEventRecord().event_mode;
+			auto timestamp = cfoEvent.GetEventWindowTag().GetEventWindowTag(true);
+			if ((eventMode & event_mode_bitmask_) == 0)
+			{
+				TLOG(TLVL_DEBUG + 25) << "Received CFO event with mode " << std::hex << eventMode << std::dec << ", skipping due to bitmask";
+				continue;
+			}
+
+			// Process the received data and create an artdaq Fragment
+			auto frag = artdaq::Fragment::FragmentBytes(sizeof(CFOLib::CFO_EventRecord),
+														static_cast<artdaq::Fragment::sequence_id_t>(timestamp),
+														fragment_id(),
+														FragmentType::CFO,
+														static_cast<artdaq::Fragment::timestamp_t>(timestamp));
+			std::memcpy(frag->dataBegin(), cfoEvent.GetRawBufferPointer(), sizeof(CFOLib::CFO_EventRecord));
+			{
+				std::lock_guard<std::mutex> lock(frag_mutex_);
+				frags_.push_back(std::move(frag));
+			}
+		}
+		catch (const zmq::error_t& e)
+		{
+			TLOG(TLVL_ERROR) << "ZeroMQ error in receive thread: " << e.what();
+		}
+		catch (const std::exception& e)
+		{
+			TLOG(TLVL_ERROR) << "Exception in receive thread: " << e.what();
+		}
+	}
+	socket_.set(zmq::sockopt::unsubscribe, "");  // Subscribe to all messages
+	socket_.disconnect(zmq_address_);
+}
+
+// The following macro is defined in artdaq's GeneratorMacros.hh header
+DEFINE_ARTDAQ_COMMANDABLE_GENERATOR(mu2e::CFOZmqReceiver)

@@ -69,6 +69,7 @@ endif()
 find_package(artdaq 3.12.00 REQUIRED EXPORT)
 find_package(artdaq-core-mu2e 1.08.00 REQUIRED EXPORT)
 find_package(mu2e-pcie-utils REQUIRED EXPORT)
+find_package(cppzmq REQUIRED)
 
 include(BuildPlugins)
 

@@ -22,6 +22,13 @@ cet_build_plugin(CFODataReceiver artdaq::commandableGenerator
   artdaq_plugin_types::CommandableFragmentGenerator
 )
 
+cet_build_plugin(CFOZmqReceiver artdaq::commandableGenerator
+  LIBRARIES REG
+  artdaq-core-mu2e::Overlays
+  cppzmq
+  artdaq_plugin_types::CommandableFragmentGenerator
+)
+
 cet_build_plugin(Mu2eSubEventReceiver artdaq::commandableGenerator
   LIBRARIES REG
   artdaq-core-mu2e::Overlays
