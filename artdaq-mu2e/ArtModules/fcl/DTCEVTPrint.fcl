@@ -1,0 +1,31 @@
+process_name : CrvDQMOffline
+
+source: {
+  module_type: RootInput # EmptyEvent
+  maxEvents: -1
+}
+
+physics : {
+  
+  producers: { 
+  }
+
+  analyzers : {
+    print: {
+      module_type: DTCEVTPrint
+      diagLevel : 2
+    }
+  }
+
+  t1 : []
+  a1 : [print]
+  e1 : [fileDump]
+
+  trigger_paths : [t1]
+  end_paths : [a1] # , e1]
+}
+
+outputs: { 
+  fileDump: {
+  }
+} 
