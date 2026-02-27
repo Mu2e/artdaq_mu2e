@@ -106,8 +106,10 @@ void mu2e::CFOZmqReceiver::stop_receiver_thread_()
 
 void mu2e::CFOZmqReceiver::receiveCFOData_()
 {
+	TLOG(TLVL_INFO) << "Data Receiver Thread started, connecting to ZeroMQ address: " << zmq_address_;
 	socket_.connect(zmq_address_);
 	socket_.set(zmq::sockopt::subscribe, "");  // Subscribe to all messages
+	TLOG(TLVL_INFO) << "Data Receiver Thread connected and subscribed to ZeroMQ address: " << zmq_address_ << ", starting receive loop";
 	while (receive_thread_running_)
 	{
 		try
