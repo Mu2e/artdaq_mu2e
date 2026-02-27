@@ -107,16 +107,24 @@ void mu2e::CFOZmqReceiver::stop_receiver_thread_()
 
 void mu2e::CFOZmqReceiver::connect_()
 {
-    TLOG(TLVL_INFO) << "Connecting to ZeroMQ address: " << zmq_address_;
-	socket_.disconnect(zmq_address_);  // Ensure any previous connection is closed
-    socket_.connect(zmq_address_);
-    socket_.set(zmq::sockopt::subscribe, "");  // Subscribe to all messages
+	TLOG(TLVL_INFO) << "Connecting to ZeroMQ address: " << zmq_address_;
+	try
+	{
+		socket_.disconnect(zmq_address_);  // Ensure any previous connection is closed
+	}
+	catch (const zmq::error_t&)
+	{
+		// Ignore disconenct errors, as the socket may not be connected yet
+	}
+
+	socket_.connect(zmq_address_);
+	socket_.set(zmq::sockopt::subscribe, "");  // Subscribe to all messages
 	TLOG(TLVL_INFO) << "Connected and subscribed to ZeroMQ address: " << zmq_address_;
 }
 
 void mu2e::CFOZmqReceiver::receiveCFOData_()
 {
-    connect_();
+	connect_();
 	while (receive_thread_running_)
 	{
 		try
@@ -126,7 +134,7 @@ void mu2e::CFOZmqReceiver::receiveCFOData_()
 			auto topic_ret = socket_.recv(topic_msg, zmq::recv_flags::none);
 			if (!topic_ret.has_value())
 			{
-                // No data in socket buffer
+				// No data in socket buffer
 				continue;
 			}
 			auto data_ret = socket_.recv(data_msg, zmq::recv_flags::none);
