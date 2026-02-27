@@ -42,6 +42,8 @@ std::string subsystemToString(uint8_t subsystem)
 			return "STM";
 		case 5:
 			return "ExtMon";
+		case 7:
+			return "TDAQ";
 		default:
 			return "Unknown (" + std::to_string(subsystem) + ")";
 	}
