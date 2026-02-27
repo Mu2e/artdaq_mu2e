@@ -16,36 +16,36 @@ BOOST_AUTO_TEST_CASE(ZmqContext)
 
 BOOST_AUTO_TEST_CASE(Socket)
 {
-    zmq::context_t context;
-    zmq::socket_t socket(context, zmq::socket_type::pub);
-    socket.close();
+	zmq::context_t context;
+	zmq::socket_t socket(context, zmq::socket_type::pub);
+	socket.close();
 	context.close();
 }
 
 BOOST_AUTO_TEST_CASE(Subscribe)
 {
-    zmq::context_t context;
-    zmq::socket_t socket(context, zmq::socket_type::sub);
-    socket.set(zmq::sockopt::subscribe, "test");
-    socket.close();
-    context.close();
+	zmq::context_t context;
+	zmq::socket_t socket(context, zmq::socket_type::sub);
+	socket.set(zmq::sockopt::subscribe, "test");
+	socket.close();
+	context.close();
 }
 
 BOOST_AUTO_TEST_CASE(Publish)
 {
-    zmq::context_t context;
+	zmq::context_t context;
 	zmq::socket_t pub_socket(context, zmq::socket_type::pub);
 	zmq::socket_t sub_socket(context, zmq::socket_type::sub);
 
-    pub_socket.bind("inproc://test");
+	pub_socket.bind("inproc://test");
 	sub_socket.connect("inproc://test");
 
-    sub_socket.set(zmq::sockopt::subscribe, "test");
+	sub_socket.set(zmq::sockopt::subscribe, "test");
 	std::string message = "test message";
 	pub_socket.send(zmq::buffer("test"), zmq::send_flags::sndmore);
-    pub_socket.send(zmq::buffer(message), zmq::send_flags::none);
+	pub_socket.send(zmq::buffer(message), zmq::send_flags::none);
 
-    std::string received_topic;
+	std::string received_topic;
 	received_topic.resize(4);
 	std::string received_message;
 	received_message.resize(message.size());
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(Publish)
 
 	sub_socket.close();
 	pub_socket.close();
-    context.close();
+	context.close();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

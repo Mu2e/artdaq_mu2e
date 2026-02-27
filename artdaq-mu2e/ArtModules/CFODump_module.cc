@@ -124,10 +124,10 @@ void mu2e::CFODump::analyze(art::Event const& evt)
 		auto evt = bb.getData();
 		TLOG(TLVL_DEBUG) << "Event " << evt.GetEventWindowTag().GetEventWindowTag(true) << " has fragment size " << frag.sizeBytes() << ")";
 		TLOG(TLVL_TRACE) << "Dumping CFO event: " << evt.GetEventRecord().toJson();
-		//if (output_file_)
+		// if (output_file_)
 		//{
 		//	evt.WriteEvent(output_file_, detemu_format_);
-		//}
+		// }
 	}
 }
 
