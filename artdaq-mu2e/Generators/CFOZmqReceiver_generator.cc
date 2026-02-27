@@ -153,11 +153,11 @@ void mu2e::CFOZmqReceiver::receiveCFOData_()
 			}
 
 			// Process the received data and create an artdaq Fragment
-			auto frag = artdaq::Fragment::FragmentBytes(sizeof(CFOLib::CFO_EventRecord),
-														static_cast<artdaq::Fragment::sequence_id_t>(timestamp),
-														fragment_id(),
-														FragmentType::CFO,
-														static_cast<artdaq::Fragment::timestamp_t>(timestamp));
+			auto frag = std::make_unique<artdaq::Fragment>(static_cast<artdaq::Fragment::sequence_id_t>(timestamp),
+														   fragment_id(),
+														   FragmentType::CFO,
+														   static_cast<artdaq::Fragment::timestamp_t>(timestamp));
+			frag->resizeBytes(sizeof(CFOLib::CFO_EventRecord));
 			std::memcpy(frag->dataBegin(), cfoEvent.GetRawBufferPointer(), sizeof(CFOLib::CFO_EventRecord));
 			{
 				std::lock_guard<std::mutex> lock(frag_mutex_);
