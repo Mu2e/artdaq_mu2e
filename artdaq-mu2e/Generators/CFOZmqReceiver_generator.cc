@@ -33,6 +33,7 @@ private:
 	void start_receiver_thread_();
 	void stop_receiver_thread_();
 	void receiveCFOData_();
+	void connect_();
 
 	std::mutex frag_mutex_;
 	artdaq::FragmentPtrs frags_;
@@ -104,12 +105,18 @@ void mu2e::CFOZmqReceiver::stop_receiver_thread_()
 	}
 }
 
+void mu2e::CFOZmqReceiver::connect_()
+{
+    TLOG(TLVL_INFO) << "Connecting to ZeroMQ address: " << zmq_address_;
+	socket_.disconnect(zmq_address_);  // Ensure any previous connection is closed
+    socket_.connect(zmq_address_);
+    socket_.set(zmq::sockopt::subscribe, "");  // Subscribe to all messages
+	TLOG(TLVL_INFO) << "Connected and subscribed to ZeroMQ address: " << zmq_address_;
+}
+
 void mu2e::CFOZmqReceiver::receiveCFOData_()
 {
-	TLOG(TLVL_INFO) << "Data Receiver Thread started, connecting to ZeroMQ address: " << zmq_address_;
-	socket_.connect(zmq_address_);
-	socket_.set(zmq::sockopt::subscribe, "");  // Subscribe to all messages
-	TLOG(TLVL_INFO) << "Data Receiver Thread connected and subscribed to ZeroMQ address: " << zmq_address_ << ", starting receive loop";
+    connect_();
 	while (receive_thread_running_)
 	{
 		try
@@ -152,13 +159,14 @@ void mu2e::CFOZmqReceiver::receiveCFOData_()
 		catch (const zmq::error_t& e)
 		{
 			TLOG(TLVL_ERROR) << "ZeroMQ error in receive thread: " << e.what();
+			connect_();
 		}
 		catch (const std::exception& e)
 		{
 			TLOG(TLVL_ERROR) << "Exception in receive thread: " << e.what();
+			connect_();
 		}
 	}
-	socket_.set(zmq::sockopt::unsubscribe, "");  // Subscribe to all messages
 	socket_.disconnect(zmq_address_);
 }
 
