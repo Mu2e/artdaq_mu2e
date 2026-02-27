@@ -148,8 +148,12 @@ void mu2e::CFOZmqReceiver::receiveCFOData_()
 			auto timestamp = cfoEvent.GetEventWindowTag().GetEventWindowTag(true);
 			if ((eventMode & event_mode_bitmask_) == 0)
 			{
-				TLOG(TLVL_DEBUG + 25) << "Received CFO event with mode " << std::hex << eventMode << std::dec << ", skipping due to bitmask";
+				TLOG(TLVL_DEBUG + 25) << "Received CFO event " << timestamp << " with mode " << std::hex << eventMode << std::dec << ", skipping due to bitmask";
 				continue;
+			}
+			else
+			{
+				TLOG(TLVL_DEBUG + 24) << "Received CFO event " << timestamp << " with mode " << std::hex << eventMode << std::dec << ", processing";
 			}
 
 			// Process the received data and create an artdaq Fragment
