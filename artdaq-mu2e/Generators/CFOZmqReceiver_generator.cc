@@ -1,6 +1,7 @@
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 #include "artdaq-core-mu2e/Overlays/CFO_Packets/CFO_Event.h"
 
+#include "artdaq-core/Data/MetadataFragment.hh"
 #include "artdaq/DAQdata/Globals.hh"
 #include "artdaq/Generators/GeneratorMacros.hh"
 
@@ -43,6 +44,9 @@ private:
 	uint64_t event_mode_bitmask_;
 	std::atomic<bool> receive_thread_running_{false};
 	std::unique_ptr<boost::thread> receiver_thread_;
+	uint8_t daq_mode_word_value_{0};
+	uint64_t predictive_subrun_offset_{0};
+	uint32_t current_subrun_number_{1};
 };
 }  // namespace mu2e
 
@@ -52,6 +56,7 @@ mu2e::CFOZmqReceiver::CFOZmqReceiver(fhicl::ParameterSet const& ps)
 	, socket_(context_, zmq::socket_type::sub)
 	, zmq_address_(ps.get<std::string>("zmqAddress", "inproc://default"))
 	, event_mode_bitmask_(ps.get<uint64_t>("eventModeBitmask", 0xFFFFFFFFFFFFFFFF))
+	, predictive_subrun_offset_(ps.get<uint64_t>("predictiveSubrunOffset", 0))
 {
 	socket_.set(zmq::sockopt::rcvtimeo, 1000);  // 1 second timeout
 }
@@ -145,16 +150,31 @@ void mu2e::CFOZmqReceiver::receiveCFOData_()
 
 			auto cfoEvent = CFOLib::CFO_Event(data_msg.data());
 			uint64_t eventMode = cfoEvent.GetEventRecord().event_mode;
+			uint8_t daqModeWord = static_cast<uint8_t>(eventMode & 0xFF'0000'0000 >> 32);
 			auto timestamp = cfoEvent.GetEventWindowTag().GetEventWindowTag(true);
 			if ((eventMode & event_mode_bitmask_) == 0)
 			{
+				if (daqModeWord != daq_mode_word_value_)
+				{
+					TLOG(TLVL_DEBUG + 25) << "Received CFO event " << timestamp << " with DAQ mode word " << std::hex << daqModeWord << " != " << daq_mode_word_value_ << ", checking for subrun transition";
+					std::bitset<8> daqModeBits(daqModeWord);
+					daq_mode_word_value_ = daqModeWord;
+					if (daqModeBits.test(2))
+					{
+						current_subrun_number_++;
+						// Sequence in EndOfSubrunFragment is the _last_ timestamp of the subrun, thus subtracting one to make the next subrun start at timestamp + predictive_subrun_offset_
+						auto endOfSubrunFrag = artdaq::MetadataFragment::CreateEndOfSubrunFragment(my_rank, timestamp + predictive_subrun_offset_ - 1, current_subrun_number_, 0);
+
+						std::lock_guard<std::mutex> lock(frag_mutex_);
+						frags_.push_back(std::move(endOfSubrunFrag));
+					}
+					continue;
+				}
 				TLOG(TLVL_DEBUG + 25) << "Received CFO event " << timestamp << " with mode " << std::hex << eventMode << std::dec << ", skipping due to bitmask";
 				continue;
 			}
-			else
-			{
-				TLOG(TLVL_DEBUG + 24) << "Received CFO event " << timestamp << " with mode " << std::hex << eventMode << std::dec << ", processing";
-			}
+
+            TLOG(TLVL_DEBUG + 24) << "Received CFO event " << timestamp << " with mode " << std::hex << eventMode << std::dec << ", processing";
 
 			// Process the received data and create an artdaq Fragment
 			auto frag = std::make_unique<artdaq::Fragment>(static_cast<artdaq::Fragment::sequence_id_t>(timestamp),
