@@ -26,7 +26,12 @@ cet_build_plugin(Mu2eArtdaqTimeTrackerService art::service LIBRARIES REG
 cetlib::sqlite
 artdaq::DAQdata
 art::Framework_Principal
-          )
+)
+
+cet_build_plugin(DTCEVTPrint art::module LIBRARIES REG
+    art_root_io::TFileService_service
+    artdaq-core-mu2e::Data
+)
 
 # Subdirectories.
 add_subdirectory(fcl)
