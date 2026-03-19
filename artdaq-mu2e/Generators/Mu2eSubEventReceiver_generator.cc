@@ -174,7 +174,11 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 														   cfoConfig.get<bool>("useCFODRP", false));
 	}
 
-	if (skip_dtc_init_) return;  // skip any control of DTC
+	if (skip_dtc_init_) 
+	{
+		theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+		return; // skip any control of DTC	
+	}
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
