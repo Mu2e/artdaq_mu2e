@@ -2,4 +2,5 @@
 cet_test(ZmqPubSub_test USE_BOOST_UNIT INSTALL_BIN
   LIBRARIES PRIVATE
   cppzmq
+  TRACE::MF
 )
