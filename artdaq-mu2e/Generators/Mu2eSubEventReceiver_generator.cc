@@ -176,7 +176,9 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 
 	if (skip_dtc_init_) 
 	{
+        TLOG(TLVL_ERROR) << "Before ReleaseAllBuffers" << std::endl;
 		theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+        TLOG(TLVL_ERROR) << "After ReleaseAllBuffers" << std::endl;
 		return; // skip any control of DTC	
 	}
 
