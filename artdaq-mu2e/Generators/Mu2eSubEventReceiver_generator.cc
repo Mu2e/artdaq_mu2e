@@ -1,5 +1,29 @@
 // This file reads out DTCs that are NOT in HW Event-building mode
 // It can be used as an exmaple for developing more specific functionality.
+//
+// -----------------------------------------------------------------------------
+// Detector-delay emulation
+// -----------------------------------------------------------------------------
+// A lognormal random delay can be injected before each fragment is returned,
+// to emulate the natural timing spread of real detector readout chains.
+//
+// FHiCL parameters (all optional, feature is off by default):
+//
+//   throttle_lognormal_usecs  (double, default 0.0)
+//       Mean delay in microseconds.  Set to 0 to disable the feature entirely.
+//
+//   throttle_lognormal_sigma  (double, default 0.5)
+//       Shape of the distribution -- the standard deviation of the underlying
+//       normal.  Larger values produce a heavier tail.  0.5 is a reasonable
+//       starting point for a single detector subsystem.
+//
+//   throttle_lognormal_seed   (uint64, default 0)
+//       Random seed for the generator.
+//       0  ->  a unique seed is drawn produces an independent delay sequence.
+//       >0 ->  a fixed deterministic seed; set the same value on every board
+//              to force all detectors to produce the identical delay sequence
+//              (same delay for event N on every board).
+// -----------------------------------------------------------------------------
 
 #include "artdaq-core-mu2e/Overlays/FragmentType.hh"
 #include "artdaq-core-mu2e/Overlays/DTCEventFragment.hh"
@@ -12,6 +36,8 @@
 #include "artdaq/Generators/GeneratorMacros.hh"
 
 #include <fstream>
+#include <random>
+#include <cmath>
 
 #include "trace.h"
 #define TRACE_NAME "Mu2eSubEventReceiver"
@@ -37,6 +63,10 @@ private:
 	void readSimFile_(std::string sim_file);
 
 	size_t getCurrentSequenceID();
+
+	/// Sleep for a random duration drawn from the configured distribution,
+	/// honouring should_stop() so the delay is interruptible.
+	void emulateDetectorDelay_();
 
 	// Like "getNext_", "fragmentIDs_" is a mandatory override; it
 	// returns a vector of the fragment IDs an instance of this class
@@ -69,6 +99,16 @@ private:
 	std::size_t const throttle_usecs_;
 	std::condition_variable throttle_cv_;
 	std::mutex throttle_mutex_;
+
+	// --- Emulated detector-delay parameters (lognormal) ---
+	// throttle_lognormal_usecs: mean delay in us. 0 (default) = disabled.
+	// throttle_lognormal_sigma: shape parameter of the underlying normal (default 0.5).
+	// throttle_lognormal_seed:  0 = unique random seed per instance;
+	//                           >0 = fixed seed (identical sequence on all instances sharing it).
+	double const throttle_lognormal_usecs_;  // 0 means disabled
+	double const throttle_lognormal_sigma_;
+	std::mt19937_64 delay_rng_;
+	std::lognormal_distribution<double> delay_lognorm_dist_;
 	// The "getNext_" function is used to implement user-specific
 	// functionality; it's a mandatory override of the pure virtual
 	// getNext_ function declared in CommandableFragmentGenerator
@@ -94,6 +134,11 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 		TLOG(TLVL_DEBUG + 32) << "Throttling... " << throttle_usecs_;
 		std::unique_lock<std::mutex> throttle_lock(throttle_mutex_);
 		throttle_cv_.wait_for(throttle_lock, std::chrono::microseconds(throttle_usecs_), [&]() { return should_stop(); });
+	}
+
+	if (throttle_lognormal_usecs_ > 0.0)
+	{
+		emulateDetectorDelay_();
 	}
 
 	if (should_stop())
@@ -147,7 +192,30 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	, dtc_offset_(ps.get<size_t>("dtc_position_in_chain", 0))
 	, n_dtcs_(ps.get<size_t>("n_dtcs_in_chain", 1))
 	, throttle_usecs_(ps.get<size_t>("throttle_usecs", 0))  // in units of us
+	, throttle_lognormal_usecs_(ps.get<double>("throttle_lognormal_usecs", 0.0))
+	, throttle_lognormal_sigma_(ps.get<double>("throttle_lognormal_sigma", 0.5))
 {
+	// --- Initialise emulated-delay RNG ---
+	if (throttle_lognormal_usecs_ > 0.0)
+	{
+		uint64_t seed = ps.get<uint64_t>("throttle_lognormal_seed", 0);
+		if (seed == 0)
+		{
+			// Draw two 32-bit words from the hardware entropy source so that
+			// each detector instance gets a unique, unpredictable sequence.
+			std::random_device rd;
+			seed = (static_cast<uint64_t>(rd()) << 32) | rd();
+		}
+		delay_rng_.seed(seed);
+		// Back-compute the lognormal location parameter m so that the
+		// distribution mean equals throttle_lognormal_usecs_.
+		double m = std::log(throttle_lognormal_usecs_) - 0.5 * throttle_lognormal_sigma_ * throttle_lognormal_sigma_;
+		delay_lognorm_dist_ = std::lognormal_distribution<double>(m, throttle_lognormal_sigma_);
+		TLOG(TLVL_INFO) << "Detector delay emulation enabled: lognormal, mean="
+						<< throttle_lognormal_usecs_ << " us, sigma=" << throttle_lognormal_sigma_
+						<< ", seed=" << seed;
+	}
+
 	// mode_ can still be overridden by environment!
 	theInterface_ = std::make_unique<DTCLib::DTC>(mode_,
 												  ps.get<int>("dtc_id", -1),
@@ -174,12 +242,21 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 														   cfoConfig.get<bool>("useCFODRP", false));
 	}
 
-	if (skip_dtc_init_) 
+	if (skip_dtc_init_)
 	{
-        TLOG(TLVL_ERROR) << "Before ReleaseAllBuffers" << std::endl;
-		theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
-        TLOG(TLVL_ERROR) << "After ReleaseAllBuffers" << std::endl;
-		return; // skip any control of DTC	
+		try
+		{
+			theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+		}
+		catch (const std::exception& ex)
+		{
+			throw std::runtime_error(std::string("Mu2eSubEventReceiver: ReleaseAllBuffers failed during init (skip_dtc_init): ") + ex.what());
+		}
+		catch (...)
+		{
+			throw std::runtime_error("Mu2eSubEventReceiver: ReleaseAllBuffers failed during init (skip_dtc_init): unknown exception");
+		}
+		return; // skip any control of DTC
 	}
 
 	if (ps.get<bool>("load_sim_file", false))
@@ -206,7 +283,18 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 	{
 		theInterface_->ClearDetectorEmulatorInUse();  // Needed if we're doing ROC Emulator...make sure Detector Emulation
 		// is disabled
-		theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+		try
+		{
+			theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+		}
+		catch (const std::exception& ex)
+		{
+			throw std::runtime_error(std::string("Mu2eSubEventReceiver: ReleaseAllBuffers failed during init: ") + ex.what());
+		}
+		catch (...)
+		{
+			throw std::runtime_error("Mu2eSubEventReceiver: ReleaseAllBuffers failed during init: unknown exception");
+		}
 	}
 }
 
@@ -243,6 +331,18 @@ void mu2e::Mu2eSubEventReceiver::start()
 		}
 		rawOutputStream_.open(fileName, std::ios::out | std::ios::app | std::ios::binary);
 	}
+}
+
+void mu2e::Mu2eSubEventReceiver::emulateDetectorDelay_()
+{
+	double delay_us = delay_lognorm_dist_(delay_rng_);
+
+	auto delay_int = static_cast<uint64_t>(delay_us);
+	TLOG(TLVL_DEBUG + 40) << "emulateDetectorDelay_: delaying " << delay_int << " us";
+
+	// Reuse the existing throttle mutex/cv so the sleep is interruptible by stop().
+	std::unique_lock<std::mutex> lock(throttle_mutex_);
+	throttle_cv_.wait_for(lock, std::chrono::microseconds(delay_int), [&]() { return should_stop(); });
 }
 
 bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCLib::DTC_EventWindowTag ts_in)
