@@ -409,12 +409,12 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 			metricMan->sendMetric("ROC link4 status", subevtheader->link4_status, "status", 3, artdaq::MetricMode::Maximum);
 			metricMan->sendMetric("ROC link5 status", subevtheader->link5_status, "status", 3, artdaq::MetricMode::Maximum);
 
-			metricMan->sendMetric("ROC link0 latency", subevtheader->link0_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link1 latency", subevtheader->link1_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link2 latency", subevtheader->link2_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link3 latency", subevtheader->link3_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link4 latency", subevtheader->link4_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
-			metricMan->sendMetric("ROC link5 latency", subevtheader->link5_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum);
+			metricMan->sendMetric("ROC link0 latency", subevtheader->link0_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link1 latency", subevtheader->link1_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link2 latency", subevtheader->link2_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link3 latency", subevtheader->link3_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link4 latency", subevtheader->link4_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
+			metricMan->sendMetric("ROC link5 latency", subevtheader->link5_drp_rx_latency, "status", 3, artdaq::MetricMode::Minimum | artdaq::MetricMode::Maximum | artdaq::MetricMode::Average);
 
 			for (size_t bl = 0; bl < subevt->GetDataBlockCount(); ++bl)
 			{
