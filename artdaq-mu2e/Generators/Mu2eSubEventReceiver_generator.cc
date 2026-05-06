@@ -274,6 +274,8 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
 	for (auto& subevt : data)
 	{
+		ts_out = subevt->GetEventWindowTag();
+		TLOG(TLVL_TRACE + 19) << "Processing subevent with timestamp " << ts_out.GetEventWindowTag(true);
 		size_t size_bytes = sizeof(DTCLib::DTC_EventHeader);
 		size_bytes += subevt->GetSubEventByteCount();
 		TLOG(TLVL_DEBUG + 20) << "Size of event will be " << static_cast<int>(size_bytes) << "B";
