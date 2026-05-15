@@ -219,7 +219,11 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 														   cfoConfig.get<bool>("useCFODRP", false));
 	}
 
-	if (skip_dtc_init_) return;  // skip any control of DTC
+	if (skip_dtc_init_)
+	{
+		theInterface_->ReleaseAllBuffers(DTC_DMA_Engine_DAQ);
+		return;  // skip any control of DTC
+	}
 
 	if (ps.get<bool>("load_sim_file", false))
 	{
@@ -335,6 +339,8 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 	// GetSubEventData can return multiple EWTs, and we can assume that there is ONE DTC_SubEvent per EWT!
 	for (auto& subevt : data)
 	{
+		ts_out = subevt->GetEventWindowTag();
+		TLOG(TLVL_TRACE + 19) << "Processing subevent with timestamp " << ts_out.GetEventWindowTag(true);
 		size_t size_bytes = sizeof(DTCLib::DTC_EventHeader);
 		size_bytes += subevt->GetSubEventByteCount();
 		TLOG(TLVL_DEBUG + 20) << "Size of event will be " << static_cast<int>(size_bytes) << "B";

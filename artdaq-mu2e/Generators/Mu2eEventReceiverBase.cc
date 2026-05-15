@@ -218,7 +218,7 @@ bool mu2e::Mu2eEventReceiverBase::getNextDTCFragment(artdaq::FragmentPtrs& frags
 	else
 	{
 		TLOG(TLVL_TRACE + 20) << "Creating ContainerFragment, sz=" << data.size();
-		frags.emplace_back(new artdaq::Fragment(seq_out, fragment_ids_[0]));
+		frags.emplace_back(new artdaq::Fragment(seq_out, fragment_ids_[0], artdaq::Fragment::ContainerFragmentType));
 		frags.back()->setTimestamp(fragment_timestamp);
 		artdaq::ContainerFragmentLoader cfl(*frags.back());
 		cfl.set_missing_data(false);

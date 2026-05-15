@@ -1,0 +1,87 @@
+# FHiCL document used to run the "driver" executable. To learn more
+#  about the FHiCL language, please look at
+#  cdcvs.fnal.gov/redmine/documents/327 , the "FHiCL Quick Start Guide"
+
+events_to_generate: 0
+run_number: 101
+debug_cout: true
+transition_timeout: 30
+
+fragment_receiver: {
+
+   # Parameters defining and configuring the fragment generator to be used
+
+   generator: CFOZmqReceiver
+   zmqAddress: "tcp://mu2e-trk-04.fnal.gov:3093"
+
+   # Parameters configuring the fragment generator's parent class
+   # artdaq::CommandableFragmentGenerator
+
+   fragment_id: 0
+   board_id: 0
+}
+
+event_builder: {
+
+  expected_fragments_per_event: 1
+max_fragment_size_bytes: 0x3000
+buffer_count: 20
+use_art: true
+  print_event_store_stats: false
+  verbose: false
+  events_expected_in_SimpleQueueReader: @local::events_to_generate
+  send_requests: false
+  init_fragment_count: 0
+}
+
+######################################################################
+# The ART code
+######################################################################
+
+art: {
+services: {
+   ArtdaqSharedMemoryServiceInterface: {
+     service_provider: ArtdaqSharedMemoryService
+     waiting_time: 900
+     resume_after_timeout: true
+  }
+  ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: "Mu2e" }
+    TimeTracker: {}
+}
+physics:
+{
+  analyzers:
+  {
+	cfoDump: {
+		module_type: CFODump
+	}
+  }
+
+  producers:
+  {
+  }
+
+  a1: [ cfoDump ]
+  my_output_modules: [ rootout ]
+}
+
+outputs:
+{
+
+ rootout:
+  {
+    module_type: RootDAQOut
+    fileName: "driver.root"
+    fastCloning: false
+    compressionLevel: 0
+  }
+
+}
+
+source:
+{
+module_type: ArtdaqInput
+}
+
+process_name: Driver
+}

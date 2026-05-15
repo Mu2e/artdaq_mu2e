@@ -1,8 +1,6 @@
 
-#cet_test(driver_t HANDBUILT
-#   TEST_EXEC artdaqDriver
-#   TEST_ARGS -c driverDTC.fcl
-#   DATAFILES
-#   ../../tools/fcl/driverDTC.fcl
-#)
-
+cet_test(ZmqPubSub_test USE_BOOST_UNIT INSTALL_BIN
+  LIBRARIES PRIVATE
+  cppzmq
+  TRACE::MF
+)
