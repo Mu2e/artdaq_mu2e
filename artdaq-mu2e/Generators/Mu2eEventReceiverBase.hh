@@ -25,6 +25,7 @@
 
 #include <atomic>
 #include <vector>
+#include <algorithm>
 
 #include "dtcInterfaceLib/DTC.h"
 #include "dtcInterfaceLib/DTCSoftwareCFO.h"
