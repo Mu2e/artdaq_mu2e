@@ -117,7 +117,7 @@ bool mu2e::Mu2eSubEventReceiver::getNext_(artdaq::FragmentPtrs& frags)
 	bool retVal = true;
 	do
 	{
-		retVal =  getNextDTCEventFragment(frags, zero);// getNextDTCFragment(frags, zero);
+		retVal = getNextDTCEventFragment(frags, zero);  // getNextDTCFragment(frags, zero);
 		TLOG(TLVL_DEBUG + 35) << "getNext_ req retry? " << retVal << " " << frags.size();
 	} while (1 && retVal && frags.size() < 900 &&
 			 artdaq::TimeUtils::GetElapsedTimeMicroseconds(start_time) < 100000 /* 100 ms */);
