@@ -475,6 +475,8 @@ void mu2e::CFODataReceiver::start()
 	ewts_.clear();
 
 	subrun_record_.reset(subrun_number());
+	metricMan->sendMetric("SubrunNumber", static_cast<uint64_t>(subrun_record_.subrun_number), "subrun", 1,
+	                      artdaq::MetricMode::LastPoint | artdaq::MetricMode::Persist);
 	openRecordFile_();
 
 	// Start DB writer thread if we have a connection string
@@ -597,6 +599,8 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 			                      << " -> subrun " << next_subrun;
 			publishRecord_();
 			subrun_record_.reset(next_subrun);
+			metricMan->sendMetric("SubrunNumber", static_cast<uint64_t>(subrun_record_.subrun_number), "subrun", 1,
+			                      artdaq::MetricMode::LastPoint | artdaq::MetricMode::Persist);
 			//                                                                   next EWT             subrun       ID
 			frags.emplace_back(artdaq::MetadataFragment::CreateEndOfSubrunFragment(
 			    my_rank, fragment_timestamp + 1, next_subrun, fragment_id()));
