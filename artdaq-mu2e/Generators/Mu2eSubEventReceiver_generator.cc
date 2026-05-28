@@ -257,7 +257,7 @@ mu2e::Mu2eSubEventReceiver::Mu2eSubEventReceiver(fhicl::ParameterSet const& ps)
 		{
 			throw std::runtime_error("Mu2eSubEventReceiver: ReleaseAllBuffers failed during init (skip_dtc_init): unknown exception");
 		}
-		return; // skip any control of DTC
+		return;  // skip any control of DTC
 	}
 
 	if (ps.get<bool>("load_sim_file", false))

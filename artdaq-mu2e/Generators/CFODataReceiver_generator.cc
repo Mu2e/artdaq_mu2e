@@ -79,50 +79,50 @@ private:
 	// Per-subrun record
 	struct SubrunRecord
 	{
-		int      subrun_number{-1};
+		int subrun_number{-1};
 		uint64_t n_events{0};
 		uint64_t n_on_spill{0};
 		uint64_t n_off_spill{0};
 		uint64_t n_null{0};
 		uint64_t min_ewt{uint64_t(-1)};
 		uint64_t max_ewt{0};
-		uint32_t start_time_unix{0};    // linux_timestamp of first event
-		uint32_t stop_time_unix{0};     // linux_timestamp of last event
+		uint32_t start_time_unix{0};                     // linux_timestamp of first event
+		uint32_t stop_time_unix{0};                      // linux_timestamp of last event
 		std::map<uint64_t, uint64_t> event_mode_counts;  // raw event_mode value -> count
 
 		void reset(int subrun)
 		{
-			subrun_number     = subrun;
-			n_events          = 0;
-			n_on_spill        = 0;
-			n_off_spill       = 0;
-			n_null            = 0;
-			min_ewt           = uint64_t(-1);
-			max_ewt           = 0;
-			start_time_unix   = 0;
-			stop_time_unix    = 0;
+			subrun_number = subrun;
+			n_events = 0;
+			n_on_spill = 0;
+			n_off_spill = 0;
+			n_null = 0;
+			min_ewt = uint64_t(-1);
+			max_ewt = 0;
+			start_time_unix = 0;
+			stop_time_unix = 0;
 			event_mode_counts.clear();
 		}
 	};
 
-	SubrunRecord  subrun_record_;
+	SubrunRecord subrun_record_;
 
 	// File output
-	std::string   subrun_record_dir_;
+	std::string subrun_record_dir_;
 	std::ofstream subrun_record_file_;
 
 	void openRecordFile_();
 	void writeRecordToFile_(const SubrunRecord& rec);
 
 	// DB output — background writer thread
-	std::string   subrun_record_db_connstr_;
+	std::string subrun_record_db_connstr_;
 
 	static constexpr size_t kDbQueueMaxSize = 20;
-	std::queue<SubrunRecord>  db_queue_;
-	std::mutex                db_queue_mutex_;
-	std::condition_variable   db_queue_cv_;
-	std::atomic<bool>         db_writer_stop_{false};
-	std::thread               db_writer_thread_;
+	std::queue<SubrunRecord> db_queue_;
+	std::mutex db_queue_mutex_;
+	std::condition_variable db_queue_cv_;
+	std::atomic<bool> db_writer_stop_{false};
+	std::thread db_writer_thread_;
 
 	void dbWriterThread_();
 	void writeRecordToDb_(PGconn* conn, const SubrunRecord& rec);
@@ -182,12 +182,12 @@ void mu2e::CFODataReceiver::openRecordFile_()
 	if (subrun_record_file_.tellp() == 0)
 	{
 		subrun_record_file_
-		    << "run_number,subrun_number"
-		    << ",n_events,n_on_spill,n_off_spill,n_null"
-		    << ",min_ewt,max_ewt"
-		    << ",start_time_unix,stop_time_unix"
-		    << ",event_mode_counts_json"
-		    << "\n";
+			<< "run_number,subrun_number"
+			<< ",n_events,n_on_spill,n_off_spill,n_null"
+			<< ",min_ewt,max_ewt"
+			<< ",start_time_unix,stop_time_unix"
+			<< ",event_mode_counts_json"
+			<< "\n";
 	}
 	TLOG(TLVL_DEBUG) << "Opened subrun record file: " << fname.str();
 }
@@ -198,23 +198,23 @@ void mu2e::CFODataReceiver::writeRecordToFile_(const SubrunRecord& rec)
 	if (rec.n_events == 0) return;
 
 	subrun_record_file_
-	    << run_number()
-	    << "," << rec.subrun_number
-	    << "," << rec.n_events
-	    << "," << rec.n_on_spill
-	    << "," << rec.n_off_spill
-	    << "," << rec.n_null
-	    << "," << rec.min_ewt
-	    << "," << rec.max_ewt
-	    << "," << rec.start_time_unix
-	    << "," << rec.stop_time_unix
-	    << ",\"" << buildEventModeJson(rec.event_mode_counts) << "\""
-	    << "\n";
+		<< run_number()
+		<< "," << rec.subrun_number
+		<< "," << rec.n_events
+		<< "," << rec.n_on_spill
+		<< "," << rec.n_off_spill
+		<< "," << rec.n_null
+		<< "," << rec.min_ewt
+		<< "," << rec.max_ewt
+		<< "," << rec.start_time_unix
+		<< "," << rec.stop_time_unix
+		<< ",\"" << buildEventModeJson(rec.event_mode_counts) << "\""
+		<< "\n";
 	subrun_record_file_.flush();
 
 	TLOG(TLVL_DEBUG) << "Wrote file record for subrun " << rec.subrun_number
-	                 << ": " << rec.n_events << " events"
-	                 << " (" << rec.n_on_spill << " on-spill, " << rec.n_off_spill << " off-spill)";
+					 << ": " << rec.n_events << " events"
+					 << " (" << rec.n_on_spill << " on-spill, " << rec.n_off_spill << " off-spill)";
 }
 
 // ---------------------------------------------------------------------------
@@ -229,39 +229,39 @@ void mu2e::CFODataReceiver::writeRecordToDb_(PGconn* conn, const SubrunRecord& r
 
 	// Use parameterized query to avoid any injection issues
 	const std::string sql =
-	    "INSERT INTO test_sc.subrun "
-	    "(run, subrun, n_events, n_on_spill, n_off_spill, n_null, "
-	    " min_ewt, max_ewt, start_time_unix, stop_time_unix, event_mode_counts) "
-	    "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb) "
-	    "ON CONFLICT (run, subrun) DO UPDATE SET "
-	    "  n_events=EXCLUDED.n_events, n_on_spill=EXCLUDED.n_on_spill, "
-	    "  n_off_spill=EXCLUDED.n_off_spill, n_null=EXCLUDED.n_null, "
-	    "  min_ewt=EXCLUDED.min_ewt, max_ewt=EXCLUDED.max_ewt, "
-	    "  start_time_unix=EXCLUDED.start_time_unix, "
-	    "  stop_time_unix=EXCLUDED.stop_time_unix, "
-	    "  event_mode_counts=EXCLUDED.event_mode_counts";
+		"INSERT INTO test_sc.subrun "
+		"(run, subrun, n_events, n_on_spill, n_off_spill, n_null, "
+		" min_ewt, max_ewt, start_time_unix, stop_time_unix, event_mode_counts) "
+		"VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb) "
+		"ON CONFLICT (run, subrun) DO UPDATE SET "
+		"  n_events=EXCLUDED.n_events, n_on_spill=EXCLUDED.n_on_spill, "
+		"  n_off_spill=EXCLUDED.n_off_spill, n_null=EXCLUDED.n_null, "
+		"  min_ewt=EXCLUDED.min_ewt, max_ewt=EXCLUDED.max_ewt, "
+		"  start_time_unix=EXCLUDED.start_time_unix, "
+		"  stop_time_unix=EXCLUDED.stop_time_unix, "
+		"  event_mode_counts=EXCLUDED.event_mode_counts";
 
-	const std::string p1  = std::to_string(run_number());
-	const std::string p2  = std::to_string(rec.subrun_number);
-	const std::string p3  = std::to_string(rec.n_events);
-	const std::string p4  = std::to_string(rec.n_on_spill);
-	const std::string p5  = std::to_string(rec.n_off_spill);
-	const std::string p6  = std::to_string(rec.n_null);
-	const std::string p7  = std::to_string(rec.min_ewt);
-	const std::string p8  = std::to_string(rec.max_ewt);
-	const std::string p9  = std::to_string(rec.start_time_unix);
+	const std::string p1 = std::to_string(run_number());
+	const std::string p2 = std::to_string(rec.subrun_number);
+	const std::string p3 = std::to_string(rec.n_events);
+	const std::string p4 = std::to_string(rec.n_on_spill);
+	const std::string p5 = std::to_string(rec.n_off_spill);
+	const std::string p6 = std::to_string(rec.n_null);
+	const std::string p7 = std::to_string(rec.min_ewt);
+	const std::string p8 = std::to_string(rec.max_ewt);
+	const std::string p9 = std::to_string(rec.start_time_unix);
 	const std::string p10 = std::to_string(rec.stop_time_unix);
 	const std::string p11 = mode_json;
 
-	const char* params[11] = { p1.c_str(), p2.c_str(), p3.c_str(), p4.c_str(), p5.c_str(),
-	                            p6.c_str(), p7.c_str(), p8.c_str(), p9.c_str(), p10.c_str(),
-	                            p11.c_str() };
+	const char* params[11] = {p1.c_str(), p2.c_str(), p3.c_str(), p4.c_str(), p5.c_str(),
+							  p6.c_str(), p7.c_str(), p8.c_str(), p9.c_str(), p10.c_str(),
+							  p11.c_str()};
 
 	PGresult* res = PQexecParams(conn, sql.c_str(), 11, nullptr, params, nullptr, nullptr, 0);
 
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 		TLOG(TLVL_WARNING) << "DB insert failed for subrun " << rec.subrun_number
-		                   << ": " << PQresultErrorMessage(res);
+						   << ": " << PQresultErrorMessage(res);
 	else
 		TLOG(TLVL_DEBUG) << "DB record written for subrun " << rec.subrun_number;
 
@@ -276,13 +276,13 @@ void mu2e::CFODataReceiver::dbWriterThread_()
 	if (PQstatus(conn) != CONNECTION_OK)
 	{
 		TLOG(TLVL_WARNING) << "DB connection failed: " << PQerrorMessage(conn)
-		                   << " — subrun records will not be written to DB";
+						   << " — subrun records will not be written to DB";
 		PQfinish(conn);
 		// Drain the queue without writing so pushes don't pile up
 		while (true)
 		{
 			std::unique_lock<std::mutex> lock(db_queue_mutex_);
-			db_queue_cv_.wait(lock, [&]{ return !db_queue_.empty() || db_writer_stop_.load(); });
+			db_queue_cv_.wait(lock, [&] { return !db_queue_.empty() || db_writer_stop_.load(); });
 			while (!db_queue_.empty()) db_queue_.pop();
 			if (db_writer_stop_.load()) break;
 		}
@@ -296,7 +296,7 @@ void mu2e::CFODataReceiver::dbWriterThread_()
 		SubrunRecord rec;
 		{
 			std::unique_lock<std::mutex> lock(db_queue_mutex_);
-			db_queue_cv_.wait(lock, [&]{ return !db_queue_.empty() || db_writer_stop_.load(); });
+			db_queue_cv_.wait(lock, [&] { return !db_queue_.empty() || db_writer_stop_.load(); });
 
 			if (db_queue_.empty()) break;  // stop_ set and queue drained
 
@@ -417,15 +417,15 @@ mu2e::CFODataReceiver::CFODataReceiver(fhicl::ParameterSet const& ps)
 	// If no explicit connstr, try to build one from environment variables
 	if (subrun_record_db_connstr_.empty())
 	{
-		const char* host   = std::getenv("OTSDAQ_RUNINFO_DATABASE_HOST");
-		const char* db     = std::getenv("OTSDAQ_RUNINFO_DATABASE");
-		const char* port   = std::getenv("OTSDAQ_RUNINFO_DATABASE_PORT");
-		const char* user   = std::getenv("OTSDAQ_RUNINFO_DATABASE_USER");
+		const char* host = std::getenv("OTSDAQ_RUNINFO_DATABASE_HOST");
+		const char* db = std::getenv("OTSDAQ_RUNINFO_DATABASE");
+		const char* port = std::getenv("OTSDAQ_RUNINFO_DATABASE_PORT");
+		const char* user = std::getenv("OTSDAQ_RUNINFO_DATABASE_USER");
 		if (host && db && port && user)
 		{
 			std::ostringstream oss;
 			oss << "host=" << host << " port=" << port
-			    << " dbname=" << db << " user=" << user;
+				<< " dbname=" << db << " user=" << user;
 			subrun_record_db_connstr_ = oss.str();
 			TLOG(TLVL_DEBUG) << "Built DB connstr from environment: " << subrun_record_db_connstr_;
 		}
@@ -476,15 +476,14 @@ void mu2e::CFODataReceiver::start()
 
 	subrun_record_.reset(subrun_number());
 	metricMan->sendMetric("SubrunNumber", static_cast<uint64_t>(subrun_record_.subrun_number), "subrun", 1,
-	                      artdaq::MetricMode::LastPoint | artdaq::MetricMode::Persist);
+						  artdaq::MetricMode::LastPoint | artdaq::MetricMode::Persist);
 	openRecordFile_();
 
 	// Start DB writer thread if we have a connection string
 	if (!subrun_record_db_connstr_.empty())
 	{
 		db_writer_stop_.store(false);
-		db_writer_thread_ = std::thread([this]()
-		{
+		db_writer_thread_ = std::thread([this]() {
 			dbWriterThread_();
 		});
 	}
@@ -555,8 +554,8 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 
 		// Per-subrun accounting
 		{
-			const CFOLib::CFO_EventRecord& rec  = evt->GetEventRecord();
-			const DTCLib::DTC_EventMode   mode  = evt->GetEventMode();
+			const CFOLib::CFO_EventRecord& rec = evt->GetEventRecord();
+			const DTCLib::DTC_EventMode mode = evt->GetEventMode();
 
 			if (rec.event_mode == 0)
 			{
@@ -586,24 +585,23 @@ bool mu2e::CFODataReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags, DTCL
 		// Sub-run transition: fire inline so the boundary is exact within the batch.
 		// Triggered by hardware subrun bit OR software event-count interval.
 		//--------------------------------------------------------------------------------
-		const bool hw_subrun_trigger  = (fragment_id() == 0) && evt->GetEventMode().isSubRunBitSet();
-		const bool sw_subrun_trigger  = (fragment_id() == 0) && (rollover_subrun_interval_ > 0)
-		                                && (ev_counter() % rollover_subrun_interval_ == 0);
+		const bool hw_subrun_trigger = (fragment_id() == 0) && evt->GetEventMode().isSubRunBitSet();
+		const bool sw_subrun_trigger = (fragment_id() == 0) && (rollover_subrun_interval_ > 0) && (ev_counter() % rollover_subrun_interval_ == 0);
 		if (hw_subrun_trigger || sw_subrun_trigger)
 		{
 			const auto next_subrun = subrun_record_.subrun_number + 1;
 			TLOG(TLVL_DEBUG + 29) << "Subrun transition (hw=" << hw_subrun_trigger
-			                      << " sw=" << sw_subrun_trigger
-			                      << ") at EWT=" << fragment_timestamp
-			                      << " ev_counter=" << ev_counter()
-			                      << " -> subrun " << next_subrun;
+								  << " sw=" << sw_subrun_trigger
+								  << ") at EWT=" << fragment_timestamp
+								  << " ev_counter=" << ev_counter()
+								  << " -> subrun " << next_subrun;
 			publishRecord_();
 			subrun_record_.reset(next_subrun);
 			metricMan->sendMetric("SubrunNumber", static_cast<uint64_t>(subrun_record_.subrun_number), "subrun", 1,
-			                      artdaq::MetricMode::LastPoint | artdaq::MetricMode::Persist);
+								  artdaq::MetricMode::LastPoint | artdaq::MetricMode::Persist);
 			//                                                                   next EWT             subrun       ID
 			frags.emplace_back(artdaq::MetadataFragment::CreateEndOfSubrunFragment(
-			    my_rank, fragment_timestamp + 1, next_subrun, fragment_id()));
+				my_rank, fragment_timestamp + 1, next_subrun, fragment_id()));
 		}
 	}
 
