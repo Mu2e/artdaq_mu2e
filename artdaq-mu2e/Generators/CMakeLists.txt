@@ -20,7 +20,7 @@ cet_build_plugin(CFODataReceiver artdaq::commandableGenerator
   mu2e-pcie-utils::DTCInterface
   mu2e-pcie-utils::CFOInterface
   artdaq_plugin_types::CommandableFragmentGenerator
-  pq
+  PostgreSQL::PostgreSQL
 )
 
 cet_build_plugin(CFOZmqReceiver artdaq::commandableGenerator
