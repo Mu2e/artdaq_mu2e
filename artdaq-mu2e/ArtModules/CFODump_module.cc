@@ -1,0 +1,134 @@
+///////////////////////////////////////////////////////////////////////////////////////
+// Class:       CFODump
+// Module Type: EDAnalyzer
+// File:        CFODump_module.cc
+// Description: Prints out DTCFragments in HWUG Packet format (see mu2e-docdb #4097)
+///////////////////////////////////////////////////////////////////////////////////////
+
+#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "canvas/Utilities/Exception.h"
+
+#include "artdaq-core/Data/Fragment.hh"
+#include "artdaq-core-mu2e/Overlays/FragmentType.hh"
+#include "artdaq-core-mu2e/Overlays/CFOEventFragment.hh"
+#include "artdaq-core/Data/ContainerFragment.hh"
+
+#include "trace.h"
+
+#include <unistd.h>
+#include <iomanip>
+#include <iostream>
+#include <string>
+
+namespace mu2e {
+class CFODump;
+}
+
+class mu2e::CFODump : public art::EDAnalyzer
+{
+public:
+	explicit CFODump(fhicl::ParameterSet const& pset);
+	virtual ~CFODump();
+
+	virtual void analyze(art::Event const& evt);
+
+	virtual void beginJob();
+	virtual void endJob();
+
+private:
+	std::string binary_file_name_;
+	bool detemu_format_;
+	std::ofstream output_file_;
+};
+
+mu2e::CFODump::CFODump(fhicl::ParameterSet const& pset)
+	: EDAnalyzer(pset)
+	, binary_file_name_(pset.get<std::string>("raw_output_file", "CFODump.bin"))
+	, detemu_format_(pset.get<bool>("raw_output_in_detector_emulator_format", false))
+{}
+
+mu2e::CFODump::~CFODump() {}
+
+void mu2e::CFODump::endJob()
+{
+	output_file_.close();
+}
+
+void mu2e::CFODump::beginJob()
+{
+	std::string fileName = binary_file_name_;
+	if (fileName.find(".bin") != std::string::npos)
+	{
+		std::string timestr = "_" + std::to_string(time(0));
+		fileName.insert(fileName.find(".bin"), timestr);
+	}
+	output_file_.open(fileName, std::ios::out | std::ios::app | std::ios::binary);
+}
+
+void mu2e::CFODump::analyze(art::Event const& evt)
+{
+	art::EventNumber_t eventNumber = evt.event();
+	TRACE(11, "mu2e::CFODump::analyze enter eventNumber=%d", eventNumber);
+
+	artdaq::Fragments fragments;
+	artdaq::FragmentPtrs containerFragments;
+
+	std::vector<art::Handle<artdaq::Fragments>> fragmentHandles;
+	fragmentHandles = evt.getMany<std::vector<artdaq::Fragment>>();
+
+	for (const auto& handle : fragmentHandles)
+	{
+		if (!handle.isValid() || handle->empty())
+		{
+			continue;
+		}
+
+		if (handle->front().type() == artdaq::Fragment::ContainerFragmentType)
+		{
+			for (const auto& cont : *handle)
+			{
+				artdaq::ContainerFragment contf(cont);
+				if (contf.fragment_type() != mu2e::FragmentType::CFO)
+				{
+					break;
+				}
+
+				for (size_t ii = 0; ii < contf.block_count(); ++ii)
+				{
+					containerFragments.push_back(contf[ii]);
+					fragments.push_back(*containerFragments.back());
+				}
+			}
+		}
+		else
+		{
+			if (handle->front().type() == mu2e::FragmentType::CFO)
+			{
+				for (auto frag : *handle)
+				{
+					fragments.emplace_back(frag);
+				}
+			}
+		}
+	}
+	// look for raw Toy data
+	TLOG(TLVL_INFO) << "Run " << evt.run() << ", subrun " << evt.subRun() << ", event " << eventNumber << " has "
+					<< fragments.size() << " fragment(s) of type CFO";
+
+	for (const auto& frag : fragments)
+	{
+		CFOEventFragment bb(frag);
+		auto evt = bb.getData();
+		TLOG(TLVL_DEBUG) << "Event " << evt.GetEventWindowTag().GetEventWindowTag(true) << " has fragment size " << frag.sizeBytes() << ")";
+		TLOG(TLVL_TRACE) << "Dumping CFO event: " << evt.GetEventRecord().toJson();
+		// if (output_file_)
+		//{
+		//	evt.WriteEvent(output_file_, detemu_format_);
+		// }
+	}
+}
+
+DEFINE_ART_MODULE(mu2e::CFODump)

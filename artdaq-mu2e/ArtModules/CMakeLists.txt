@@ -3,6 +3,10 @@ cet_build_plugin(DTCEventDump art::module LIBRARIES REG
  artdaq-core-mu2e::Overlays
   )
 
+cet_build_plugin(CFODump art::module LIBRARIES REG
+ artdaq-core-mu2e::Overlays
+)
+
 cet_build_plugin(DTCEventVerifier art::module LIBRARIES REG
  artdaq-core-mu2e::Data_dict
  artdaq-core-mu2e::Overlays
@@ -28,6 +32,10 @@ artdaq::DAQdata
 art::Framework_Principal
           )
   
+cet_build_plugin(DTCEVTPrint art::module LIBRARIES REG
+    art_root_io::TFileService_service
+    artdaq-core-mu2e::Data
+)
 
 # Subdirectories.
 add_subdirectory(fcl)
