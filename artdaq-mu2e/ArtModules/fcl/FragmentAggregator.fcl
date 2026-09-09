@@ -7,7 +7,8 @@
 
 physics.producers.fragmentAggregator: {
   module_type: FragmentAggregator
-  # instanceNames defaults to ["CFO", "DTCEVT", "ContainerDTCEVT"]
+  # instanceNames defaults to ["CFO", "DTCEVT"] - only names that carry data;
+  # ContainerDTCEVT was removed after measuring it at the empty-branch floor
   # throwOnDuplicate defaults to true
 }
 

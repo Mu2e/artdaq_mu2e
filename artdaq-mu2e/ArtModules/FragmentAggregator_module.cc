@@ -2,6 +2,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Principal/Selector.h"
 #include "fhiclcpp/types/Sequence.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -22,8 +23,26 @@ public:
 	{
 		fhicl::Sequence<std::string> instanceNames{
 			fhicl::Name("instanceNames"),
-			fhicl::Comment("Fragment product instance names to aggregate and re-emit"),
-			std::vector<std::string>{"CFO", "DTCEVT", "ContainerDTCEVT"}};
+			fhicl::Comment("Fragment product instance names to aggregate and re-emit.\n"
+						   "Only names that actually carry data belong here: each one costs a "
+						   "getMany query that materialises its branches in every event. "
+						   "ContainerDTCEVT was dropped from this default after measurement - "
+						   "in production files it sits exactly at the empty-branch floor "
+						   "(240,844 bytes/branch across 17 EventBuilders, i.e. no payload), "
+						   "whereas CFO is ~1.16 MB above it."),
+			std::vector<std::string>{"CFO", "DTCEVT"}};
+		fhicl::Atom<bool> useInstanceSelector{
+			fhicl::Name("useInstanceSelector"),
+			fhicl::Comment("true (default): retrieve only the configured instance names, via "
+						   "one getMany(ProductInstanceNameSelector) per name. Selectors match "
+						   "on BranchDescription metadata, so non-matching products are never "
+						   "resolved - unrelated Fragment branches (TRK, CAL, CRV, STM, DBG ... "
+						   "which are empty in Mu2e running) cost nothing.\n"
+						   "false: legacy bare getMany<Fragments>(), which retrieves and "
+						   "MATERIALISES every Fragments product in the event and only then "
+						   "filters by instance name - measured at ~5 us per unwanted branch "
+						   "per event. Kept for A/B measurement only."),
+			true};
 		fhicl::Atom<bool> throwOnDuplicate{
 			fhicl::Name("throwOnDuplicate"),
 			fhicl::Comment("Throw if two input handles share an instance name (false = concatenate)"),
@@ -38,14 +57,14 @@ public:
 
 private:
 	std::set<std::string> instanceNames_;
+	bool useInstanceSelector_;
 	bool throwOnDuplicate_;
 };
 
 }  // namespace mu2e
 
 mu2e::FragmentAggregator::FragmentAggregator(Parameters const& params)
-	: art::EDProducer{params},
-	  throwOnDuplicate_(params().throwOnDuplicate())
+	: art::EDProducer{params}, useInstanceSelector_(params().useInstanceSelector()), throwOnDuplicate_(params().throwOnDuplicate())
 {
 	auto const& names = params().instanceNames();
 	for (auto const& name : names)
@@ -67,17 +86,16 @@ void mu2e::FragmentAggregator::produce(art::Event& event)
 
 	std::map<std::string, std::string> seenSources;
 
-	auto handles = event.getMany<std::vector<artdaq::Fragment>>();
-
-	for (auto const& handle : handles)
-	{
+	// Merge one retrieved handle into its instance's output vector. Shared by both
+	// retrieval paths so they stay behaviourally identical.
+	auto absorb = [&](art::Handle<artdaq::Fragments> const& handle) {
 		if (!handle.isValid() || handle->empty())
-			continue;
+			return;
 
 		std::string const& instance = handle.provenance()->productInstanceName();
 
 		if (instanceNames_.find(instance) == instanceNames_.end())
-			continue;
+			return;
 
 		auto it = seenSources.find(instance);
 		if (it != seenSources.end())
@@ -101,6 +119,27 @@ void mu2e::FragmentAggregator::produce(art::Event& event)
 		for (auto const& frag : *handle)
 		{
 			dest.push_back(frag);
+		}
+	};
+
+	if (useInstanceSelector_)
+	{
+		// One query per wanted instance name. Products whose BranchDescription does
+		// not match are filtered on metadata and never read off disk.
+		for (auto const& name : instanceNames_)
+		{
+			for (auto const& handle :
+				 event.getMany<artdaq::Fragments>(art::ProductInstanceNameSelector{name}))
+			{
+				absorb(handle);
+			}
+		}
+	}
+	else
+	{
+		for (auto const& handle : event.getMany<artdaq::Fragments>())
+		{
+			absorb(handle);
 		}
 	}
 
