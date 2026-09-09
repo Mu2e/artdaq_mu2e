@@ -28,9 +28,23 @@ artdaq::DAQdata
 art::Framework_Principal
 )
 
+cet_build_plugin(Mu2eRunInfoDbService art::service LIBRARIES REG
+  artdaq_plugin_types::ArtdaqRunInfoService
+  artdaq::DAQdata
+  PostgreSQL::PostgreSQL
+)
+
 cet_build_plugin(DTCEVTPrint art::module LIBRARIES REG
     art_root_io::TFileService_service
     artdaq-core-mu2e::Data
+)
+
+cet_build_plugin(FragmentAggregator art::module LIBRARIES REG
+    artdaq-core::Data
+)
+
+cet_build_plugin(SyntheticFragmentProducer art::module LIBRARIES REG
+    artdaq-core::Data
 )
 
 # Subdirectories.
