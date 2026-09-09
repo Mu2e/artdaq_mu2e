@@ -362,8 +362,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCFragment(artdaq::FragmentPtrs& frags,
 		}
 		catch (std::exception const& ex)
 		{
-			const std::string msg = std::string("There was an error in the DTC Library: ") + ex.what();
-			TLOG(TLVL_ERROR) << msg;
+			TLOG(TLVL_ERROR) << "There was an error in the DTC Library: " << ex.what();
 			if (fail_on_dtc_read_error_)
 			{
 				throw std::runtime_error(std::string("Mu2eSubEventReceiver fatal DTC read error: ") + ex.what());
@@ -536,8 +535,7 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCEventFragment(artdaq::FragmentPtrs& f
 		}
 		catch (std::exception const& ex)
 		{
-			const std::string msg = std::string("There was an error in the DTC Library: ") + ex.what();
-			TLOG(TLVL_ERROR) << msg;
+			TLOG(TLVL_ERROR) << "There was an error in the DTC Library: " << ex.what();
 			if (fail_on_dtc_read_error_)
 			{
 				throw std::runtime_error(std::string("Mu2eSubEventReceiver fatal DTC read error: ") + ex.what());
