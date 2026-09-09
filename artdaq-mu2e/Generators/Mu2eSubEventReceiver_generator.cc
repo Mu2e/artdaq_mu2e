@@ -654,9 +654,9 @@ bool mu2e::Mu2eSubEventReceiver::getNextDTCEventFragment(artdaq::FragmentPtrs& f
 		// performs the rollover; -1 (default) disables the feature entirely.
 		//--------------------------------------------------------------------------------
 		const bool sw_subrun_trigger = (subrun_rollover_fragment_id_ >= 0) &&
-										(static_cast<int>(fragment_id()) == subrun_rollover_fragment_id_) &&
-										(subrun_rollover_interval_ > 0) &&
-										(ev_counter() % subrun_rollover_interval_ == 0);
+									   (static_cast<int>(fragment_id()) == subrun_rollover_fragment_id_) &&
+									   (subrun_rollover_interval_ > 0) &&
+									   (ev_counter() % subrun_rollover_interval_ == 0);
 		if (sw_subrun_trigger)
 		{
 			const auto next_subrun = subrun_number_ + 1;
